@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors */
+  --background: #ffffff;
+  --background-color: #FBD5E0;
+  --primary-color: #C15074;
+  --primary-dark: #9E3659;
+  --primary-light: #D4738F;
+  --secondary-color: #FCEDF0;
+  --accent-color: #E8A0B5;
+
+  /* Text Colors */
+  --text-primary: #9E3659;
+  --text-secondary: #554246;
+  --text-tertiary: #AC9CA0;
+  --text-dark: #2D1F23;
+  --text-light: #ffffff;
+
+  /* Surface Colors */
+  --surface-pink: #F5C6D0;
+  --surface-light-pink: #FDF5F7;
+  --surface-warm: #F9F5F0;
+
+  /* Gradients */
+  --gradient-hero: linear-gradient(135deg, #D4738F 0%, #E8A0B5 50%, #F5C6D0 100%);
+  --gradient-cta: linear-gradient(135deg, #C15074 0%, #D4738F 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(193, 80, 116, 0.08);
+  --shadow-md: 0 4px 12px rgba(193, 80, 116, 0.1);
+  --shadow-lg: 0 8px 30px rgba(193, 80, 116, 0.12);
+  --shadow-xl: 0 16px 48px rgba(193, 80, 116, 0.15);
+
+
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-background-color: var(--background-color);
+  --color-primary: var(--primary-color);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary-color);
+  --color-accent: var(--accent-color);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-dark: var(--text-dark);
+  --color-surface-pink: var(--surface-pink);
+  --color-surface-light-pink: var(--surface-light-pink);
+  --color-surface-warm: var(--surface-warm);
+}
+
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-secondary);
+  font-family: var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
