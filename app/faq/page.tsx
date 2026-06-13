@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BadgeCheck,
   Clock3,
+  ExternalLink,
   Gift,
   HelpCircle,
   MapPin,
@@ -127,11 +128,13 @@ const branches = [
     name: "San Miguel Casa Matriz",
     address: ["Urbanización España", "Calle Suiza (principal), pol. 12", "N-1, San Miguel"],
     hours: ["Lunes a viernes: 10:00am - 6:30pm", "Sábados: 9:30am - 6:30pm"],
+    mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
     name: "Sucursal Usulután",
-    address: ["Centro Comercial Plaza Mundo", "Usulután, 2do Nivel, Etapa I", "Usulután"],
+    address: ["Plaza Mundo Usulután", "2do Nivel, frente a Didi Shop"],
     hours: ["Horario: 10:00am - 6:00pm", "Martes cerrado"],
+    mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];
 
@@ -264,6 +267,15 @@ export default function FaqPage() {
                     </p>
                   ))}
                 </div>
+                <a
+                  href={branch.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-[4px] bg-[#FBD5E0] px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9E3659] transition-colors hover:bg-white"
+                >
+                  Abrir pin en Google Maps
+                  <ExternalLink size={14} strokeWidth={2} />
+                </a>
               </article>
             ))}
           </div>
