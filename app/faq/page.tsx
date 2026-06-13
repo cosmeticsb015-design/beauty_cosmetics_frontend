@@ -8,6 +8,7 @@ import {
   MapPin,
   MessageCircle,
   PackageCheck,
+  Store,
   RotateCcw,
   ShieldCheck,
   Sparkles,
@@ -117,6 +118,21 @@ const quickLinks = [
   { label: "Ver catálogo", href: "/catalog", icon: Sparkles },
   { label: "Gift Cards", href: "/#gift-card", icon: Gift },
   { label: "Retiro en sucursal", href: "#retiro-en-sucursal", icon: MapPin },
+  { label: "Sucursales", href: "#sucursales", icon: Store },
+];
+
+
+const branches = [
+  {
+    name: "San Miguel Casa Matriz",
+    address: ["Urbanización España", "Calle Suiza (principal), pol. 12", "N-1, San Miguel"],
+    hours: ["Lunes a viernes: 10:00am - 6:30pm", "Sábados: 9:30am - 6:30pm"],
+  },
+  {
+    name: "Sucursal Usulután",
+    address: ["Centro Comercial Plaza Mundo", "Usulután, 2do Nivel, Etapa I", "Usulután"],
+    hours: ["Horario: 10:00am - 6:00pm", "Martes cerrado"],
+  },
 ];
 
 const policyCards = [
@@ -210,6 +226,47 @@ export default function FaqPage() {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section id="sucursales" className="mx-auto max-w-7xl px-4 pb-12 md:px-8">
+        <div className="rounded-[28px] bg-[#2D1F23] p-6 text-white md:p-8">
+          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#F5C6D0]">Nuestras sucursales</p>
+              <h2 className="mt-3 font-serif text-3xl font-normal uppercase tracking-wide md:text-4xl">Retiro en tienda</h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-white/75">
+              Si elegiste retiro en sucursal, espera nuestra confirmación antes de visitarnos para asegurarte de que tu pedido esté listo.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {branches.map((branch) => (
+              <article key={branch.name} className="rounded-2xl border border-white/10 bg-white/8 p-6">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#FBD5E0] text-[#9E3659]">
+                  <Store size={22} strokeWidth={1.8} />
+                </div>
+                <h3 className="text-base font-bold uppercase tracking-widest text-white">{branch.name}</h3>
+                <div className="mt-4 space-y-2 text-sm leading-6 text-white/78">
+                  {branch.address.map((line) => (
+                    <p key={line} className="flex gap-2">
+                      <MapPin size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#F5C6D0]" />
+                      <span>{line}</span>
+                    </p>
+                  ))}
+                </div>
+                <div className="mt-5 border-t border-white/10 pt-4 text-sm leading-6 text-white/78">
+                  {branch.hours.map((line) => (
+                    <p key={line} className="flex gap-2">
+                      <Clock3 size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#F5C6D0]" />
+                      <span>{line}</span>
+                    </p>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
