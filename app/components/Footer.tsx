@@ -79,11 +79,12 @@ export default function Footer() {
 
             />
           </Link>
-          <p className="text-sm text-[#8A7A7E] leading-relaxed max-w-xs">
-            La excelencia en cosmética natural.
-            Diseñamos experiencias sensoriales
-            que cuidan de ti y del planeta.
-          </p>
+          <div className="text-sm text-[#8A7A7E] leading-relaxed max-w-xs">
+            <p className="font-bold text-[#2D1F23]">Beauty Cosmetics</p>
+            <p>
+              Maquillaje y skincare auténticos, seleccionados cuidadosamente para quienes buscan calidad, confianza y resultados reales.
+            </p>
+          </div>
           {/* Social Icons */}
           <div className="flex gap-3 mt-1">
             <a
