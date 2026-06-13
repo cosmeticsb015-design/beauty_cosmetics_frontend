@@ -12,6 +12,7 @@ const navLinks = [
   { label: "MAQUILLAJE", href: "/catalog?category=makeup" },
   { label: "CUIDADO DE PIEL", href: "/catalog?category=skincare" },
   { label: "CATÁLOGO", href: "/catalog" },
+  { label: "FAQ", href: "/faq" },
 ];
 
 const subBarItems = [
