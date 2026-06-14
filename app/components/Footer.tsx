@@ -1,5 +1,8 @@
+"use client";
+
 import { Gift, HandFist, ShieldCheck, Truck } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const preFooterFeatures = [
   {
@@ -40,6 +43,10 @@ const soporteLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <footer id="footer" className="w-full flex flex-col bg-white">
 

@@ -30,6 +30,8 @@ export default function Header() {
   const searchParams = useSearchParams();
   const currentCategory = searchParams?.get("category");
 
+  if (pathname?.startsWith("/admin")) return null;
+
   const checkIsActive = (href: string) => {
     if (href === "/") return pathname === "/";
     if (href.includes("category=")) {
