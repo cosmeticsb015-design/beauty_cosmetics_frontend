@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { ArrowLeft, Clock, Save } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
+import { saveBranchForm } from "../../actions";
 
 export default function NewBranchPage() {
   return (
     <AdminShell active="branches">
-      <main className="mx-auto w-full max-w-[1040px] px-4 py-12 md:px-8">
+      <form action={saveBranchForm} className="mx-auto w-full max-w-[1040px] px-4 py-12 md:px-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[34px] font-bold leading-tight text-[#7D123B]">Añadir Nueva Sucursal</h2>
             <p className="mt-2 text-[15px] text-[#5C4B50]">
-              Completa la información para registrar un nuevo punto de venta boutique.
+              Completa la información para registrar un nuevo punto de venta boutique y luego asignar stock por sucursal.
             </p>
           </div>
           <Link
@@ -27,24 +28,26 @@ export default function NewBranchPage() {
             <label className="block">
               <span className="text-[15px] font-bold text-[#1F1F22]">Nombre de la sucursal</span>
               <input
+                name="name"
+                required
                 placeholder="Ej. Sucursal Central Boutique Polanco"
                 className="mt-3 h-14 w-full rounded-[6px] border border-[#E7BFC9] px-5 text-[15px] outline-none placeholder:text-[#D5B8C0] focus:border-[#9E3659]"
               />
             </label>
 
-            <div>
-              <p className="text-[15px] font-bold text-[#1F1F22]">Estado de la sucursal</p>
-              <div className="mt-6 flex items-center gap-4">
-                <button className="relative h-8 w-14 rounded-full bg-[#7D123B]" aria-label="Estado activo">
-                  <span className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-white" />
-                </button>
+            <label className="block">
+              <span className="text-[15px] font-bold text-[#1F1F22]">Estado de la sucursal</span>
+              <span className="mt-6 flex items-center gap-4">
+                <input type="checkbox" name="active" defaultChecked className="h-6 w-6 accent-[#7D123B]" />
                 <span className="text-[16px] font-semibold text-[#1F1F22]">Activa</span>
-              </div>
-            </div>
+              </span>
+            </label>
 
             <label className="block md:col-span-2">
               <span className="text-[15px] font-bold text-[#1F1F22]">Dirección completa</span>
               <textarea
+                name="address"
+                required
                 placeholder="Calle, Número, Colonia, Ciudad, Estado y Código Postal"
                 className="mt-3 min-h-[90px] w-full resize-none rounded-[6px] border border-[#E7BFC9] px-5 py-4 text-[15px] outline-none placeholder:text-[#D5B8C0] focus:border-[#9E3659]"
               />
@@ -52,18 +55,20 @@ export default function NewBranchPage() {
 
             <label className="block md:col-span-2">
               <span className="text-[15px] font-bold text-[#1F1F22]">Horario de atención</span>
-              <div className="mt-3 flex h-14 items-center rounded-[6px] border border-[#E7BFC9] px-4 focus-within:border-[#9E3659]">
+              <span className="mt-3 flex h-14 items-center rounded-[6px] border border-[#E7BFC9] px-4 focus-within:border-[#9E3659]">
                 <Clock size={19} strokeWidth={1.8} className="mr-4 text-[#8A7378]" />
                 <input
+                  name="schedule"
                   placeholder="Ej. Lun-Vie 9:00 - 18:00 / Sab 10:00 - 14:00"
                   className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#D5B8C0]"
                 />
-              </div>
+              </span>
             </label>
 
             <label className="block md:col-span-2">
               <span className="text-[15px] font-bold text-[#1F1F22]">Notas adicionales</span>
               <textarea
+                name="notes"
                 placeholder="Detalles de mantenimiento, accesos específicos o comentarios para el personal..."
                 className="mt-3 min-h-[115px] w-full resize-none rounded-[6px] border border-[#E7BFC9] px-5 py-4 text-[15px] outline-none placeholder:text-[#D5B8C0] focus:border-[#9E3659]"
               />
@@ -80,7 +85,7 @@ export default function NewBranchPage() {
             </button>
           </div>
         </section>
-      </main>
+      </form>
     </AdminShell>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logoutAdmin } from "../actions";
 import {
   FolderKanban,
   LogOut,
@@ -70,10 +71,12 @@ export default function AdminShell({ active, searchPlaceholder, children }: Admi
             })}
           </nav>
 
-          <button className="mx-7 mb-9 flex items-center gap-3 text-[15px] font-semibold text-[#554246] transition-colors hover:text-[#9E3659]">
-            <LogOut size={20} strokeWidth={1.9} />
-            Cerrar Sesion
-          </button>
+          <form action={logoutAdmin} className="mx-7 mb-9">
+            <button type="submit" className="flex items-center gap-3 text-[15px] font-semibold text-[#554246] transition-colors hover:text-[#9E3659]">
+              <LogOut size={20} strokeWidth={1.9} />
+              Cerrar Sesion
+            </button>
+          </form>
         </aside>
 
         <section className="min-w-0">
