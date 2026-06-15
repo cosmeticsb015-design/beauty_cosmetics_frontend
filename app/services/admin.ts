@@ -182,7 +182,14 @@ export async function getAdminShippingRates() {
 }
 
 export async function getAdminStoreConfig() {
-  return adminRequest<StrapiResponse<StrapiStoreConfig>>("store-config");
+  try {
+    return await adminRequest<StrapiResponse<StrapiStoreConfig>>("store-config");
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Not Found")) {
+      return { data: { id: 0, whatsapp_number: null, notification_email: null }, meta: {} } satisfies StrapiResponse<StrapiStoreConfig>;
+    }
+    throw error;
+  }
 }
 
 

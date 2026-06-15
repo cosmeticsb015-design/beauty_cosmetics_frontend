@@ -4,7 +4,8 @@ import AdminDataError from "../components/AdminDataError";
 import { saveStoreConfigForm } from "../actions";
 import { getAdminStoreConfig } from "../../services/admin";
 
-export default async function AdminContentPage() {
+export default async function AdminContentPage({ searchParams }: { searchParams?: Promise<{ saved?: string }> }) {
+  const query = searchParams ? await searchParams : {};
   try {
     const response = await getAdminStoreConfig();
     const config = response.data;
@@ -19,10 +20,12 @@ export default async function AdminContentPage() {
             </p>
           </div>
 
+          {query.saved === "1" && <div className="mt-6 rounded-[6px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-semibold text-emerald-700">Configuracion guardada correctamente.</div>}
+
           <form action={saveStoreConfigForm} className="mt-8 overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white">
             <div className="border-b border-[#E7BFC9] px-7 py-7">
               <h3 className="text-[22px] font-bold text-[#1F1F22]">Configuracion global de tienda</h3>
-              <p className="mt-2 text-[16px] text-[#6B6063]">Estos campos se guardan directamente en Strapi.</p>
+              <p className="mt-2 text-[16px] text-[#6B6063]">Estos campos se guardan directamente en Strapi. Si el single type todavia no tiene contenido, puedes crearlo desde este formulario.</p>
             </div>
             <div className="grid gap-7 px-7 py-8 lg:grid-cols-2">
               <label className="block">
