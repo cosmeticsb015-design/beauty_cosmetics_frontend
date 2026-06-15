@@ -21,6 +21,13 @@ function statusClass(status: string) {
 function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Sin fecha";
 }
+
+function whatsappHref(phone?: string | null) {
+  const digits = String(phone ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  const normalized = digits.length === 8 ? `503${digits}` : digits;
+  return `https://wa.me/${normalized}`;
+}
 function firstItemImage(item: StrapiOrderItem) {
   const image = item.product?.images?.[0]?.image;
   const formats = image?.formats as { thumbnail?: { url?: string }; small?: { url?: string } } | undefined;
@@ -45,6 +52,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
     const response = await getAdminOrder(id);
     const order = response.data;
     const total = Number(order.total ?? Number(order.subtotal || 0) + Number(order.shipping_cost || 0));
+    const customerWhatsapp = whatsappHref(order.customer_phone);
     const items = (order.items ?? []).map((item, index) => ({
       name: item.product_name,
       volume: item.variant_label ?? item.variant?.label ?? "Sin variante",
@@ -68,7 +76,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href={`/admin/pedidos/export?order=${order.documentId}`} className="inline-flex h-11 items-center justify-center gap-3 rounded-[4px] border border-[#9E3659] px-6 text-[15px] font-semibold tracking-wide text-[#9E3659] transition-colors hover:bg-[#FCEDF0]">Exportar pedido</Link>
-              <a href={`mailto:${order.customer_email}`} className="inline-flex h-11 items-center justify-center gap-3 rounded-[4px] bg-[#9E3659] px-6 text-[15px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]"><MessageSquareText size={20} strokeWidth={1.8} />Contactar Cliente</a>
+              <a href={customerWhatsapp ?? "#"} target="_blank" rel="noopener noreferrer" aria-disabled={!customerWhatsapp} className={`inline-flex h-11 items-center justify-center gap-3 rounded-[4px] px-6 text-[15px] font-semibold tracking-wide text-white transition-colors ${customerWhatsapp ? "bg-[#9E3659] hover:bg-[#84304C]" : "pointer-events-none bg-[#B9A6AD]"}`}><MessageSquareText size={20} strokeWidth={1.8} />Chatear con Cliente</a>
             </div>
           </div>
 
