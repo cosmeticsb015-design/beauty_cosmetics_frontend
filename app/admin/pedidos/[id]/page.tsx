@@ -9,15 +9,13 @@ function money(value?: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
 }
 function statusLabel(status: string) {
-  if (status === "paid") return "Pagado";
-  if (status === "failed") return "Fallido";
-  if (status === "refunded") return "Reembolsado";
-  return "Pendiente";
+  if (status === "paid") return "Enviado";
+  if (status === "failed" || status === "refunded") return "Finalizado";
+  return "Pendiente de envio";
 }
 function statusClass(status: string) {
-  if (status === "paid") return "bg-emerald-100 text-emerald-800";
-  if (status === "failed") return "bg-red-100 text-red-700";
-  if (status === "refunded") return "bg-[#EFEFEF] text-[#666666]";
+  if (status === "paid") return "bg-blue-100 text-blue-800";
+  if (status === "failed" || status === "refunded") return "bg-emerald-100 text-emerald-800";
   return "bg-[#F5DDE5] text-[#9E3659]";
 }
 function formatDate(value?: string) {
@@ -84,7 +82,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
             <h3 className="text-[24px] font-bold text-[#1F1F22]">Actualizar estado de pago</h3>
             <form action={updateOrderStatusForm} className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <input type="hidden" name="id" value={order.documentId} />
-              <select name="payment_status" defaultValue={order.payment_status} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending">Pendiente</option><option value="paid">Pagado</option><option value="failed">Fallido</option><option value="refunded">Reembolsado</option></select>
+              <select name="payment_status" defaultValue={order.payment_status === "paid" ? "sent" : order.payment_status === "failed" || order.payment_status === "refunded" ? "finalized" : "pending_shipping"} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="sent">Enviado</option><option value="finalized">Finalizado</option></select>
               <button className="h-12 rounded-[4px] bg-[#9E3659] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#84304C]">Guardar cambios</button>
             </form>
           </section>

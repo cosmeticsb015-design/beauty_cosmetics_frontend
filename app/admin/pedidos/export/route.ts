@@ -10,10 +10,9 @@ function formatDate(value?: string) {
 }
 
 function statusLabel(status: string) {
-  if (status === "paid") return "Pagado";
-  if (status === "failed") return "Fallido";
-  if (status === "refunded") return "Reembolsado";
-  return "Pendiente";
+  if (status === "paid") return "Enviado";
+  if (status === "failed" || status === "refunded") return "Finalizado";
+  return "Pendiente de envio";
 }
 
 function escapeCell(value: unknown) {

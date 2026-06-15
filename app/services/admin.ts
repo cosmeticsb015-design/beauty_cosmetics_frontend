@@ -127,7 +127,12 @@ export async function getAdminOrders(params: AdminListParams = {}) {
       { customer_phone: { $containsi: params.search } },
     ];
   }
-  if (params.status && params.status !== "all") filters.payment_status = { $eq: params.status };
+  if (params.status && params.status !== "all") {
+    if (params.status === "pending_shipping") filters.payment_status = { $eq: "pending" };
+    else if (params.status === "sent") filters.payment_status = { $eq: "paid" };
+    else if (params.status === "finalized") filters.payment_status = { $in: ["failed", "refunded"] };
+    else filters.payment_status = { $eq: params.status };
+  }
   if (params.dateFrom || params.dateTo) {
     filters.createdAt = {
       ...(params.dateFrom ? { $gte: `${params.dateFrom}T00:00:00.000Z` } : {}),

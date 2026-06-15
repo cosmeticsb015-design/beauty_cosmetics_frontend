@@ -261,7 +261,8 @@ export async function saveShippingRate(_prev: AdminMutationState, formData: Form
 
 export async function updateOrderStatus(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
   const id = sanitizeText(formData.get("id"));
-  const payment_status = sanitizeText(formData.get("payment_status"));
+  const rawStatus = sanitizeText(formData.get("payment_status"));
+  const payment_status = rawStatus === "pending_shipping" ? "pending" : rawStatus === "sent" ? "paid" : rawStatus === "finalized" ? "refunded" : rawStatus;
   if (!id || !["pending", "paid", "failed", "refunded"].includes(payment_status)) return { ok: false, message: "Pedido inválido." };
   try { await updateEntity("orders", id, { payment_status }); revalidatePath("/admin/pedidos"); return { ok: true, message: "Pedido actualizado." }; }
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo actualizar el pedido." }; }

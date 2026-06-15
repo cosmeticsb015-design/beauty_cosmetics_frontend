@@ -32,6 +32,7 @@ export type OrderRow = {
   total: string;
   status: string;
   paymentStatus: string;
+  orderStatus: string;
   statusClass: string;
   delivery: string;
   itemCount: string;
@@ -47,18 +48,15 @@ type AdminOrdersClientProps = {
 };
 
 const tabs = [
-  { label: "Todos", value: "all" },
-  { label: "Pendientes", value: "pending" },
-  { label: "Pagados", value: "paid" },
-  { label: "Fallidos", value: "failed" },
-  { label: "Reembolsados", value: "refunded" },
+  { label: "Pendientes de envio", value: "pending_shipping" },
+  { label: "Enviados", value: "sent" },
+  { label: "Finalizados", value: "finalized" },
 ];
 
 const statusOptions = [
-  { value: "pending", label: "Pendiente" },
-  { value: "paid", label: "Pagado" },
-  { value: "failed", label: "Fallido" },
-  { value: "refunded", label: "Reembolsado" },
+  { value: "pending_shipping", label: "Pendiente de envio" },
+  { value: "sent", label: "Enviado" },
+  { value: "finalized", label: "Finalizado" },
 ];
 
 export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false }: AdminOrdersClientProps) {
@@ -72,7 +70,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
     const status = next.status ?? filters.status;
     const search = next.search ?? filters.search;
     const page = next.page ?? pagination.page;
-    if (status && status !== "all") params.set("status", status);
+    if (status) params.set("status", status);
     if (search) params.set("search", search);
     if (page > 1) params.set("page", String(page));
     const query = params.toString();
@@ -131,7 +129,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
             </div>
 
             <form action="/admin/pedidos" className="flex flex-wrap gap-4">
-              {filters.status !== "all" && <input type="hidden" name="status" value={filters.status} />}
+              <input type="hidden" name="status" value={filters.status} />
               <label className="inline-flex h-11 items-center gap-3 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] text-[#554246]">
                 <Search size={17} strokeWidth={1.8} />
                 <input name="search" defaultValue={filters.search} placeholder="Buscar pedido o cliente" className="w-48 bg-transparent outline-none" />
@@ -182,7 +180,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
           <form action={updateOrderStatusForm} className="w-full max-w-[660px] overflow-hidden rounded-[4px] border border-[#E7BFC9] bg-white shadow-xl">
             <input type="hidden" name="id" value={selectedOrder.documentId} />
             <div className="flex items-start justify-between px-8 py-7"><div><h3 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Actualizar Estado del Pedido</h3><span className="mt-2 inline-flex rounded-[3px] bg-[#F1EEF0] px-3 py-1 text-[17px] font-bold text-[#9E3659]">{selectedOrder.id}</span></div><button type="button" aria-label="Cerrar modal" onClick={() => setSelectedOrder(null)} className="text-[#5F5F61] transition-colors hover:text-[#9E3659]"><X size={28} strokeWidth={1.8} /></button></div>
-            <div className="border-y border-[#E7BFC9] px-8 py-8"><label htmlFor="order-status" className="text-[15px] text-[#5F5F61]">Estado de pago en Strapi</label><div className="relative mt-5"><select id="order-status" name="payment_status" defaultValue={selectedOrder.paymentStatus} className="h-12 w-full appearance-none bg-white px-4 text-[19px] text-[#1F1F22] outline-none">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={22} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /></div></div>
+            <div className="border-y border-[#E7BFC9] px-8 py-8"><label htmlFor="order-status" className="text-[15px] text-[#5F5F61]">Estado del pedido</label><div className="relative mt-5"><select id="order-status" name="payment_status" defaultValue={selectedOrder.orderStatus} className="h-12 w-full appearance-none bg-white px-4 text-[19px] text-[#1F1F22] outline-none">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={22} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /></div></div>
             <div className="flex flex-col gap-4 bg-[#F5F5F5] px-8 py-7 sm:flex-row sm:justify-end"><button type="button" onClick={() => setSelectedOrder(null)} className="h-13 min-w-[190px] rounded-[2px] border border-[#5F5F61] px-8 text-[17px] font-semibold text-[#5F5F61] transition-colors hover:border-[#9E3659] hover:text-[#9E3659]">Cancelar</button><button className="h-13 min-w-[260px] rounded-[2px] bg-[#9E3659] px-8 text-[17px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]">Actualizar Estado</button></div>
           </form>
         </div>
@@ -191,7 +189,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
       {exportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
           <form method="GET" action="/admin/pedidos/export" className="w-full max-w-[620px] overflow-hidden rounded-[4px] border border-[#E7BFC9] bg-white shadow-xl">
-            {filters.status !== "all" && <input type="hidden" name="status" value={filters.status} />}
+            <input type="hidden" name="status" value={filters.status} />
             {filters.search && <input type="hidden" name="search" value={filters.search} />}
             <div className="flex items-start justify-between px-8 py-7">
               <div>
