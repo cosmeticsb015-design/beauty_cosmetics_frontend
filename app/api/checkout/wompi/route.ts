@@ -35,6 +35,10 @@ async function strapiPost<T>(endpoint: string, data?: unknown): Promise<T> {
       message = error?.error?.message ?? error?.message ?? message;
     } catch { }
 
+    if (response.status === 403 && !STRAPI_TOKEN) {
+      throw new Error(`Strapi POST ${endpoint}: ${message}. Habilita los permisos públicos del endpoint de checkout/órdenes en Strapi o configura STRAPI_API_TOKEN en el frontend.`);
+    }
+
     throw new Error(`Strapi POST ${endpoint}: ${message}`);
   }
 
@@ -58,10 +62,6 @@ export async function POST(request: Request) {
 
   if (!orderPayload.items?.length) {
     return jsonError("No hay productos válidos para crear la orden.");
-  }
-
-  if (!STRAPI_TOKEN) {
-    return jsonError("Configura STRAPI_API_TOKEN en el frontend para crear órdenes de checkout desde el servidor.", 500);
   }
 
   try {
