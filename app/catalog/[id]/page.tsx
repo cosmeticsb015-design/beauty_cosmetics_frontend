@@ -125,7 +125,7 @@ export default function ProductDetailPage() {
                 );
               });
               setVariantOptions(variants);
-              setSelectedVariant(variants.length > 0 ? variants[0] : null);
+              setSelectedVariant(null);
             })
             .catch((err) => {
               console.warn("Could not load variant options:", err);
@@ -304,7 +304,7 @@ export default function ProductDetailPage() {
               <div className="mt-10">
                 <p className="text-xs text-[#554246] mb-3">
                   Elige tu Tono:{" "}
-                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label}</span>
+                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label || "Selecciona una variante"}</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   {variantOptions.map((variant) => {
