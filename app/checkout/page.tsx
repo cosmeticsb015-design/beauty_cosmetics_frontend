@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { CheckoutBranch, CheckoutShippingRate, getCheckoutBranches, getCheckoutShippingRates } from "../services/checkout";
 
 const steps = [
   { id: 1, label: "Datos" },
@@ -19,7 +20,6 @@ export default function CheckoutPage() {
   const [termsTouched, setTermsTouched] = useState(false);
   const TAX_RATE = 0.08;
   const taxes = parseFloat((subtotal * TAX_RATE).toFixed(2));
-  const total = parseFloat((subtotal + taxes).toFixed(2));
 
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("domicilio");
@@ -31,11 +31,55 @@ export default function CheckoutPage() {
     ciudad: "",
     codigoPostal: "",
     instrucciones: "",
+    branchDocumentId: "",
+    shippingRateDocumentId: "",
   });
+  const [branches, setBranches] = useState<CheckoutBranch[]>([]);
+  const [shippingRates, setShippingRates] = useState<CheckoutShippingRate[]>([]);
+  const [logisticsLoading, setLogisticsLoading] = useState(true);
+  const [logisticsError, setLogisticsError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([getCheckoutBranches(), getCheckoutShippingRates()])
+      .then(([branchesResponse, ratesResponse]) => {
+        if (cancelled) return;
+
+        const activeBranches = (branchesResponse.data || []).filter((branch) => branch.active !== false);
+        const activeRates = (ratesResponse.data || []).filter((rate) => rate.active !== false);
+
+        setBranches(activeBranches);
+        setShippingRates(activeRates);
+        setFormData((current) => ({
+          ...current,
+          branchDocumentId: current.branchDocumentId || activeBranches[0]?.documentId || "",
+          shippingRateDocumentId: current.shippingRateDocumentId || activeRates[0]?.documentId || "",
+        }));
+      })
+      .catch((error: unknown) => {
+        console.error("Error loading checkout logistics:", error);
+        if (!cancelled) setLogisticsError("No se pudieron cargar las sucursales o tarifas de envío.");
+      })
+      .finally(() => {
+        if (!cancelled) setLogisticsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedBranch = branches.find((branch) => branch.documentId === formData.branchDocumentId) || null;
+  const selectedShippingRate = shippingRates.find((rate) => rate.documentId === formData.shippingRateDocumentId) || null;
+  const shippingCost = deliveryMethod === "domicilio" ? Number(selectedShippingRate?.cost || 0) : 0;
+  const total = parseFloat((subtotal + taxes + shippingCost).toFixed(2));
+  const canContinueToPayment = deliveryMethod === "domicilio" ? Boolean(selectedShippingRate) : Boolean(selectedBranch);
 
   if (!mounted) {
     return (
@@ -250,6 +294,91 @@ export default function CheckoutPage() {
                       </div>
                     </form>
                   )}
+
+                  {deliveryMethod === "domicilio" && (
+                    <div className="mt-8 rounded-[8px] border border-[#F0E4E8] bg-white p-5">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                          <h2 className="text-sm font-bold text-[#2D1F23]">Precio de envío</h2>
+                          <p className="text-xs text-[#AC9CA0]">Selecciona la tarifa activa que se guardará en el pedido.</p>
+                        </div>
+                        <Truck size={18} className="text-[#C15074]" />
+                      </div>
+
+                      {logisticsLoading ? (
+                        <p className="text-sm text-[#AC9CA0]">Cargando tarifas...</p>
+                      ) : logisticsError ? (
+                        <p className="text-sm text-red-600">{logisticsError}</p>
+                      ) : shippingRates.length > 0 ? (
+                        <div className="grid gap-3">
+                          {shippingRates.map((rate) => {
+                            const isSelected = formData.shippingRateDocumentId === rate.documentId;
+                            return (
+                              <button
+                                key={rate.documentId}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, shippingRateDocumentId: rate.documentId })}
+                                className={`flex items-center justify-between gap-4 rounded-[6px] border p-4 text-left transition-all ${isSelected
+                                  ? "border-[#C15074] bg-[#FCEDF0]/50"
+                                  : "border-[#F0E4E8] bg-white hover:border-[#D4738F]"
+                                  }`}
+                              >
+                                <span>
+                                  <span className="block text-sm font-bold text-[#2D1F23]">{rate.name}</span>
+                                  {rate.description && <span className="mt-1 block text-xs text-[#8A7A7E]">{rate.description}</span>}
+                                </span>
+                                <span className="shrink-0 text-base font-black text-[#C15074]">${Number(rate.cost || 0).toFixed(2)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-red-600">No hay tarifas de envío activas disponibles.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {deliveryMethod === "sucursal" && (
+                    <div className="rounded-[8px] border border-[#F0E4E8] bg-white p-5">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                          <h2 className="text-sm font-bold text-[#2D1F23]">Sucursales disponibles</h2>
+                          <p className="text-xs text-[#AC9CA0]">Selecciona dónde quieres recoger tu pedido.</p>
+                        </div>
+                        <Store size={18} className="text-[#C15074]" />
+                      </div>
+
+                      {logisticsLoading ? (
+                        <p className="text-sm text-[#AC9CA0]">Cargando sucursales...</p>
+                      ) : logisticsError ? (
+                        <p className="text-sm text-red-600">{logisticsError}</p>
+                      ) : branches.length > 0 ? (
+                        <div className="grid gap-3">
+                          {branches.map((branch) => {
+                            const isSelected = formData.branchDocumentId === branch.documentId;
+                            return (
+                              <button
+                                key={branch.documentId}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, branchDocumentId: branch.documentId })}
+                                className={`rounded-[6px] border p-4 text-left transition-all ${isSelected
+                                  ? "border-[#C15074] bg-[#FCEDF0]/50"
+                                  : "border-[#F0E4E8] bg-white hover:border-[#D4738F]"
+                                  }`}
+                              >
+                                <span className="block text-sm font-bold text-[#2D1F23]">{branch.name}</span>
+                                <span className="mt-2 flex items-start gap-2 text-xs text-[#554246]"><MapPin size={13} className="mt-0.5 shrink-0 text-[#C15074]" />{branch.address}</span>
+                                {branch.schedule && <span className="mt-1 flex items-start gap-2 text-xs text-[#8A7A7E]"><Clock size={13} className="mt-0.5 shrink-0 text-[#C15074]" />{branch.schedule}</span>}
+                                {branch.notes && <span className="mt-2 block text-xs text-[#AC9CA0]">{branch.notes}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-red-600">No hay sucursales activas disponibles.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -283,12 +412,27 @@ export default function CheckoutPage() {
                     </button>
                     <h2 className="text-base font-bold text-[#2D1F23] mb-4">Datos de entrega</h2>
                     <div className="flex flex-col gap-1.5 text-sm text-[#554246] mb-4">
-                      <p>{formData.direccion}</p>
-                      {formData.instrucciones && <p className="text-[#AC9CA0]">{formData.instrucciones}</p>}
-                      <p>{formData.ciudad}, {formData.codigoPostal}</p>
+                      {deliveryMethod === "domicilio" ? (
+                        <>
+                          <p>{formData.direccion}</p>
+                          {formData.instrucciones && <p className="text-[#AC9CA0]">{formData.instrucciones}</p>}
+                          <p>{formData.ciudad}, {formData.codigoPostal}</p>
+                        </>
+                      ) : selectedBranch ? (
+                        <>
+                          <p className="font-semibold text-[#2D1F23]">{selectedBranch.name}</p>
+                          <p>{selectedBranch.address}</p>
+                          {selectedBranch.schedule && <p className="text-[#AC9CA0]">{selectedBranch.schedule}</p>}
+                        </>
+                      ) : (
+                        <p className="text-red-600">Selecciona una sucursal disponible.</p>
+                      )}
                     </div>
                     <div className="inline-flex items-center gap-2 bg-[#F0E4E8]/50 text-[#554246] px-3 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider">
-                      <Truck size={14} /> Envío Estándar (2-3 días hábiles)
+                      {deliveryMethod === "domicilio" ? <Truck size={14} /> : <Store size={14} />}
+                      {deliveryMethod === "domicilio"
+                        ? `${selectedShippingRate?.name || "Envío"} · $${shippingCost.toFixed(2)}`
+                        : "Recoger en sucursal · $0.00"}
                     </div>
                   </div>
 
@@ -397,8 +541,14 @@ export default function CheckoutPage() {
                     </button>
 
                     <button
-                      onClick={() => setCurrentStep(3)}
-                      className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#D4738F] hover:bg-[#C15074] text-white text-sm font-medium px-8 py-3.5 rounded-[4px] transition-colors order-1"
+                      onClick={() => {
+                        if (canContinueToPayment) setCurrentStep(3);
+                      }}
+                      aria-disabled={!canContinueToPayment}
+                      className={`w-full md:w-auto flex items-center justify-center gap-2 text-white text-sm font-medium px-8 py-3.5 rounded-[4px] transition-colors order-1 ${canContinueToPayment
+                        ? "bg-[#D4738F] hover:bg-[#C15074]"
+                        : "bg-[#D4738F]/40 cursor-not-allowed"
+                        }`}
                     >
                       Continuar al Pago <ArrowRight size={16} />
                     </button>
@@ -455,7 +605,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between items-center text-[#554246]">
                     <span>Envío</span>
-                    <span className="text-[#C15074] font-medium">Gratis</span>
+                    <span className="text-[#C15074] font-medium">${shippingCost.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-[#554246]">
                     <span>Impuestos estimados</span>
