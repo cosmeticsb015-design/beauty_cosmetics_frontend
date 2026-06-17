@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { CheckoutBranch, CheckoutShippingRate, getCheckoutBranches, getCheckoutShippingRates } from "../services/checkout";
+import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutOrder, createWompiPaymentLink, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "../services/checkout";
 
 const steps = [
   { id: 1, label: "Datos" },
@@ -15,7 +14,6 @@ const steps = [
 
 export default function CheckoutPage() {
   const { items, subtotal } = useCart();
-  const router = useRouter();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsTouched, setTermsTouched] = useState(false);
   const TAX_RATE = 0.08;
@@ -39,6 +37,8 @@ export default function CheckoutPage() {
   const [logisticsLoading, setLogisticsLoading] = useState(true);
   const [logisticsError, setLogisticsError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
     return () => window.clearTimeout(timer);
@@ -101,6 +101,88 @@ export default function CheckoutPage() {
       quantity: item.quantity,
       unit_price: item.unit_price,
     })),
+  };
+
+  const matchStockForItem = (item: (typeof items)[number], stocks: CheckoutBranchStock[], usedStock: Map<string, number>) => {
+    return stocks.find((stock) => {
+      const variant = stock.variant;
+      const product = variant?.product;
+      const stockKey = stock.documentId;
+      const alreadyUsed = usedStock.get(stockKey) || 0;
+      const available = Number(stock.quantity || 0) - alreadyUsed;
+      const variantMatches = item.variant_id ? variant?.documentId === item.variant_id : product?.documentId === item.product_id;
+      return variantMatches && available >= item.quantity;
+    });
+  };
+
+  const handleWompiCheckout = async () => {
+    setTermsTouched(true);
+    setCheckoutError(null);
+
+    if (!acceptedTerms) {
+      setCheckoutError("Debes aceptar los términos y condiciones para continuar con el pago.");
+      return;
+    }
+
+    if (!canContinueToPayment) {
+      setCheckoutError(deliveryMethod === "domicilio" ? "Selecciona una tarifa de envío activa." : "Selecciona una sucursal disponible.");
+      return;
+    }
+
+    if (!formData.nombre.trim() || !formData.correo.trim() || !formData.telefono.trim()) {
+      setCheckoutError("Completa tus datos de contacto antes de pagar.");
+      goToStep(1);
+      return;
+    }
+
+    if (deliveryMethod === "domicilio" && (!formData.direccion.trim() || !formData.ciudad.trim())) {
+      setCheckoutError("Completa la dirección y ciudad de envío antes de pagar.");
+      goToStep(2);
+      return;
+    }
+
+    setCheckoutLoading(true);
+
+    try {
+      const stocks = await getCheckoutBranchStocks(
+        items.map((item) => ({ productDocumentId: item.product_id, variantDocumentId: item.variant_id, quantity: item.quantity })),
+        deliveryMethod === "sucursal" ? formData.branchDocumentId : undefined
+      );
+      const usedStock = new Map<string, number>();
+      const orderItems = items.map((item) => {
+        const stock = matchStockForItem(item, stocks, usedStock);
+        if (!stock) {
+          throw new Error(`No hay stock suficiente para ${item.product_name}${item.variant_label ? ` (${item.variant_label})` : ""}.`);
+        }
+        usedStock.set(stock.documentId, (usedStock.get(stock.documentId) || 0) + item.quantity);
+        return { branch_stock: stock.documentId, quantity: item.quantity };
+      });
+
+      const orderResponse = await createCheckoutOrder({
+        customer_name: formData.nombre.trim(),
+        customer_email: formData.correo.trim(),
+        customer_phone: formData.telefono.trim(),
+        delivery_type: deliveryMethod === "domicilio" ? "delivery" : "pickup",
+        address: deliveryMethod === "domicilio"
+          ? [formData.direccion, formData.ciudad, formData.codigoPostal].filter(Boolean).join(", ")
+          : selectedBranch?.address || "Retiro en sucursal",
+        branch: deliveryMethod === "sucursal" ? formData.branchDocumentId : null,
+        shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
+        shipping_cost: shippingCost,
+        items: orderItems,
+      });
+
+      const paymentLink = await createWompiPaymentLink(orderResponse.data.documentId);
+      const paymentUrl = paymentLink.data.payment_url;
+      if (!paymentUrl) throw new Error("Wompi no devolvió una URL de pago válida.");
+
+      window.location.assign(paymentUrl);
+    } catch (error) {
+      console.error("Error creating Wompi checkout:", error);
+      setCheckoutError(error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   const goToStep = (step: number) => {
@@ -694,6 +776,12 @@ export default function CheckoutPage() {
                   <span className="text-xl font-black text-[#2D1F23]">${total.toFixed(2)}</span>
                 </div>
 
+                {checkoutError && (
+                  <p className="mb-4 rounded-[6px] border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+                    {checkoutError}
+                  </p>
+                )}
+
                 {/* Submit Action */}
                 <button
                   onClick={() => {
@@ -701,15 +789,15 @@ export default function CheckoutPage() {
                       setTermsTouched(true);
                       return;
                     }
-                    router.push("/checkout/success");
+                    handleWompiCheckout();
                   }}
-                  aria-disabled={!acceptedTerms}
+                  aria-disabled={!acceptedTerms || checkoutLoading}
                   className={`w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4 ${acceptedTerms
                       ? "bg-[#D4738F] hover:bg-[#C15074] active:scale-[0.98]"
                       : "bg-[#D4738F]/40 cursor-not-allowed"
                     }`}
                 >
-                  <Lock size={16} strokeWidth={2.5} /> Proceder al Pago Seguro con Wompi
+                  <Lock size={16} strokeWidth={2.5} /> {checkoutLoading ? "Creando orden..." : "Proceder al Pago Seguro con Wompi"}
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#AC9CA0]">
