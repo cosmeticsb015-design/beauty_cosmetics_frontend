@@ -39,6 +39,7 @@ const soporteLinks = [
   { label: "Envíos", href: "/shipping" },
   { label: "Contacto", href: "/contact" },
   { label: "Preguntas Frecuentes", href: "/faq" },
+  { label: "Términos y Condiciones", href: "/terminos-y-condiciones" },
   { label: "Seguimiento", href: "/tracking" },
 ];
 
