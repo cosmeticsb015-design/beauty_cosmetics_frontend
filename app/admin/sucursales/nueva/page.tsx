@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft, Clock, Save } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
+import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
 import { saveBranchForm } from "../../actions";
 
-export default function NewBranchPage() {
+export default async function NewBranchPage({ searchParams }: { searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
+  const query = searchParams ? await searchParams : {};
   return (
     <AdminShell active="branches">
       <form action={saveBranchForm} className="mx-auto w-full max-w-[1040px] px-4 py-12 md:px-8">
+        <AdminFlash notice={noticeFromQuery(query, "Sucursal guardada correctamente.")} />
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[34px] font-bold leading-tight text-[#7D123B]">Añadir Nueva Sucursal</h2>

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Edit3, MapPin, Package, Phone, Store, Truck } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
 import AdminDataError from "../../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
 import { getAdminBranch } from "../../../services/admin";
 
-export default async function BranchDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string }> }) {
+export default async function BranchDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
   try {
@@ -19,7 +20,7 @@ export default async function BranchDetailPage({ params, searchParams }: { param
     return (
       <AdminShell active="branches">
         <main className="mx-auto w-full max-w-[1040px] px-4 py-12 md:px-8">
-          {query.saved === "1" ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Sucursal guardada correctamente.</div> : null}
+          <AdminFlash notice={noticeFromQuery(query, "Sucursal guardada correctamente.")} />
           <Link href="/admin/sucursales" className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#5C4B50] hover:text-[#9E3659]"><ArrowLeft size={18} strokeWidth={2} />Volver a sucursales</Link>
           <div className="mt-7 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center gap-4"><span className="flex h-14 w-14 items-center justify-center rounded-[10px] bg-[#FFD7E2] text-[#7D123B]"><Store size={28} strokeWidth={2} /></span><div><h2 className="text-[38px] font-bold leading-tight text-[#1F1F22]">{branch.name}</h2><p className="mt-1 flex items-center gap-2 text-[17px] text-[#5C4B50]"><MapPin size={18} strokeWidth={1.8} />{branch.address}</p></div></div>

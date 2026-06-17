@@ -13,6 +13,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
+import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
 import { saveProductForm } from "../../actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories } from "../../../services/admin";
 import ProductImagePicker from "../components/ProductImagePicker";
@@ -22,12 +23,14 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
 }
 
-export default async function NewProductPage() {
+export default async function NewProductPage({ searchParams }: { searchParams?: Promise<{ error?: string; message?: string; saved?: string }> }) {
+  const query = searchParams ? await searchParams : {};
   const [brandsResponse, categoriesResponse, branchesResponse] = await Promise.all([getAdminBrands(), getAdminCategories(), getAdminBranches()]);
   return (
     <AdminShell active="products" searchPlaceholder="Buscar productos...">
       <form action={saveProductForm} data-product-draft="true" className="mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8">
         <ProductDraftPersistence />
+        <AdminFlash notice={noticeFromQuery(query, "Producto guardado correctamente.")} />
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Añadir Nuevo Producto</h2>

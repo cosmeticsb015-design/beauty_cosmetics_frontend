@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import AdminShell from "../../../../../components/AdminShell";
 import AdminDataError from "../../../../../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../../../../../components/AdminFlash";
 import { saveVariantForm } from "../../../../../actions";
 import { getAdminBranches, getAdminVariant, getStrapiMediaUrl } from "../../../../../../services/admin";
 import ProductImagePicker from "../../../../components/ProductImagePicker";
@@ -21,7 +22,7 @@ function stockState(quantity: number) {
   return { label: "Disponible", classes: "bg-emerald-100 text-emerald-700" };
 }
 
-export default async function EditVariantPage({ params, searchParams }: { params: Promise<{ id: string; variant: string }>; searchParams?: Promise<{ saved?: string }> }) {
+export default async function EditVariantPage({ params, searchParams }: { params: Promise<{ id: string; variant: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id, variant: variantId } = await params;
   const query = searchParams ? await searchParams : {};
 
@@ -37,7 +38,7 @@ export default async function EditVariantPage({ params, searchParams }: { params
     return (
       <AdminShell active="products" searchPlaceholder="Buscar productos...">
         <form action={saveVariantForm} className="mx-auto w-full max-w-[1120px] px-4 py-10 md:px-8">
-          {query.saved === "1" ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Variante guardada correctamente.</div> : null}
+          <AdminFlash notice={noticeFromQuery(query, "Variante guardada correctamente.")} />
           <input type="hidden" name="id" value={variant.documentId} />
           <input type="hidden" name="product" value={product?.documentId ?? id} />
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import AdminShell from "../../../components/AdminShell";
 import AdminDataError from "../../../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../../../components/AdminFlash";
 import { saveProductForm, saveVariantForm } from "../../../actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "../../../../services/admin";
 import ProductImagePicker from "../../components/ProductImagePicker";
@@ -52,7 +53,7 @@ function money(value: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
 }
 
-export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string }> }) {
+export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
   try {
@@ -86,7 +87,7 @@ export default async function EditProductPage({ params, searchParams }: { params
   return (
     <AdminShell active="products" searchPlaceholder="Buscar productos...">
       <form action={saveProductForm} className="mx-auto w-full max-w-[1120px] px-4 py-10 md:px-8">
-        {query.saved === "1" ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Producto guardado correctamente.</div> : null}
+        <AdminFlash notice={noticeFromQuery(query, "Producto guardado correctamente.")} />
         <input type="hidden" name="id" value={product.documentId} />
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>

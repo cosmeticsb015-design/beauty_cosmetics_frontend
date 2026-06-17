@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CreditCard, MessageSquareText, ReceiptText, Truck, UserRound, Zap } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
+import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
 import { updateOrderStatusForm } from "../../actions";
 import { getStrapiMediaUrl, type StrapiOrderItem } from "../../../services/admin";
 
@@ -43,7 +44,7 @@ function ItemThumb({ src }: { src: string | null }) {
   );
 }
 
-export default async function AdminOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string }> }) {
+export default async function AdminOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
   const { getAdminOrder } = await import("../../../services/admin");
@@ -67,7 +68,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
     return (
       <AdminShell active="orders">
         <main className="mx-auto w-full max-w-[1080px] px-4 py-9 md:px-8">
-          {query.saved === "1" && <div className="mb-6 rounded-[6px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-semibold text-emerald-700">Pedido actualizado correctamente.</div>}
+          <AdminFlash notice={noticeFromQuery(query, "Pedido actualizado correctamente.")} />
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="mb-4 flex items-center gap-2 text-[13px] text-[#554246]"><Link href="/admin/pedidos" className="transition-colors hover:text-[#9E3659]">Pedidos</Link><span>›</span><span className="font-semibold text-[#2D1F23]">Pedido {order.tracking_number}</span></div>

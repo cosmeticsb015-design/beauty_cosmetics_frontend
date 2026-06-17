@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, MapPin, Save } from "lucide-react";
 import AdminShell from "../../../../components/AdminShell";
 import AdminDataError from "../../../../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../../../../components/AdminFlash";
 import { saveBranchInventoryForm } from "../../../../actions";
 import { getAdminBranch, getAdminProduct, type StrapiStock } from "../../../../../services/admin";
 
@@ -11,8 +12,9 @@ function stockStatus(quantity: number) {
   return { label: "Disponible", className: "bg-emerald-100 text-emerald-700", unitTone: "text-[#1F1F22]" };
 }
 
-export default async function BranchInventoryPage({ params }: { params: Promise<{ id: string; branch: string }> }) {
+export default async function BranchInventoryPage({ params, searchParams }: { params: Promise<{ id: string; branch: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id, branch: branchId } = await params;
+  const query = searchParams ? await searchParams : {};
 
   try {
     const [productResponse, branchResponse] = await Promise.all([getAdminProduct(id), getAdminBranch(branchId)]);
@@ -28,6 +30,7 @@ export default async function BranchInventoryPage({ params }: { params: Promise<
     return (
       <AdminShell active="products" searchPlaceholder="Buscar productos...">
         <form action={saveBranchInventoryForm} className="mx-auto w-full max-w-[1130px] px-4 py-10 md:px-8">
+          <AdminFlash notice={noticeFromQuery(query, "Inventario guardado correctamente.")} />
           <input type="hidden" name="product" value={product.documentId} />
           <input type="hidden" name="branch" value={branch.documentId} />
 

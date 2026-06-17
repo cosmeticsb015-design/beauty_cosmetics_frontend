@@ -2,11 +2,13 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Save } from "lucide-react";
 import AdminShell from "../../../components/AdminShell";
 import AdminDataError from "../../../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../../../components/AdminFlash";
 import { saveBranchForm } from "../../../actions";
 import { getAdminBranch } from "../../../../services/admin";
 
-export default async function EditBranchPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditBranchPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
+  const query = searchParams ? await searchParams : {};
 
   try {
     const response = await getAdminBranch(id);
@@ -15,6 +17,7 @@ export default async function EditBranchPage({ params }: { params: Promise<{ id:
     return (
       <AdminShell active="branches">
         <form action={saveBranchForm} className="mx-auto w-full max-w-[1040px] px-4 py-12 md:px-8">
+          <AdminFlash notice={noticeFromQuery(query, "Sucursal guardada correctamente.")} />
           <input type="hidden" name="id" value={branch.documentId} />
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>
