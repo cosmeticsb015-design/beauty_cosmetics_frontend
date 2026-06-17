@@ -11,12 +11,13 @@ import {
   WifiOff,
 } from "lucide-react";
 import AdminShell from "../components/AdminShell";
+import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
 
 export type BranchIcon = "map-pin" | "truck" | "wifi-off";
 export type BranchRow = { name: string; address: string; status: string; statusTone: string; schedule: string; notes: string; icon: BranchIcon; iconTone: string; href: string };
 const branchIcons = { "map-pin": MapPin, truck: Truck, "wifi-off": WifiOff } satisfies Record<BranchIcon, React.ElementType>;
 
-type AdminBranchesClientProps = { branches: BranchRow[]; totalLabel: string; currentStatus: string; currentPage: number; pageCount: number; saved?: boolean };
+type AdminBranchesClientProps = { branches: BranchRow[]; totalLabel: string; currentStatus: string; currentPage: number; pageCount: number; saved?: boolean; notice?: AdminNotice };
 
 const tabs = [
   { label: "Todas", status: "all" },
@@ -32,11 +33,11 @@ function branchHref(status: string, page = 1) {
   return `/admin/sucursales${query ? `?${query}` : ""}`;
 }
 
-export default function AdminBranchesClient({ branches, totalLabel, currentStatus, currentPage, pageCount, saved }: AdminBranchesClientProps) {
+export default function AdminBranchesClient({ branches, totalLabel, currentStatus, currentPage, pageCount, saved, notice }: AdminBranchesClientProps) {
   return (
     <AdminShell active="branches">
       <main className="mx-auto w-full max-w-[1120px] px-4 py-12 md:px-8">
-        {saved ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Sucursal guardada correctamente.</div> : null}
+        <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Sucursal guardada correctamente." } : null)} />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="inline-flex w-fit rounded-[10px] bg-[#EEF0F2] p-1">
             {tabs.map((tab) => (

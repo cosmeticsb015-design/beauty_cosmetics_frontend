@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   Ban,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -12,7 +13,8 @@ import {
   Plus,
 } from "lucide-react";
 import AdminShell from "./components/AdminShell";
-import { deactivateProductForm } from "./actions";
+import AdminFlash, { type AdminNotice } from "./components/AdminFlash";
+import { setProductActiveForm } from "./actions";
 
 export type ProductRow = {
   id: string;
@@ -42,6 +44,7 @@ type AdminProductsClientProps = {
   currentFilters: { category: string; availability: string; status: string; search: string };
   pagination: ProductPagination;
   saved?: boolean;
+  notice?: AdminNotice;
 };
 
 function ProductThumb({ className, imageUrl, alt }: { className: string; imageUrl?: string | null; alt: string }) {
@@ -55,8 +58,8 @@ function ProductThumb({ className, imageUrl, alt }: { className: string; imageUr
   );
 }
 
-export default function AdminProductsClient({ stats, products, totalLabel, categories, currentFilters, pagination, saved }: AdminProductsClientProps) {
-  const [productToDisable, setProductToDisable] = useState<ProductRow | null>(null);
+export default function AdminProductsClient({ stats, products, totalLabel, categories, currentFilters, pagination, saved, notice }: AdminProductsClientProps) {
+  const [productToToggle, setProductToToggle] = useState<ProductRow | null>(null);
   const pageHref = (page: number) => {
     const params = new URLSearchParams();
     if (currentFilters.category !== "all") params.set("category", currentFilters.category);
@@ -70,8 +73,8 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
 
   return (
     <AdminShell active="products" searchPlaceholder="Buscar productos...">
-          <main className={`mx-auto w-full max-w-[1080px] px-4 py-10 md:px-8 md:py-20 ${productToDisable ? "blur-[2px]" : ""}`}>
-            {saved ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Cambios guardados correctamente.</div> : null}
+          <main className={`mx-auto w-full max-w-[1080px] px-4 py-10 md:px-8 md:py-20 ${productToToggle ? "blur-[2px]" : ""}`}>
+            <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Cambios guardados correctamente." } : null)} />
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="mb-2 text-sm font-semibold text-[#9E3659] lg:hidden">Beauty Cosmetics Admin</p>
@@ -185,11 +188,11 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
                               <Edit3 size={19} strokeWidth={1.9} />
                             </Link>
                             <button
-                              aria-label={`Desactivar ${product.name}`}
-                              onClick={() => setProductToDisable(product)}
+                              aria-label={`${product.active ? "Desactivar" : "Activar"} ${product.name}`}
+                              onClick={() => setProductToToggle(product)}
                               className="transition-colors hover:text-[#9E3659]"
                             >
-                              <Ban size={20} strokeWidth={1.9} />
+                              {product.active ? <Ban size={20} strokeWidth={1.9} /> : <CheckCircle2 size={20} strokeWidth={1.9} />}
                             </button>
                           </div>
                         </td>
@@ -219,37 +222,38 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
             </section>
           </main>
 
-          {productToDisable && (
+          {productToToggle && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
               <div className="w-full max-w-[430px] rounded-[8px] bg-white px-12 py-12 shadow-xl">
                 <div className="flex items-center gap-3 text-red-700">
                   <Ban size={23} strokeWidth={2} />
-                  <h3 className="text-[25px] font-bold">Desactivar Producto</h3>
+                  <h3 className="text-[25px] font-bold">{productToToggle.active ? "Desactivar Producto" : "Activar Producto"}</h3>
                 </div>
 
                 <p className="mt-7 text-[16px] leading-relaxed text-[#6B6063]">
-                  ¿Estás seguro de que deseas desactivar este producto? Se ocultará de la tienda pero no se eliminará.
+                  {productToToggle.active ? "¿Estás seguro de que deseas desactivar este producto? Se ocultará de la tienda pero no se eliminará." : "¿Deseas activar este producto? Volverá a estar visible según la publicación configurada en Strapi."}
                 </p>
 
                 <div className="mt-7 flex items-center gap-5 rounded-[4px] border border-[#E7BFC9] bg-[#F8F8F8] p-3">
-                  <ProductThumb className={productToDisable.image} imageUrl={productToDisable.imageUrl} alt={productToDisable.name} />
+                  <ProductThumb className={productToToggle.image} imageUrl={productToToggle.imageUrl} alt={productToToggle.name} />
                   <div>
-                    <p className="text-[16px] font-bold text-[#1F1F22]">{productToDisable.name}</p>
-                    <p className="mt-1 text-[15px] text-[#8A7378]">SKU: {productToDisable.sku}</p>
+                    <p className="text-[16px] font-bold text-[#1F1F22]">{productToToggle.name}</p>
+                    <p className="mt-1 text-[15px] text-[#8A7378]">SKU: {productToToggle.sku}</p>
                   </div>
                 </div>
 
                 <div className="mt-9 flex items-center justify-end gap-8">
                   <button
-                    onClick={() => setProductToDisable(null)}
+                    onClick={() => setProductToToggle(null)}
                     className="text-[15px] font-semibold text-[#5F5F61] transition-colors hover:text-[#9E3659]"
                   >
                     Cancelar
                   </button>
-                  <form action={deactivateProductForm}>
-                    <input type="hidden" name="id" value={productToDisable.id} />
-                    <button className="h-11 rounded-[4px] bg-red-700 px-7 text-[15px] font-bold text-white transition-colors hover:bg-red-800">
-                      Desactivar
+                  <form action={setProductActiveForm}>
+                    <input type="hidden" name="id" value={productToToggle.id} />
+                    <input type="hidden" name="active" value={productToToggle.active ? "false" : "true"} />
+                    <button className={`h-11 rounded-[4px] px-7 text-[15px] font-bold text-white transition-colors ${productToToggle.active ? "bg-red-700 hover:bg-red-800" : "bg-emerald-700 hover:bg-emerald-800"}`}>
+                      {productToToggle.active ? "Desactivar" : "Activar"}
                     </button>
                   </form>
                 </div>

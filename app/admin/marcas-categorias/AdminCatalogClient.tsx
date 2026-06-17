@@ -40,10 +40,10 @@ export default function AdminCatalogClient({ brands, categories, allCategories }
   const editingCategory = isCategory ? activeModal.item : undefined;
 
   useEffect(() => {
-    const state = brandState.ok ? brandState : categoryState.ok ? categoryState : null;
+    const state = brandState.message ? brandState : categoryState.message ? categoryState : null;
     if (!state) return;
-    setSavedMessage(state.message || "Guardado correctamente.");
-    setActiveModal(null);
+    setSavedMessage(state.message || (state.ok ? "Guardado correctamente." : "No se pudo guardar."));
+    if (state.ok) setActiveModal(null);
     const timeout = window.setTimeout(() => setSavedMessage(""), 3500);
     return () => window.clearTimeout(timeout);
   }, [brandState, categoryState]);
@@ -51,7 +51,7 @@ export default function AdminCatalogClient({ brands, categories, allCategories }
   return (
     <AdminShell active="catalog">
       {savedMessage && (
-        <div className="fixed right-6 top-6 z-[70] rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700 shadow-lg">
+        <div className={`fixed right-6 top-6 z-[70] rounded-[8px] border px-5 py-4 text-[15px] font-bold shadow-lg ${brandState.ok || categoryState.ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}> 
           {savedMessage}
         </div>
       )}

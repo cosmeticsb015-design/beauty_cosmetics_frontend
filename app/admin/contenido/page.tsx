@@ -1,10 +1,11 @@
 import { Mail, MessageCircle, Save } from "lucide-react";
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
+import AdminFlash, { noticeFromQuery } from "../components/AdminFlash";
 import { saveStoreConfigForm } from "../actions";
 import { getAdminStoreConfig } from "../../services/admin";
 
-export default async function AdminContentPage({ searchParams }: { searchParams?: Promise<{ saved?: string }> }) {
+export default async function AdminContentPage({ searchParams }: { searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const query = searchParams ? await searchParams : {};
   try {
     const response = await getAdminStoreConfig();
@@ -20,7 +21,7 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
             </p>
           </div>
 
-          {query.saved === "1" && <div className="mt-6 rounded-[6px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-semibold text-emerald-700">Configuracion guardada correctamente.</div>}
+          <div className="mt-6"><AdminFlash notice={noticeFromQuery(query, "Configuracion guardada correctamente.")} /></div>
 
           <form action={saveStoreConfigForm} className="mt-8 overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white">
             <div className="border-b border-[#E7BFC9] px-7 py-7">

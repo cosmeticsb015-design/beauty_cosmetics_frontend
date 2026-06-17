@@ -1,5 +1,6 @@
 import AdminShell from "./components/AdminShell";
 import AdminDataError from "./components/AdminDataError";
+import { noticeFromQuery } from "./components/AdminFlash";
 import AdminProductsClient, { type ProductFilterOption, type ProductPagination, type ProductRow, type ProductStat } from "./AdminProductsClient";
 import { getAdminCategories, getAdminProducts, getStrapiMediaUrl, type StrapiStock } from "../services/admin";
 
@@ -27,6 +28,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   const status = firstParam(params.status) ?? "all";
   const search = firstParam(params.q);
   const saved = firstParam(params.saved) === "1";
+  const notice = noticeFromQuery({ saved: firstParam(params.saved), error: firstParam(params.error), message: firstParam(params.message) });
 
   try {
     const [response, categoriesResponse] = await Promise.all([
@@ -81,6 +83,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
         currentFilters={{ category, availability, status, search: search ?? "" }}
         pagination={pagination}
         saved={saved}
+        notice={notice}
       />
     );
   } catch (error) {

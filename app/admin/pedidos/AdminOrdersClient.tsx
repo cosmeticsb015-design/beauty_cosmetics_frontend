@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import AdminShell from "../components/AdminShell";
+import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
 import { updateOrderStatusForm } from "../actions";
 
 export type OrderStatIcon = "shopping-cart" | "clipboard-clock" | "truck";
@@ -45,6 +46,7 @@ type AdminOrdersClientProps = {
   pagination: { page: number; pageCount: number; total: number };
   filters: { status: string; search: string };
   saved?: boolean;
+  notice?: AdminNotice;
 };
 
 const tabs = [
@@ -59,7 +61,7 @@ const statusOptions = [
   { value: "finalized", label: "Finalizado" },
 ];
 
-export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false }: AdminOrdersClientProps) {
+export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false, notice }: AdminOrdersClientProps) {
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const pathname = usePathname();
@@ -86,11 +88,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
   return (
     <AdminShell active="orders" searchPlaceholder="Buscar pedidos, clientes, IDs...">
       <main className={`mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8 ${selectedOrder ? "blur-[3px]" : ""}`}>
-        {saved && (
-          <div className="mb-6 rounded-[6px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-semibold text-emerald-700">
-            Pedido actualizado correctamente.
-          </div>
-        )}
+        <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Pedido actualizado correctamente." } : null)} />
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="mb-2 text-sm font-semibold text-[#9E3659] lg:hidden">Beauty Cosmetics Admin</p>

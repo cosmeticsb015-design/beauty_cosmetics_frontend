@@ -56,6 +56,13 @@ async function setSession(jwt: string) {
   (await cookies()).set(ADMIN_SESSION_COOKIE, jwt, { httpOnly: true, secure: isProduction, sameSite: "strict", path: "/admin", maxAge: 60 * 60 * 8 });
 }
 
+function redirectWithNotice(path: string, result: AdminMutationState, fallbackSuccess = "Cambios guardados correctamente.") {
+  const params = new URLSearchParams();
+  params.set(result.ok ? "saved" : "error", "1");
+  params.set("message", result.message || (result.ok ? fallbackSuccess : "No se pudo completar la accion."));
+  redirect(`${path}?${params.toString()}`);
+}
+
 
 const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_PRODUCT_IMAGES_PER_SAVE = 8;
@@ -281,37 +288,48 @@ export async function removeEntityAction(_prev: AdminMutationState, formData: Fo
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo eliminar." }; }
 }
 
-export async function deactivateProductForm(formData: FormData) {
+export async function setProductActiveForm(formData: FormData) {
   const id = sanitizeText(formData.get("id"));
-  if (!id) return;
-  await updateEntity("products", id, { active: false });
-  revalidatePath("/admin");
+  const active = sanitizeBoolean(formData.get("active"));
+  if (!id) redirectWithNotice("/admin", { ok: false, message: "Producto inválido." });
+  try {
+    await updateEntity("products", id, { active });
+    revalidatePath("/admin");
+    redirectWithNotice("/admin", { ok: true, message: active ? "Producto activado correctamente." : "Producto desactivado correctamente." });
+  } catch (error) {
+    redirectWithNotice("/admin", { ok: false, message: error instanceof Error ? error.message : "No se pudo actualizar el producto." });
+  }
+}
+
+export async function deactivateProductForm(formData: FormData) {
+  formData.set("active", "false");
+  await setProductActiveForm(formData);
 }
 
 export async function removeEntityForm(formData: FormData) {
   const result = await removeEntityAction({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin?saved=1");
+  redirectWithNotice("/admin", result);
 }
 export async function saveProductForm(formData: FormData) {
   const result = await saveProduct({ ok: false, message: "" }, formData);
   revalidatePath("/admin");
-  if (result.ok) redirect("/admin?saved=1");
+  redirectWithNotice("/admin", result);
 }
 export async function saveBrandForm(formData: FormData) {
   const result = await saveBrand({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/marcas-categorias?saved=1");
+  redirectWithNotice("/admin/marcas-categorias", result);
 }
 export async function saveCategoryForm(formData: FormData) {
   const result = await saveCategory({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/marcas-categorias?saved=1");
+  redirectWithNotice("/admin/marcas-categorias", result);
 }
 export async function saveBranchForm(formData: FormData) {
   const result = await saveBranch({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/sucursales?saved=1");
+  redirectWithNotice("/admin/sucursales", result);
 }
 export async function saveVariantForm(formData: FormData) {
   const result = await saveVariant({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin?saved=1");
+  redirectWithNotice("/admin", result);
 }
 
 export async function saveBranchInventoryForm(formData: FormData) {
@@ -330,18 +348,18 @@ export async function saveBranchInventoryForm(formData: FormData) {
   }
   revalidatePath(`/admin/productos/${product}/editar`);
   revalidatePath(`/admin/productos/${product}/inventario/${branch}`);
-  redirect("/admin?saved=1");
+  redirectWithNotice("/admin", { ok: true, message: "Inventario guardado correctamente." });
 }
 
 export async function saveShippingRateForm(formData: FormData) {
   const result = await saveShippingRate({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/logistica?saved=1");
+  redirectWithNotice("/admin/logistica", result);
 }
 export async function updateOrderStatusForm(formData: FormData) {
   const result = await updateOrderStatus({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/pedidos?saved=1");
+  redirectWithNotice("/admin/pedidos", result);
 }
 export async function saveStoreConfigForm(formData: FormData) {
   const result = await saveStoreConfig({ ok: false, message: "" }, formData);
-  if (result.ok) redirect("/admin/contenido?saved=1");
+  redirectWithNotice("/admin/contenido", result);
 }

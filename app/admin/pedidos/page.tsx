@@ -1,5 +1,6 @@
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
+import { noticeFromQuery } from "../components/AdminFlash";
 import AdminOrdersClient, { type OrderRow, type OrderStat } from "./AdminOrdersClient";
 import { getAdminOrders } from "../../services/admin";
 
@@ -17,7 +18,7 @@ function statusMeta(status: string) {
 
 const validStatuses = ["pending_shipping", "sent", "finalized"] as const;
 
-type SearchParams = Promise<{ page?: string; status?: string; search?: string; saved?: string }>;
+type SearchParams = Promise<{ page?: string; status?: string; search?: string; saved?: string; error?: string; message?: string }>;
 
 export default async function AdminOrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   const query = searchParams ? await searchParams : {};
@@ -70,6 +71,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
         pagination={{ page: pagination.page, pageCount: pagination.pageCount, total: pagination.total }}
         filters={{ status, search }}
         saved={query.saved === "1"}
+        notice={noticeFromQuery(query, "Pedido actualizado correctamente.")}
       />
     );
   } catch (error) {

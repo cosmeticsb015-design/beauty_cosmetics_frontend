@@ -1,5 +1,6 @@
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
+import { noticeFromQuery } from "../components/AdminFlash";
 import AdminLogisticsClient, { type ShippingZoneRow } from "./AdminLogisticsClient";
 import { getAdminShippingRates } from "../../services/admin";
 
@@ -15,7 +16,7 @@ export default async function AdminLogisticsPage({ searchParams }: { searchParam
       icon: index % 2 === 0 ? "map-pin" : "truck",
       highlighted: rate.active,
     }));
-    return <AdminLogisticsClient shippingZones={shippingZones} saved={query.saved === "1"} />;
+    return <AdminLogisticsClient shippingZones={shippingZones} saved={query.saved === "1"} notice={noticeFromQuery(query, "Tarifa guardada correctamente.")} />;
   } catch (error) {
     return (
       <AdminShell active="logistics">

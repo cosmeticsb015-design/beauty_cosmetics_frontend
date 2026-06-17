@@ -3,23 +3,24 @@
 import { useState } from "react";
 import { DollarSign, Info, MapPin, Pencil, Plus, Save, Truck, X } from "lucide-react";
 import AdminShell from "../components/AdminShell";
+import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
 import { saveShippingRateForm } from "../actions";
 
 export type ShippingZoneIcon = "map-pin" | "truck";
 export type ShippingZoneRow = { id: string; title: string; description: string; price: number; icon: ShippingZoneIcon; highlighted: boolean };
 const shippingZoneIcons = { "map-pin": MapPin, truck: Truck } satisfies Record<ShippingZoneIcon, React.ElementType>;
 
-type AdminLogisticsClientProps = { shippingZones: ShippingZoneRow[]; saved?: boolean };
+type AdminLogisticsClientProps = { shippingZones: ShippingZoneRow[]; saved?: boolean; notice?: AdminNotice };
 
 const emptyZone: ShippingZoneRow = { id: "", title: "", description: "", price: 0, icon: "truck", highlighted: true };
 
-export default function AdminLogisticsClient({ shippingZones, saved }: AdminLogisticsClientProps) {
+export default function AdminLogisticsClient({ shippingZones, saved, notice }: AdminLogisticsClientProps) {
   const [editingZone, setEditingZone] = useState<ShippingZoneRow | null>(null);
 
   return (
     <AdminShell active="logistics">
       <main className={`mx-auto w-full max-w-[1140px] px-4 py-12 md:px-8 ${editingZone ? "blur-[2px]" : ""}`}>
-        {saved ? <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-[15px] font-bold text-emerald-700">Tarifa guardada correctamente.</div> : null}
+        <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Tarifa guardada correctamente." } : null)} />
         <section className="max-w-[780px]">
           <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-[#7D123B]">Configuración Global</p>
           <h2 className="mt-3 text-[38px] font-bold leading-tight text-[#1F1F22] md:text-[46px]">Zonas y Tarifas de Envío</h2>

@@ -1,9 +1,10 @@
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
+import { noticeFromQuery } from "../components/AdminFlash";
 import AdminBranchesClient, { type BranchRow } from "./AdminBranchesClient";
 import { getAdminBranches } from "../../services/admin";
 
-export default async function BranchesPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string; saved?: string }> }) {
+export default async function BranchesPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string; saved?: string; error?: string; message?: string }> }) {
   const query = await searchParams;
   const currentStatus = ["active", "inactive"].includes(query.status ?? "") ? query.status! : "all";
   const currentPage = Math.max(1, Number(query.page ?? 1) || 1);
@@ -26,7 +27,7 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
     }));
     const from = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
     const to = Math.min(currentPage * pageSize, total);
-    return <AdminBranchesClient branches={branches} currentStatus={currentStatus} currentPage={currentPage} pageCount={pageCount} saved={query.saved === "1"} totalLabel={`Mostrando ${from}-${to} de ${total} sucursales`} />;
+    return <AdminBranchesClient branches={branches} currentStatus={currentStatus} currentPage={currentPage} pageCount={pageCount} saved={query.saved === "1"} notice={noticeFromQuery(query, "Sucursal guardada correctamente.")} totalLabel={`Mostrando ${from}-${to} de ${total} sucursales`} />;
   } catch (error) {
     return <AdminShell active="branches"><AdminDataError title="No se pudieron cargar sucursales desde Strapi" error={error} permissions={["Branch: find/findOne", "Branch-stock: find/findOne"]} /></AdminShell>;
   }
