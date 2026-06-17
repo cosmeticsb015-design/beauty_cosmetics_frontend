@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ShoppingCart, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import {
   getProductById,
@@ -43,13 +43,13 @@ const getMockUsage = (): string =>
   "Aplicar una pequeña cantidad de producto sobre la zona limpia con movimientos suaves y ascendentes. Dejar absorber completamente antes de aplicar maquillaje u otros tratamientos. Usar diariamente en la mañana y noche.";
 
 // ── Accordion ─────────────────────────────────────────────
-function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function Accordion({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-t border-[#F0E4E8]">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between py-4 text-sm font-semibold text-[#2D1F23] hover:text-[#C15074] transition-colors"
+        className="w-full flex items-center justify-between py-5 text-[13px] font-semibold text-[#2D1F23] hover:text-[#C15074] transition-colors"
       >
         {title}
         {open ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
@@ -99,8 +99,6 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-
     getProductById(id)
       .then((res: StrapiResponse<StrapiProduct>) => {
         if (res.data) {
@@ -140,7 +138,7 @@ export default function ProductDetailPage() {
         }
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error(err);
         setError("Ocurrió un error al buscar los detalles del producto.");
         setLoading(false);
@@ -188,28 +186,38 @@ export default function ProductDetailPage() {
   const ingredients = getMockIngredients();
   const usage = getMockUsage();
   function getDescriptionText(description: unknown): string {
-    if (!description) {
-      return "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
-    }
+    const fallback = "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
+
+    if (!description) return fallback;
     if (typeof description === "string") return description;
-    if (Array.isArray(description)) {
-      const text = description
-        .map((block: any) =>
-          block.children?.map((child: any) => child.text).join("") || ""
-        )
-        .join(" ")
-        .trim();
-      return text || "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
-    }
-    return "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
+    if (!Array.isArray(description)) return fallback;
+
+    const text = description
+      .map((block) => {
+        if (typeof block !== "object" || block === null || !("children" in block)) return "";
+        const children = (block as { children?: unknown }).children;
+        if (!Array.isArray(children)) return "";
+
+        return children
+          .map((child) => {
+            if (typeof child !== "object" || child === null || !("text" in child)) return "";
+            const childText = (child as { text?: unknown }).text;
+            return typeof childText === "string" ? childText : "";
+          })
+          .join("");
+      })
+      .join(" ")
+      .trim();
+
+    return text || fallback;
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-8 md:py-10">
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-[#AC9CA0] mb-8">
+        <nav className="flex items-center gap-2 text-[11px] text-[#8A7A7E] mb-14">
           <Link href="/" className="hover:text-[#C15074] transition-colors">Inicio</Link>
           <span>/</span>
           <Link
@@ -223,17 +231,17 @@ export default function ProductDetailPage() {
         </nav>
 
         {/* Main grid */}
-        <div className="grid md:grid-cols-2 gap-10 items-start">
+        <div className="grid lg:grid-cols-[1.25fr_0.9fr] gap-8 lg:gap-12 xl:gap-16 items-start">
 
           {/* ── Left: Images ── */}
           <div className="flex flex-col gap-4">
             {/* Main image */}
-            <div className="relative w-full aspect-square rounded-[10px] flex items-center justify-center overflow-hidden bg-[#FAF6F6]">
+            <div className="relative w-full aspect-square flex items-center justify-center overflow-hidden bg-[#F7F7F5]">
               {mainImageUrl ? (
                 <img
                   src={mainImageUrl}
                   alt={selectedVariant?.label || product.name}
-                  className="w-full h-full object-cover transition-opacity duration-300"
+                  className="w-full h-full object-contain transition-opacity duration-300"
                 />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-[#C15074]/30">
@@ -243,27 +251,24 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Variant name badge overlay */}
-              {selectedVariant && (
-                <span className="absolute bottom-3 left-3 text-[10px] font-bold tracking-widest uppercase bg-white/90 text-[#2D1F23] px-2.5 py-1 rounded-[3px] shadow-sm">
-                  {selectedVariant.label}
-                </span>
-              )}
+              <span className="absolute left-6 top-6 text-[11px] font-medium text-[#2D1F23]">
+                Cruelty-free
+              </span>
             </div>
 
             {/* Thumbnails: variante (si tiene imágenes) o producto */}
             {thumbsToShow.length > 1 && (
-              <div className="flex gap-3 flex-wrap">
+              <div className="grid grid-cols-3 gap-3 max-w-[430px]">
                 {thumbsToShow.map((url, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveThumb(i)}
-                    className={`w-20 h-20 rounded-[6px] overflow-hidden transition-all duration-200 ${activeThumb === i
+                    className={`aspect-[1.45] overflow-hidden bg-white transition-all duration-200 ${activeThumb === i
                       ? "ring-2 ring-[#C15074] ring-offset-1"
                       : "ring-1 ring-[#F0E4E8] hover:ring-[#D4738F]"
                       }`}
                   >
-                    <img src={url} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={url} alt={`Imagen ${i + 1}`} className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
@@ -271,8 +276,8 @@ export default function ProductDetailPage() {
           </div>
 
           {/* ── Right: Info ── */}
-          <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-medium text-[#2D1F23] leading-tight">
+          <div className="flex flex-col pt-1 lg:pt-2">
+            <h1 className="text-3xl md:text-[34px] font-medium text-[#171316] leading-tight">
               {product.name}
             </h1>
 
@@ -283,7 +288,7 @@ export default function ProductDetailPage() {
             )}
 
             <div className="mt-2 flex items-baseline gap-3">
-              <p className="text-2xl font-bold text-[#2D1F23]">
+              <p className="text-2xl font-normal text-[#2D1F23]">
                 ${Number(selectedVariant?.price_override ?? product.price).toFixed(2)}
               </p>
               
@@ -296,7 +301,7 @@ export default function ProductDetailPage() {
                 <span className="text-xs">Cargando tonalidades...</span>
               </div>
             ) : variantOptions.length > 0 ? (
-              <div className="mt-6">
+              <div className="mt-10">
                 <p className="text-xs text-[#554246] mb-3">
                   Elige tu Tono:{" "}
                   <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label}</span>
@@ -313,8 +318,8 @@ export default function ProductDetailPage() {
                           setActiveThumb(0);
                         }}
                         title={variant.label}
-                        className={`w-9 h-9 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 ${isSelected
-                          ? "border-primary scale-110 shadow-md"
+                        className={`w-9 h-9 rounded-[10px] border-2 transition-all duration-200 overflow-hidden flex-shrink-0 ${isSelected
+                          ? "border-[#2D1F23] scale-105 shadow-sm"
                           : "border-transparent hover:scale-105 hover:border-[#C15074]/40"
                           }`}
                       >
@@ -334,21 +339,21 @@ export default function ProductDetailPage() {
             <button
               id="product-detail-add-to-cart"
               onClick={handleAddToCart}
-              className="mt-8 flex items-center justify-center gap-3 w-full bg-[#C15074] hover:bg-[#9E3659] active:scale-[0.98] text-white font-semibold text-sm tracking-widest uppercase py-4 rounded-[4px] transition-all duration-200"
+              className="mt-10 flex items-center justify-center gap-3 w-full bg-[#C9577F] hover:bg-[#9E3659] active:scale-[0.98] text-white font-semibold text-sm py-4 transition-all duration-200"
             >
-              <ShoppingCart size={18} strokeWidth={2} />
+              <ShoppingBag size={18} strokeWidth={2} />
               Añadir al Carrito
             </button>
 
             {/* Description */}
-            <p className="mt-8 text-sm text-[#554246] leading-relaxed border-t border-[#F0E4E8] pt-6">
+            <p className="mt-16 text-sm text-[#554246] leading-7 border-t border-[#EFE5E8] pt-7">
 
               {getDescriptionText(product.description)}</p>
 
 
             {/* Accordions */}
-            {/* <div className="mt-4">
-              <Accordion title="Ingredientes Principales">
+            <div className="mt-4 border-b border-[#EFE5E8]">
+              <Accordion title="Ingredientes Principales" defaultOpen>
                 <ul className="flex flex-col gap-4">
                   {ingredients.map((ing) => (
                     <li key={ing.name}>
@@ -361,15 +366,9 @@ export default function ProductDetailPage() {
               <Accordion title="Modo de Uso">
                 <p className="text-sm text-[#554246] leading-relaxed">{usage}</p>
               </Accordion>
-            </div> */}
+            </div>
 
-            {/* Back link */}
-            <Link
-              href="/catalog"
-              className="mt-8 inline-flex items-center gap-1.5 text-xs text-[#AC9CA0] hover:text-[#C15074] transition-colors self-start"
-            >
-              <ArrowLeft size={13} /> Volver al catálogo
-            </Link>
+
           </div>
 
         </div>
