@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Edit3, MapPin, Package, Phone, Store, Truck } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
 import AdminDataError from "../../components/AdminDataError";
-import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
+import AdminFlash from "../../components/AdminFlash";
+import { noticeFromQuery } from "../../components/AdminFlash.utils";
 import { getAdminBranch } from "../../../services/admin";
 
 export default async function BranchDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle } from "lucide-react";
 import { useCart } from "../context/CartContext";
 
 const steps = [
@@ -13,6 +14,9 @@ const steps = [
 
 export default function CheckoutPage() {
   const { items, subtotal } = useCart();
+  const router = useRouter();
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsTouched, setTermsTouched] = useState(false);
   const TAX_RATE = 0.08;
   const taxes = parseFloat((subtotal * TAX_RATE).toFixed(2));
   const total = parseFloat((subtotal + taxes).toFixed(2));
@@ -315,6 +319,43 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Aceptación de Términos y Condiciones */}
+                  <div
+                    className={`rounded-[8px] border p-5 transition-colors ${termsTouched && !acceptedTerms
+                        ? "border-red-300 bg-red-50/40"
+                        : "border-[#F0E4E8] bg-[#F9F7F8]"
+                      }`}
+                  >
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => {
+                          setAcceptedTerms(e.target.checked);
+                          setTermsTouched(true);
+                        }}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded-[3px] border border-[#C8CEDB] text-[#C15074] accent-[#C15074] outline-none focus:ring-2 focus:ring-[#C15074]/30"
+                      />
+                      <span className="text-[13px] text-[#554246] leading-relaxed">
+                        He leído y acepto los{" "}
+                        <Link
+                          href="/terminos-y-condiciones"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-[#C15074] underline decoration-[#C15074]/40 hover:text-[#9E3659] inline-flex items-center gap-1"
+                        >
+                          <FileText size={12} /> Términos y Condiciones
+                        </Link>{" "}
+                        de Beauty Cosmetics, incluyendo las políticas de envío, devoluciones y pago.
+                      </span>
+                    </label>
+                    {termsTouched && !acceptedTerms && (
+                      <p className="mt-3 flex items-center gap-2 text-[12px] font-semibold text-red-600">
+                        <AlertCircle size={14} /> Debes aceptar los términos y condiciones para continuar con el pago.
+                      </p>
+                    )}
+                  </div>
+
                 </div>
               )}
             </div>
@@ -431,12 +472,22 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Submit Action */}
-                <Link
-                  href="/checkout/success"
-                  className="w-full flex items-center justify-center gap-2 bg-[#D4738F] hover:bg-[#C15074] active:scale-[0.98] text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4"
+                <button
+                  onClick={() => {
+                    if (!acceptedTerms) {
+                      setTermsTouched(true);
+                      return;
+                    }
+                    router.push("/checkout/success");
+                  }}
+                  aria-disabled={!acceptedTerms}
+                  className={`w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4 ${acceptedTerms
+                      ? "bg-[#D4738F] hover:bg-[#C15074] active:scale-[0.98]"
+                      : "bg-[#D4738F]/40 cursor-not-allowed"
+                    }`}
                 >
                   <Lock size={16} strokeWidth={2.5} /> Proceder al Pago Seguro con Wompi
-                </Link>
+                </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#AC9CA0]">
                   <ShieldCheck size={12} />

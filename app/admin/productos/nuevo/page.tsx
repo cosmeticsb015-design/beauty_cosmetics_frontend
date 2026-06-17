@@ -13,7 +13,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
-import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
+import AdminFlash from "../../components/AdminFlash";
+import { noticeFromQuery } from "../../components/AdminFlash.utils";
 import { saveProductForm } from "../../actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories } from "../../../services/admin";
 import ProductImagePicker from "../components/ProductImagePicker";

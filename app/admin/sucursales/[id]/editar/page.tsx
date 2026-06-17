@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Save } from "lucide-react";
 import AdminShell from "../../../components/AdminShell";
 import AdminDataError from "../../../components/AdminDataError";
-import AdminFlash, { noticeFromQuery } from "../../../components/AdminFlash";
+import AdminFlash from "../../../components/AdminFlash";
+import { noticeFromQuery } from "../../../components/AdminFlash.utils";
 import { saveBranchForm } from "../../../actions";
 import { getAdminBranch } from "../../../../services/admin";
 

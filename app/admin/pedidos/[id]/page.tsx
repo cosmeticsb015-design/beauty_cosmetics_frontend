@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { CreditCard, MessageSquareText, ReceiptText, Truck, UserRound, Zap } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
-import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
+import AdminFlash from "../../components/AdminFlash";
+import { noticeFromQuery } from "../../components/AdminFlash.utils";
 import { updateOrderStatusForm } from "../../actions";
 import { getStrapiMediaUrl, type StrapiOrderItem } from "../../../services/admin";
 

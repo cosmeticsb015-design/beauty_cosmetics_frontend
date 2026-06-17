@@ -1,7 +1,8 @@
 import { Mail, MessageCircle, Save } from "lucide-react";
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
-import AdminFlash, { noticeFromQuery } from "../components/AdminFlash";
+import AdminFlash from "../components/AdminFlash";
+import { noticeFromQuery } from "../components/AdminFlash.utils";
 import { saveStoreConfigForm } from "../actions";
 import { getAdminStoreConfig } from "../../services/admin";
 

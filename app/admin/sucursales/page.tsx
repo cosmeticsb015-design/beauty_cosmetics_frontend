@@ -1,6 +1,6 @@
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
-import { noticeFromQuery } from "../components/AdminFlash";
+import { noticeFromQuery } from "../components/AdminFlash.utils";
 import AdminBranchesClient, { type BranchRow } from "./AdminBranchesClient";
 import { getAdminBranches } from "../../services/admin";
 

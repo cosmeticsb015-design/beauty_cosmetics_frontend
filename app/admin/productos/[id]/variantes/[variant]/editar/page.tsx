@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import AdminShell from "../../../../../components/AdminShell";
 import AdminDataError from "../../../../../components/AdminDataError";
-import AdminFlash, { noticeFromQuery } from "../../../../../components/AdminFlash";
+import AdminFlash from "../../../../../components/AdminFlash";
+import { noticeFromQuery } from "../../../../../components/AdminFlash.utils";
 import { saveVariantForm } from "../../../../../actions";
 import { getAdminBranches, getAdminVariant, getStrapiMediaUrl } from "../../../../../../services/admin";
 import ProductImagePicker from "../../../../components/ProductImagePicker";

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, Clock, Save } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
-import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
+import AdminFlash from "../../components/AdminFlash";
+import { noticeFromQuery } from "../../components/AdminFlash.utils";
 import { saveBranchForm } from "../../actions";
 
 export default async function NewBranchPage({ searchParams }: { searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {

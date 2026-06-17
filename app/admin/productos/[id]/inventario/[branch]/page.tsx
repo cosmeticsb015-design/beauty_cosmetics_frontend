@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, MapPin, Save } from "lucide-react";
 import AdminShell from "../../../../components/AdminShell";
 import AdminDataError from "../../../../components/AdminDataError";
-import AdminFlash, { noticeFromQuery } from "../../../../components/AdminFlash";
+import AdminFlash from "../../../../components/AdminFlash";
+import { noticeFromQuery } from "../../../../components/AdminFlash.utils";
 import { saveBranchInventoryForm } from "../../../../actions";
 import { getAdminBranch, getAdminProduct, type StrapiStock } from "../../../../../services/admin";
 

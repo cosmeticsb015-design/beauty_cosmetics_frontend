@@ -1,6 +1,6 @@
 import AdminShell from "../components/AdminShell";
 import AdminDataError from "../components/AdminDataError";
-import { noticeFromQuery } from "../components/AdminFlash";
+import { noticeFromQuery } from "../components/AdminFlash.utils";
 import AdminOrdersClient, { type OrderRow, type OrderStat } from "./AdminOrdersClient";
 import { getAdminOrders } from "../../services/admin";
 
