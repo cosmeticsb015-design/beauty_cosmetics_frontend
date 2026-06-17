@@ -307,12 +307,27 @@ export default function ProductDetailPage() {
                   <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label || "Selecciona una variante"}</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedVariant(null);
+                      setActiveThumb(0);
+                    }}
+                    title="Producto principal"
+                    className={`h-9 rounded-[10px] border-2 px-3 text-[11px] font-semibold transition-all duration-200 flex-shrink-0 ${!selectedVariant
+                      ? "border-[#2D1F23] bg-[#FAF6F6] text-[#2D1F23] shadow-sm"
+                      : "border-[#E8D9DF] bg-white text-[#8A7A7E] hover:border-[#C15074]/40 hover:text-[#C15074]"
+                      }`}
+                  >
+                    Principal
+                  </button>
                   {variantOptions.map((variant) => {
                     const isSelected = selectedVariant?.documentId === variant.documentId;
 
                     return (
                       <button
                         key={variant.documentId}
+                        type="button"
                         onClick={() => {
                           setSelectedVariant(variant);
                           setActiveThumb(0);
