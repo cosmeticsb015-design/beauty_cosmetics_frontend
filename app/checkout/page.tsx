@@ -297,6 +297,13 @@ export default function CheckoutPage() {
 
                   {deliveryMethod === "domicilio" && (
                     <div className="mt-8 rounded-[8px] border border-[#F0E4E8] bg-white p-5">
+                      <div className="mb-5 rounded-[6px] border border-[#F5C6D0] bg-[#FCEDF0]/50 p-4 text-[12px] leading-relaxed text-[#554246]">
+                        <p className="font-semibold text-[#2D1F23]">No podemos garantizar horarios específicos de entrega.</p>
+                        <p className="mt-1">
+                          Nuestros pedidos son distribuidos a través de servicios de transporte y delivery que operan mediante rutas previamente establecidas, por lo que las entregas se realizan dentro de la programación de cada ruta.
+                        </p>
+                      </div>
+
                       <div className="mb-4 flex items-center justify-between gap-4">
                         <div>
                           <h2 className="text-sm font-bold text-[#2D1F23]">Precio de envío</h2>
