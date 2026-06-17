@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutOrder, createWompiPaymentLink, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "../services/checkout";
+import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutPayment, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "../services/checkout";
 
 const steps = [
   { id: 1, label: "Datos" },
@@ -158,7 +158,7 @@ export default function CheckoutPage() {
         return { branch_stock: stock.documentId, quantity: item.quantity };
       });
 
-      const orderResponse = await createCheckoutOrder({
+      const checkoutPayment = await createCheckoutPayment({
         customer_name: formData.nombre.trim(),
         customer_email: formData.correo.trim(),
         customer_phone: formData.telefono.trim(),
@@ -172,8 +172,7 @@ export default function CheckoutPage() {
         items: orderItems,
       });
 
-      const paymentLink = await createWompiPaymentLink(orderResponse.data.documentId);
-      const paymentUrl = paymentLink.data.payment_url;
+      const paymentUrl = checkoutPayment.payment.payment_url;
       if (!paymentUrl) throw new Error("Wompi no devolvió una URL de pago válida.");
 
       window.location.assign(paymentUrl);
@@ -792,6 +791,7 @@ export default function CheckoutPage() {
                     handleWompiCheckout();
                   }}
                   aria-disabled={!acceptedTerms || checkoutLoading}
+                  disabled={!acceptedTerms || checkoutLoading}
                   className={`w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4 ${acceptedTerms
                       ? "bg-[#D4738F] hover:bg-[#C15074] active:scale-[0.98]"
                       : "bg-[#D4738F]/40 cursor-not-allowed"

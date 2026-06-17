@@ -61,12 +61,19 @@ export interface CheckoutOrder {
 }
 
 export interface WompiPaymentLinkResponse {
-  data: {
-    order: string;
-    payment_link_id: number;
-    payment_url?: string;
-    qr_url?: string;
-  };
+  data: WompiPaymentLink;
+}
+
+export interface WompiPaymentLink {
+  order: string;
+  payment_link_id: number;
+  payment_url?: string;
+  qr_url?: string;
+}
+
+export interface CheckoutPaymentResponse {
+  order: CheckoutOrder;
+  payment: WompiPaymentLink;
 }
 
 export interface CheckoutShippingRate {
@@ -138,10 +145,23 @@ export const getCheckoutBranchStocks = async (items: CreateCheckoutOrderItem[], 
   return response.data || [];
 };
 
-export const createCheckoutOrder = async (payload: CreateCheckoutOrderPayload): Promise<StrapiResponse<CheckoutOrder>> => {
-  return strapi.post<StrapiResponse<CheckoutOrder>>("orders", { data: payload });
-};
+export const createCheckoutPayment = async (order: CreateCheckoutOrderPayload): Promise<CheckoutPaymentResponse> => {
+  const response = await fetch("/api/checkout/wompi", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ order }),
+  });
 
-export const createWompiPaymentLink = async (orderDocumentId: string): Promise<WompiPaymentLinkResponse> => {
-  return strapi.post<WompiPaymentLinkResponse>(`orders/${orderDocumentId}/wompi-payment-link`);
+  if (!response.ok) {
+    let message = response.statusText;
+
+    try {
+      const error = await response.json();
+      message = error?.error ?? error?.message ?? message;
+    } catch { }
+
+    throw new Error(message);
+  }
+
+  return response.json();
 };
