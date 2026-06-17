@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { HandFist, Search, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
@@ -25,10 +25,16 @@ const subBarItems = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [cartHydrated, setCartHydrated] = useState(false);
   const { cartCount } = useCart();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams?.get("category");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setCartHydrated(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   if (pathname?.startsWith("/admin")) return null;
 
@@ -93,7 +99,7 @@ export default function Header() {
               aria-label="Carrito"
             >
               <ShoppingBag size={20} strokeWidth={1.8} />
-              {cartCount > 0 && (
+              {cartHydrated && cartCount > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C15074] text-white text-[9px] font-bold flex items-center justify-center leading-none">
                   {cartCount}
                 </span>
