@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import {
   getProductById,
@@ -15,49 +15,9 @@ import {
 } from "../../services/producst";
 
 // ── Helpers ────────────────────────────────────────────────
-interface Ingredient {
-  name: string;
-  description: string;
-}
-
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
 
 const buildUrl = (url?: string | null) => (url ? `${API_BASE}${url}` : null);
-
-const getMockIngredients = (): Ingredient[] => [
-  {
-    name: "Extracto de Semillas Naturales",
-    description: "Aporta nutrientes esenciales y antioxidantes para revitalizar la barrera cutánea.",
-  },
-  {
-    name: "Ácido Hialurónico de Triple Peso",
-    description: "Penetra en múltiples niveles para retener la humedad de manera prolongada.",
-  },
-  {
-    name: "Vitamina E y Cistina",
-    description: "Protegen la superficie de los factores ambientales y previenen la resequedad.",
-  },
-];
-
-const getMockUsage = (): string =>
-  "Aplicar una pequeña cantidad de producto sobre la zona limpia con movimientos suaves y ascendentes. Dejar absorber completamente antes de aplicar maquillaje u otros tratamientos. Usar diariamente en la mañana y noche.";
-
-// ── Accordion ─────────────────────────────────────────────
-function Accordion({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="border-t border-[#F0E4E8]">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between py-5 text-[13px] font-semibold text-[#2D1F23] hover:text-[#C15074] transition-colors"
-      >
-        {title}
-        {open ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
-      </button>
-      {open && <div className="pb-5">{children}</div>}
-    </div>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────
 export default function ProductDetailPage() {
@@ -183,8 +143,6 @@ export default function ProductDetailPage() {
   const mainImageUrl = thumbsToShow[activeThumb] || null;
 
   const categoryLabel = product.category?.name || "Catálogo";
-  const ingredients = getMockIngredients();
-  const usage = getMockUsage();
   function getDescriptionText(description: unknown): string {
     const fallback = "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
 
@@ -361,27 +319,12 @@ export default function ProductDetailPage() {
             </button>
 
             {/* Description */}
-            <p className="mt-16 text-sm text-[#554246] leading-7 border-t border-[#EFE5E8] pt-7">
-
-              {getDescriptionText(product.description)}</p>
-
-
-            {/* Accordions */}
-            <div className="mt-4 border-b border-[#EFE5E8]">
-              <Accordion title="Ingredientes Principales" defaultOpen>
-                <ul className="flex flex-col gap-4">
-                  {ingredients.map((ing) => (
-                    <li key={ing.name}>
-                      <p className="text-sm font-semibold text-[#2D1F23]">• {ing.name}</p>
-                      <p className="text-xs text-[#AC9CA0] mt-0.5 ml-3">{ing.description}</p>
-                    </li>
-                  ))}
-                </ul>
-              </Accordion>
-              <Accordion title="Modo de Uso">
-                <p className="text-sm text-[#554246] leading-relaxed">{usage}</p>
-              </Accordion>
-            </div>
+            <section className="mt-16 border-t border-[#EFE5E8] pt-7">
+              <h2 className="text-[13px] font-semibold text-[#2D1F23] mb-3">Descripción</h2>
+              <p className="text-sm text-[#554246] leading-7">
+                {getDescriptionText(product.description)}
+              </p>
+            </section>
 
 
           </div>
