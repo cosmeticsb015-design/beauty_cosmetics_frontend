@@ -17,17 +17,30 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   const [variantError, setVariantError] = useState<string | null>(null);
 
   function getDescriptionText(description: unknown): string {
-    if (!description) return "Sin descripción disponible.";
+    const fallback = "Sin descripción disponible.";
+
+    if (!description) return fallback;
     if (typeof description === "string") return description;
-    if (Array.isArray(description)) {
-      return description
-        .map((block: any) =>
-          block.children?.map((child: any) => child.text).join("") || ""
-        )
-        .join(" ")
-        .trim() || "Sin descripción disponible.";
-    }
-    return "Sin descripción disponible.";
+    if (!Array.isArray(description)) return fallback;
+
+    const text = description
+      .map((block) => {
+        if (typeof block !== "object" || block === null || !("children" in block)) return "";
+        const children = (block as { children?: unknown }).children;
+        if (!Array.isArray(children)) return "";
+
+        return children
+          .map((child) => {
+            if (typeof child !== "object" || child === null || !("text" in child)) return "";
+            const childText = (child as { text?: unknown }).text;
+            return typeof childText === "string" ? childText : "";
+          })
+          .join("");
+      })
+      .join(" ")
+      .trim();
+
+    return text || fallback;
   }
 
   const imageUrl = product.images?.[0]?.image?.url
@@ -143,12 +156,17 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     : "Añadir al carrito";
 
   return (
-    <div className="group flex flex-col bg-white border border-[#F0E4E8] rounded-[8px] overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div className="group relative flex flex-col bg-white border border-[#F0E4E8] rounded-[8px] overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer">
+      <Link
+        href={`/catalog/${product.documentId}`}
+        aria-label={`Ver detalles de ${product.name}`}
+        className="absolute inset-0 z-20"
+      />
 
       {/* Image area */}
       <div className="relative w-full aspect-4/3 flex items-center justify-center bg-[#FAF6F6] overflow-hidden">
         {product.featured && (
-          <div className="absolute top-2 left-3 z-10 inline-flex items-center gap-2 bg-gradient-to-r from-[#C15074] to-[#9E3659] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-lg shadow-[#C15074]/20 ring-1 ring-white/80">
+          <div className="absolute top-2 left-3 z-30 inline-flex items-center gap-2 bg-gradient-to-r from-[#C15074] to-[#9E3659] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-lg shadow-[#C15074]/20 ring-1 ring-white/80">
          
             Destacado
           </div>
@@ -183,7 +201,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         </p>
 
         {variantOptions && variantOptions.length > 0 && (
-          <div className="mt-3">
+          <div className="relative z-30 mt-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C15074] mb-2">
               Tonalidades
             </p>
@@ -217,7 +235,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           <p className="mt-2 text-[11px] text-[#C15074]">{variantError}</p>
         )}
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="relative z-30 mt-4 flex flex-col gap-2">
           <button
             id={`add-to-cart-${product.documentId}`}
             type="button"
