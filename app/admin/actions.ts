@@ -57,10 +57,30 @@ async function setSession(jwt: string) {
 }
 
 function redirectWithNotice(path: string, result: AdminMutationState, fallbackSuccess = "Cambios guardados correctamente.") {
-  const params = new URLSearchParams();
+  const [pathname, currentQuery = ""] = path.split("?");
+  const params = new URLSearchParams(currentQuery);
+  params.delete("saved");
+  params.delete("error");
+  params.delete("message");
   params.set(result.ok ? "saved" : "error", "1");
   params.set("message", result.message || (result.ok ? fallbackSuccess : "No se pudo completar la accion."));
-  redirect(`${path}?${params.toString()}`);
+  redirect(`${pathname}?${params.toString()}`);
+}
+
+async function adminRefererPath(fallback: string) {
+  const referer = (await headers()).get("referer");
+  if (!referer) return fallback;
+  try {
+    const url = new URL(referer);
+    if (!url.pathname.startsWith("/admin")) return fallback;
+    url.searchParams.delete("saved");
+    url.searchParams.delete("error");
+    url.searchParams.delete("message");
+    const query = url.searchParams.toString();
+    return `${url.pathname}${query ? `?${query}` : ""}`;
+  } catch {
+    return fallback;
+  }
 }
 
 
@@ -313,7 +333,7 @@ export async function removeEntityForm(formData: FormData) {
 export async function saveProductForm(formData: FormData) {
   const result = await saveProduct({ ok: false, message: "" }, formData);
   revalidatePath("/admin");
-  redirectWithNotice("/admin", result);
+  redirectWithNotice(result.ok ? "/admin" : await adminRefererPath("/admin/productos/nuevo"), result);
 }
 export async function saveBrandForm(formData: FormData) {
   const result = await saveBrand({ ok: false, message: "" }, formData);
@@ -325,30 +345,34 @@ export async function saveCategoryForm(formData: FormData) {
 }
 export async function saveBranchForm(formData: FormData) {
   const result = await saveBranch({ ok: false, message: "" }, formData);
-  redirectWithNotice("/admin/sucursales", result);
+  redirectWithNotice(result.ok ? "/admin/sucursales" : await adminRefererPath("/admin/sucursales"), result);
 }
 export async function saveVariantForm(formData: FormData) {
   const result = await saveVariant({ ok: false, message: "" }, formData);
-  redirectWithNotice("/admin", result);
+  redirectWithNotice(result.ok ? "/admin" : await adminRefererPath("/admin"), result);
 }
 
 export async function saveBranchInventoryForm(formData: FormData) {
   const product = sanitizeText(formData.get("product"));
   const branch = sanitizeText(formData.get("branch"));
-  if (!product || !branch) return;
-  const entries = Array.from(formData.entries()).filter(([key]) => key.startsWith("variant_stock_"));
-  for (const [key, value] of entries) {
-    const variantDocumentId = key.replace("variant_stock_", "");
-    if (!variantDocumentId) continue;
-    const quantity = sanitizeNumber(value);
-    const stockDocumentId = sanitizeText(formData.get(`stock_document_${variantDocumentId}`));
-    const payload = { quantity, reserved: 0, variant: variantDocumentId, branch };
-    if (stockDocumentId) await updateEntity("branch-stocks", stockDocumentId, payload);
-    else await createEntity("branch-stocks", payload);
+  if (!product || !branch) redirectWithNotice(await adminRefererPath("/admin"), { ok: false, message: "Inventario inválido." });
+  try {
+    const entries = Array.from(formData.entries()).filter(([key]) => key.startsWith("variant_stock_"));
+    for (const [key, value] of entries) {
+      const variantDocumentId = key.replace("variant_stock_", "");
+      if (!variantDocumentId) continue;
+      const quantity = sanitizeNumber(value);
+      const stockDocumentId = sanitizeText(formData.get(`stock_document_${variantDocumentId}`));
+      const payload = { quantity, reserved: 0, variant: variantDocumentId, branch };
+      if (stockDocumentId) await updateEntity("branch-stocks", stockDocumentId, payload);
+      else await createEntity("branch-stocks", payload);
+    }
+    revalidatePath(`/admin/productos/${product}/editar`);
+    revalidatePath(`/admin/productos/${product}/inventario/${branch}`);
+    redirectWithNotice("/admin", { ok: true, message: "Inventario guardado correctamente." });
+  } catch (error) {
+    redirectWithNotice(await adminRefererPath("/admin"), { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar el inventario." });
   }
-  revalidatePath(`/admin/productos/${product}/editar`);
-  revalidatePath(`/admin/productos/${product}/inventario/${branch}`);
-  redirectWithNotice("/admin", { ok: true, message: "Inventario guardado correctamente." });
 }
 
 export async function saveShippingRateForm(formData: FormData) {
