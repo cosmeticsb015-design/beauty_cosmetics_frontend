@@ -83,12 +83,14 @@ export default function ProductDetailPage() {
       ? buildUrl(product.images[0].image.url)
       : null;
 
+    const unitPrice = selectedVariant?.price_override ?? product.price;
+
     addToCart({
       product_id: product.documentId,
       variant_id: selectedVariant?.documentId || null,
       product_name: product.name,
       variant_label: selectedVariant?.label || null,
-      unit_price: product.price,
+      unit_price: unitPrice,
       image_url: imageUrl,
       category: product.category?.name || "Catálogo",
       bg: "#FAF6F6",
@@ -102,20 +104,35 @@ export default function ProductDetailPage() {
     getProductById(id)
       .then((res: StrapiResponse<StrapiProduct>) => {
         if (res.data) {
+          if (res.data.active === false) {
+            setError("Producto no encontrado.");
+            setProduct(null);
+            setLoading(false);
+            return;
+          }
+
           setProduct(res.data);
 
-          // Fetch variant options (tonalidades) for this product
+          // Fetch variant options (tonalidades) para este producto
           setVariantsLoading(true);
           getVariantOptions(id)
             .then((variantRes) => {
-              const variants = variantRes.data || [];
+              const variants = (variantRes.data || []).filter((variant) => {
+                const label = variant.label?.toLowerCase().trim();
+                const value = variant.value?.toLowerCase().trim();
+                return (
+                  variant.active !== false &&
+                  label !== "default" &&
+                  value !== "general"
+                );
+              });
               setVariantOptions(variants);
-              if (variants.length > 0) {
-                setSelectedVariant(variants[0]);
-              }
+              setSelectedVariant(variants.length > 0 ? variants[0] : null);
             })
             .catch((err) => {
               console.warn("Could not load variant options:", err);
+              setVariantOptions([]);
+              setSelectedVariant(null);
             })
             .finally(() => setVariantsLoading(false));
         } else {
@@ -265,9 +282,12 @@ export default function ProductDetailPage() {
               </p>
             )}
 
-            <p className="text-2xl font-bold text-[#2D1F23] mt-2">
-              ${product.price.toFixed(2)}
-            </p>
+            <div className="mt-2 flex items-baseline gap-3">
+              <p className="text-2xl font-bold text-[#2D1F23]">
+                ${Number(selectedVariant?.price_override ?? product.price).toFixed(2)}
+              </p>
+              
+            </div>
 
             {/* ── Tonalidades / Color Picker ── */}
             {variantsLoading ? (
@@ -327,7 +347,7 @@ export default function ProductDetailPage() {
 
 
             {/* Accordions */}
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <Accordion title="Ingredientes Principales">
                 <ul className="flex flex-col gap-4">
                   {ingredients.map((ing) => (
@@ -341,7 +361,7 @@ export default function ProductDetailPage() {
               <Accordion title="Modo de Uso">
                 <p className="text-sm text-[#554246] leading-relaxed">{usage}</p>
               </Accordion>
-            </div>
+            </div> */}
 
             {/* Back link */}
             <Link

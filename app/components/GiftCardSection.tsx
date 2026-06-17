@@ -20,7 +20,7 @@ export default function GiftCardSection() {
               de nuestra colección de lujo.
             </p>
             <Link
-              href="/gift-card"
+              href="/catalog?category=gift-cards"
               id="gift-card-cta"
               className="mt-2 inline-flex items-center justify-center bg-white text-[#C15074] border border-white px-10 py-4 text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-white/90 transition-colors duration-200 rounded-none min-w-[220px]"
             >

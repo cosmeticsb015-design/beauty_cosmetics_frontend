@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   description:
     "Descubre nuestra selección exclusiva de productos de belleza y cuidado de la piel. Formulaciones naturales que realzan tu brillo interior.",
   keywords: ["belleza", "cosmetics", "skin care", "maquillaje", "cuidado de la piel", "productos naturales"],
+  icons: {
+    icon: "/bc-logo.png",
+    shortcut: "/bc-logo.png",
+    apple: "/bc-logo.png",
+  },
 };
 
 export default function RootLayout({

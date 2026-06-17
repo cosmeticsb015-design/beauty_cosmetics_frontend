@@ -96,7 +96,7 @@ export default function Footer() {
           {/* Social Icons */}
           <div className="flex gap-3 mt-1">
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/beautycosmetics_sv/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"

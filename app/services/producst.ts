@@ -69,6 +69,7 @@ export interface GetProductsParams {
     pageSize?: number;
     categorySlug?: string;
     brandNames?: string[];
+    featured?: boolean;
     sort?: "price:asc" | "price:desc" | "createdAt:desc" | "createdAt:asc";
     search?: string;
 }
@@ -97,6 +98,12 @@ export const getProducts = async (
         filters.brand = { name: { $in: brandNames } };
     }
 
+    if (typeof params.featured === "boolean") {
+        filters.featured = { $eq: params.featured };
+    }
+
+    filters.active = { $eq: true };
+
     if (search) {
         filters.name = { $containsi: search };
     }
@@ -104,7 +111,7 @@ export const getProducts = async (
     const query = qs.stringify(
         {
             pagination: { page, pageSize },
-            ...(Object.keys(filters).length > 0 ? { filters } : {}),
+            filters,
             ...(sort ? { sort } : {}),
             populate: {
                 brand: {
@@ -179,6 +186,9 @@ export const getVariantOptions = async (productDocumentId: string): Promise<Stra
                         $eq: productDocumentId,
                     },
                 },
+                active: { $eq: true },
+                label: { $notContainsi: "default" },
+                value: { $notContainsi: "general" },
             },
             populate: {
                 images: {
@@ -187,6 +197,7 @@ export const getVariantOptions = async (productDocumentId: string): Promise<Stra
                     },
                 },
             },
+            fields: ["id", "documentId", "label", "value", "price_override", "active"],
         },
         {
             encodeValuesOnly: true,

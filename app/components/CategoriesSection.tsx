@@ -1,34 +1,15 @@
 import Link from "next/link";
-import { Flower2, Paintbrush, Wind, Sparkles } from "lucide-react";
+import { StrapiCategory } from "../services/producst";
 
-const categories = [
-  {
-    id: "cat-skincare",
-    name: "SKINCARE",
-    href: "/catalog?category=skincare",
-    icon: <Flower2 size={40} strokeWidth={1.5} className="text-[#8C344E]" />,
-  },
-  {
-    id: "cat-makeup",
-    name: "MAKEUP",
-    href: "/catalog?category=makeup",
-    icon: <Paintbrush size={40} strokeWidth={1.5} className="text-[#8C344E]" />,
-  },
-  {
-    id: "cat-fragrance",
-    name: "FRAGRANCE",
-    href: "/catalog?category=fragrance",
-    icon: <Wind size={40} strokeWidth={1.5} className="text-[#8C344E]" />,
-  },
-  {
-    id: "cat-wellness",
-    name: "WELLNESS",
-    href: "/catalog?category=wellness",
-    icon: <Sparkles size={40} strokeWidth={1.5} className="text-[#8C344E]" />,
-  },
-];
+interface CategoriesSectionProps {
+  categories: StrapiCategory[];
+}
 
-export default function CategoriesSection() {
+export default function CategoriesSection({ categories }: CategoriesSectionProps) {
+  const visibleCategories = categories
+    .filter((category) => category.active && !category.parent)
+    .slice(0, 4);
+
   return (
     <section id="categories-section" className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -48,22 +29,20 @@ export default function CategoriesSection() {
 
         {/* Category Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {categories.map((cat) => (
+          {visibleCategories.map((category) => (
             <Link
-              key={cat.id}
-              href={cat.href}
-              id={cat.id}
+              key={category.documentId}
+              href={`/catalog?category=${category.slug}`}
+              id={`cat-${category.slug}`}
               className="flex flex-col items-start group"
             >
-              {/* Pink square block */}
               <div className="w-full aspect-square rounded-[4px] bg-[#FCEDF0] flex items-center justify-center transition-all duration-300 group-hover:bg-[#F5C6D0]/50 group-hover:scale-[1.02]">
-                <div className="transition-transform duration-300 group-hover:scale-110">
-                  {cat.icon}
-                </div>
+                <span className="text-sm font-semibold text-[#8C344E] uppercase tracking-[0.22em]">
+                  {category.name}
+                </span>
               </div>
-              {/* Text label underneath */}
               <span className="mt-4 text-[11px] md:text-xs font-semibold text-[#554246] tracking-[0.15em] transition-colors group-hover:text-[#C15074] uppercase">
-                {cat.name}
+                {category.name}
               </span>
             </Link>
           ))}
