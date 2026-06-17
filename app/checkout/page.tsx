@@ -80,6 +80,33 @@ export default function CheckoutPage() {
   const shippingCost = deliveryMethod === "domicilio" ? Number(selectedShippingRate?.cost || 0) : 0;
   const total = parseFloat((subtotal + taxes + shippingCost).toFixed(2));
   const canContinueToPayment = deliveryMethod === "domicilio" ? Boolean(selectedShippingRate) : Boolean(selectedBranch);
+  const orderPayloadPreview = {
+    customer_name: formData.nombre,
+    customer_email: formData.correo,
+    customer_phone: formData.telefono,
+    delivery_type: deliveryMethod === "domicilio" ? "delivery" : "pickup",
+    address: deliveryMethod === "domicilio" ? [formData.direccion, formData.ciudad, formData.codigoPostal].filter(Boolean).join(", ") : selectedBranch?.address || "",
+    instructions: formData.instrucciones,
+    branch: deliveryMethod === "sucursal" ? formData.branchDocumentId : null,
+    shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
+    subtotal,
+    shipping_cost: shippingCost,
+    taxes,
+    total,
+    items: items.map((item) => ({
+      product: item.product_id,
+      variant: item.variant_id,
+      product_name: item.product_name,
+      variant_label: item.variant_label,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+    })),
+  };
+
+  const goToStep = (step: number) => {
+    if (step === 3 && !canContinueToPayment) return;
+    setCurrentStep(step);
+  };
 
   if (!mounted) {
     return (
@@ -123,9 +150,17 @@ export default function CheckoutPage() {
                   const isActive = step.id === currentStep;
                   const isPast = step.id < currentStep;
 
+                  const isBlocked = step.id === 3 && !canContinueToPayment;
+
                   return (
-                    <div key={step.id} className="flex flex-col items-center bg-white px-2">
-                      <div
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => goToStep(step.id)}
+                      disabled={isBlocked}
+                      className={`flex flex-col items-center bg-white px-2 transition-opacity ${isBlocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                    >
+                      <span
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-colors ${isActive
                             ? "border border-[#C15074] text-[#C15074] bg-white"
                             : isPast
@@ -134,14 +169,14 @@ export default function CheckoutPage() {
                           }`}
                       >
                         {isPast ? <Check size={14} strokeWidth={3} /> : step.id}
-                      </div>
+                      </span>
                       <span
                         className={`text-[11px] font-medium transition-colors ${isActive || isPast ? "text-[#2D1F23]" : "text-[#AC9CA0]"
                           }`}
                       >
                         {step.id}. {step.label}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -396,7 +431,7 @@ export default function CheckoutPage() {
                   {/* Resumen de cliente */}
                   <div className="bg-[#F9F7F8] rounded-[8px] p-6 relative">
                     <button
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => goToStep(1)}
                       className="absolute top-6 right-6 flex items-center gap-1.5 text-[#C15074] hover:text-[#9E3659] text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       <Pencil size={12} strokeWidth={2.5} /> Editar
@@ -412,7 +447,7 @@ export default function CheckoutPage() {
                   {/* Datos de entrega */}
                   <div className="bg-[#F9F7F8] rounded-[8px] p-6 relative">
                     <button
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => goToStep(2)}
                       className="absolute top-6 right-6 flex items-center gap-1.5 text-[#C15074] hover:text-[#9E3659] text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       <Pencil size={12} strokeWidth={2.5} /> Editar
@@ -441,6 +476,37 @@ export default function CheckoutPage() {
                         ? `${selectedShippingRate?.name || "Envío"} · $${shippingCost.toFixed(2)}`
                         : "Recoger en sucursal · $0.00"}
                     </div>
+                  </div>
+
+                  {/* Payload final del pedido */}
+                  <div className="bg-white border border-[#F0E4E8] rounded-[8px] p-6">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-[#2D1F23]">Datos finales para el pedido</h2>
+                        <p className="mt-1 text-[12px] text-[#AC9CA0]">Revisa esta información antes de pagar con Wompi.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(1)}
+                        className="text-[#C15074] hover:text-[#9E3659] text-[11px] font-bold uppercase tracking-wider transition-colors"
+                      >
+                        Editar datos
+                      </button>
+                    </div>
+                    <dl className="grid gap-3 text-sm text-[#554246] sm:grid-cols-2">
+                      <div>
+                        <dt className="text-[11px] font-bold uppercase tracking-wider text-[#AC9CA0]">Cliente</dt>
+                        <dd className="mt-1 font-semibold text-[#2D1F23]">{orderPayloadPreview.customer_name || "Pendiente"}</dd>
+                        <dd>{orderPayloadPreview.customer_email || "Correo pendiente"}</dd>
+                        <dd>{orderPayloadPreview.customer_phone || "Teléfono pendiente"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] font-bold uppercase tracking-wider text-[#AC9CA0]">Entrega</dt>
+                        <dd className="mt-1 font-semibold text-[#2D1F23]">{orderPayloadPreview.delivery_type === "delivery" ? "Envío a domicilio" : "Recoger en sucursal"}</dd>
+                        <dd>{orderPayloadPreview.address || "Dirección pendiente"}</dd>
+                        <dd className="text-[#C15074]">Envío: ${orderPayloadPreview.shipping_cost.toFixed(2)}</dd>
+                      </div>
+                    </dl>
                   </div>
 
                   {/* Método de Pago */}
@@ -524,7 +590,7 @@ export default function CheckoutPage() {
                     </Link>
 
                     <button
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => goToStep(2)}
                       className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#D4738F] hover:bg-[#C15074] text-white text-sm font-medium px-8 py-3.5 rounded-[4px] transition-colors order-1 md:order-2"
                     >
                       Continuar al Método de Entrega <ArrowRight size={16} />
@@ -533,7 +599,7 @@ export default function CheckoutPage() {
                 ) : (
                   <div className="w-full flex flex-col md:flex-row items-center justify-end gap-6 relative">
                     <button
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => goToStep(1)}
                       className="absolute left-0 items-center gap-2 text-sm text-[#554246] hover:text-[#C15074] transition-colors hidden md:flex"
                     >
                       <ArrowLeft size={16} /> Volver a Datos
@@ -541,7 +607,7 @@ export default function CheckoutPage() {
 
                     {/* Mobile version of back button */}
                     <button
-                      onClick={() => setCurrentStep(1)}
+                      onClick={() => goToStep(1)}
                       className="w-full md:hidden flex items-center justify-center gap-2 text-sm text-[#554246] hover:text-[#C15074] transition-colors order-2"
                     >
                       <ArrowLeft size={16} /> Volver a Datos
@@ -549,7 +615,7 @@ export default function CheckoutPage() {
 
                     <button
                       onClick={() => {
-                        if (canContinueToPayment) setCurrentStep(3);
+                        if (canContinueToPayment) goToStep(3);
                       }}
                       aria-disabled={!canContinueToPayment}
                       className={`w-full md:w-auto flex items-center justify-center gap-2 text-white text-sm font-medium px-8 py-3.5 rounded-[4px] transition-colors order-1 ${canContinueToPayment
