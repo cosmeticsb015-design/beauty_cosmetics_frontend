@@ -36,8 +36,9 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         setCategories((catsRes.data || []).filter((c) => !c.parent && c.active !== false).slice(0, 5));
         setBrands((brandsRes.data || []).filter((b) => b.active !== false).slice(0, 5));
       })
-      .catch((err) => {
-        console.error("Failed to load search filters", err);
+      .catch(() => {
+        setCategories([]);
+        setBrands([]);
       });
   }, []);
 
@@ -49,8 +50,8 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         .then((res) => {
           setProducts(res.data || []);
         })
-        .catch((err) => {
-          console.error("Search failed", err);
+        .catch(() => {
+          setProducts([]);
         })
         .finally(() => {
           setLoading(false);

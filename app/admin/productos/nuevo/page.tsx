@@ -9,19 +9,28 @@ import {
   Layers3,
   Save,
   Settings,
-  Upload,
   History,
+  ShoppingBag,
 } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
+import AdminFlash, { noticeFromQuery } from "../../components/AdminFlash";
+import { saveProductForm } from "../../actions";
+import { getAdminBranches, getAdminBrands, getAdminCategories } from "../../../services/admin";
+import ProductImagePicker from "../components/ProductImagePicker";
+import ProductDraftPersistence from "../components/ProductDraftPersistence";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
 }
 
-export default function NewProductPage() {
+export default async function NewProductPage({ searchParams }: { searchParams?: Promise<{ error?: string; message?: string; saved?: string }> }) {
+  const query = searchParams ? await searchParams : {};
+  const [brandsResponse, categoriesResponse, branchesResponse] = await Promise.all([getAdminBrands(), getAdminCategories(), getAdminBranches()]);
   return (
     <AdminShell active="products" searchPlaceholder="Buscar productos...">
-      <main className="mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8">
+      <form action={saveProductForm} data-product-draft="true" className="mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8">
+        <ProductDraftPersistence />
+        <AdminFlash notice={noticeFromQuery(query, "Producto guardado correctamente.")} />
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Añadir Nuevo Producto</h2>
@@ -54,6 +63,7 @@ export default function NewProductPage() {
                 <div className="space-y-2">
                   <FieldLabel>Nombre del Producto</FieldLabel>
                   <input
+                    name="name"
                     placeholder="Ej. Velvet Rose Elixir"
                     className="h-12 w-full rounded-[4px] border border-[#C8CEDB] px-4 text-[15px] outline-none placeholder:text-[#7A7F8A] focus:border-[#9E3659]"
                   />
@@ -61,8 +71,9 @@ export default function NewProductPage() {
                 <div className="space-y-2">
                   <FieldLabel>Categoría</FieldLabel>
                   <div className="relative">
-                    <select className="h-12 w-full appearance-none rounded-[4px] border border-[#C8CEDB] bg-white px-4 text-[15px] outline-none focus:border-[#9E3659]">
-                      <option>Seleccionar categoría</option>
+                    <select name="category" className="h-12 w-full appearance-none rounded-[4px] border border-[#C8CEDB] bg-white px-4 text-[15px] outline-none focus:border-[#9E3659]">
+                      <option value="">Seleccionar categoría</option>
+                      {categoriesResponse.data.map((category) => <option key={category.documentId} value={category.documentId}>{category.name}</option>)}
                     </select>
                     <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#5F6370]" />
                   </div>
@@ -70,8 +81,9 @@ export default function NewProductPage() {
                 <div className="space-y-2">
                   <FieldLabel>Marca</FieldLabel>
                   <div className="relative">
-                    <select className="h-12 w-full appearance-none rounded-[4px] border border-[#C8CEDB] bg-white px-4 text-[15px] outline-none focus:border-[#9E3659]">
-                      <option>Seleccionar marca</option>
+                    <select name="brand" className="h-12 w-full appearance-none rounded-[4px] border border-[#C8CEDB] bg-white px-4 text-[15px] outline-none focus:border-[#9E3659]">
+                      <option value="">Seleccionar marca</option>
+                      {brandsResponse.data.map((brand) => <option key={brand.documentId} value={brand.documentId}>{brand.name}</option>)}
                     </select>
                     <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#5F6370]" />
                   </div>
@@ -79,6 +91,7 @@ export default function NewProductPage() {
                 <div className="space-y-2">
                   <FieldLabel>Slug</FieldLabel>
                   <input
+                    name="slug"
                     placeholder="Ej. velvet-rose"
                     className="h-12 w-full rounded-[4px] border border-[#C8CEDB] px-4 text-[15px] outline-none placeholder:text-[#7A7F8A] focus:border-[#9E3659]"
                   />
@@ -88,10 +101,34 @@ export default function NewProductPage() {
               <div className="mt-24 space-y-2">
                 <FieldLabel>Descripción</FieldLabel>
                 <textarea
+                  name="description"
                   placeholder="Escribe una descripción detallada que resalte los beneficios y componentes..."
                   className="min-h-[115px] w-full resize-none rounded-[4px] border border-[#C8CEDB] px-4 py-3 text-[15px] outline-none placeholder:text-[#7A7F8A] focus:border-[#9E3659]"
                 />
               </div>
+            </section>
+
+            <section className="rounded-[8px] border border-[#C8CEDB] bg-white p-7">
+              <div className="mb-6 flex items-center gap-3">
+                <ShoppingBag size={24} strokeWidth={2} className="text-[#9E3659]" />
+                <h3 className="text-[25px] font-bold text-[#1F1F22]">Stock por Sucursal</h3>
+              </div>
+              <p className="mb-5 text-[14px] text-[#5F6370]">Define el stock inicial del producto. Si no agregas variantes, este stock queda asignado a la variante automática Default / General.</p>
+              {branchesResponse.data.length ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {branchesResponse.data.map((branch) => (
+                    <label key={branch.documentId} className="rounded-[6px] border border-[#E5E7EB] bg-[#F8F9FB] p-4">
+                      <span className="block text-[14px] font-bold text-[#1F1F22]">{branch.name}</span>
+                      <span className="text-[12px] text-[#5F6370]">Cantidad disponible</span>
+                      <input name={`branch_stock_${branch.documentId}`} type="number" min="0" defaultValue="0" className="mt-2 h-11 w-full rounded-[4px] border border-[#C8CEDB] bg-white px-3 text-[15px] font-bold outline-none focus:border-[#9E3659]" />
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-[6px] border border-dashed border-[#C8CEDB] bg-[#F8F9FB] p-5 text-[14px] font-semibold text-[#5F6370]">
+                  No hay sucursales creadas en Strapi. Crea una sucursal para poder asignar stock inicial.
+                </div>
+              )}
             </section>
 
             <section className="rounded-[8px] border border-[#C8CEDB] bg-white p-7">
@@ -108,12 +145,13 @@ export default function NewProductPage() {
 
               <div className="flex min-h-[145px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[#C8CEDB] px-5 py-8 text-center">
                 <p className="text-[16px] text-[#4B4E5A]">No se han definido variantes para este producto.</p>
+                <p className="mt-2 text-[14px] text-[#5F6370]">El producto se guardará con una variante Default / General para manejar stock por sucursal.</p>
                 <Link
                   href="/admin/productos/nuevo/variante"
                   className="mt-5 inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#CFE1FA] px-7 text-[15px] font-bold tracking-wide text-[#5F6D82] transition-colors hover:bg-[#BCD4F4]"
                 >
                   <CirclePlus size={22} strokeWidth={2} />
-                  Añadir Nueva Variante
+                  Añadir Nueva Variante después de guardar
                 </Link>
               </div>
             </section>
@@ -125,19 +163,7 @@ export default function NewProductPage() {
                 <ImageIcon size={22} strokeWidth={2} className="text-[#9E3659]" />
                 <h3 className="text-[20px] font-bold text-[#1F1F22]">Galería de Imágenes</h3>
               </div>
-              <p className="text-[13px] font-semibold uppercase tracking-wide text-[#6B7280]">Imagen Principal</p>
-              <div className="mt-3 flex h-[150px] flex-col items-center justify-center rounded-[4px] border-2 border-dashed border-[#DFE3EA] text-[#9AA3B2]">
-                <Upload size={34} strokeWidth={1.8} />
-                <p className="mt-3 text-[15px]">Sube la imagen</p>
-              </div>
-
-              <p className="mt-5 text-[13px] font-semibold uppercase tracking-wide text-[#6B7280]">Adicionales</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <button className="flex h-[150px] items-center justify-center rounded-[4px] border-2 border-dashed border-[#DFE3EA] text-[24px] text-[#9E3659]">
-                  +
-                </button>
-                <div className="h-[150px] rounded-[8px] bg-[#F8F8F9]" />
-              </div>
+<ProductImagePicker />
             </section>
 
             <section className="rounded-[8px] border border-[#C8CEDB] bg-white p-7">
@@ -150,7 +176,7 @@ export default function NewProductPage() {
                   <FieldLabel>Precio Base (USD)</FieldLabel>
                   <div className="flex h-12 items-center rounded-[4px] border border-[#C8CEDB] px-4 focus-within:border-[#9E3659]">
                     <span className="mr-3 text-[17px] text-[#4B4E5A]">$</span>
-                    <input placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#7A7F8A]" />
+                    <input name="price" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#7A7F8A]" />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -169,20 +195,20 @@ export default function NewProductPage() {
                 <h3 className="text-[25px] font-bold text-[#1F1F22]">Publicación</h3>
               </div>
               <div className="space-y-5">
-                {[
-                  ["Estado Activo", "Visible en la tienda pública"],
-                  ["Destacado", "Producto destacado"],
-                ].map(([title, subtitle]) => (
-                  <div key={title} className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4">
-                    <div>
-                      <p className="text-[15px] font-bold text-[#1F1F22]">{title}</p>
-                      <p className="text-[13px] text-[#4B4E5A]">{subtitle}</p>
-                    </div>
-                    <button aria-label={title} className="relative h-8 w-14 rounded-full bg-[#C3C5D4]">
-                      <span className="absolute left-1.5 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-white" />
-                    </button>
-                  </div>
-                ))}
+                <label className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4">
+                  <span>
+                    <span className="block text-[15px] font-bold text-[#1F1F22]">Estado Activo</span>
+                    <span className="text-[13px] text-[#4B4E5A]">Visible en la tienda pública</span>
+                  </span>
+                  <input type="checkbox" name="active" defaultChecked className="h-6 w-6 accent-[#9E3659]" />
+                </label>
+                <label className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4">
+                  <span>
+                    <span className="block text-[15px] font-bold text-[#1F1F22]">Destacado</span>
+                    <span className="text-[13px] text-[#4B4E5A]">Producto destacado</span>
+                  </span>
+                  <input type="checkbox" name="featured" className="h-6 w-6 accent-[#9E3659]" />
+                </label>
               </div>
               <p className="mt-5 flex items-center gap-2 text-[14px] text-[#4B4E5A]">
                 <History size={16} strokeWidth={1.8} />
@@ -191,7 +217,7 @@ export default function NewProductPage() {
             </section>
           </aside>
         </div>
-      </main>
+      </form>
     </AdminShell>
   );
 }
