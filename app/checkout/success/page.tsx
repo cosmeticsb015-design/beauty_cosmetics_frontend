@@ -43,6 +43,8 @@ interface PublicOrderItem {
 interface PublicOrder {
   tracking_number: string;
   payment_status: "pending" | "paid" | "failed" | "refunded";
+  internal_payment_status?: "pending" | "paid" | "failed" | "refunded" | null;
+  wompi_payment_status?: "pending" | "paid" | "failed" | "refunded" | string | null;
   customer_name: string;
   customer_email: string;
   delivery_type: "delivery" | "pickup";

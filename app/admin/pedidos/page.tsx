@@ -10,20 +10,24 @@ function money(value?: number) {
 function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) : "Sin fecha";
 }
+function fulfillmentStatus(order: { order_status?: string | null; fulfillment_status?: string | null }) {
+  return order.order_status ?? order.fulfillment_status ?? "pending_shipping";
+}
 function statusMeta(status: string) {
-  if (status === "paid") return { label: "ENVIADO", className: "border-blue-200 bg-blue-50 text-blue-700" };
-  if (status === "failed" || status === "refunded") return { label: "FINALIZADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
+  if (status === "sent") return { label: "ENVIADO", className: "border-blue-200 bg-blue-50 text-blue-700" };
+  if (status === "delivered") return { label: "ENTREGADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
+  if (status === "finalized") return { label: "FINALIZADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
   return { label: "PENDIENTE DE ENVIO", className: "border-[#E8C1CD] bg-[#FCEDF0] text-[#9E3659]" };
 }
 
-const validStatuses = ["pending_shipping", "sent", "finalized"] as const;
+const validStatuses = ["pending_shipping", "sent", "delivered", "finalized"] as const;
 
 type SearchParams = Promise<{ page?: string; status?: string; search?: string; saved?: string; error?: string; message?: string }>;
 
 export default async function AdminOrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   const query = searchParams ? await searchParams : {};
   const page = Math.max(1, Number(query.page ?? 1) || 1);
-  const status = validStatuses.includes(query.status as any) ? query.status! : "pending_shipping";
+  const status = validStatuses.includes(query.status as (typeof validStatuses)[number]) ? query.status! : "pending_shipping";
   const search = typeof query.search === "string" ? query.search.trim() : "";
 
   try {
@@ -35,7 +39,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
     ]);
 
     const orders: OrderRow[] = response.data.map((order) => {
-      const meta = statusMeta(order.payment_status);
+      const orderStatus = fulfillmentStatus(order);
+      const meta = statusMeta(orderStatus);
       const itemCount = order.items?.length ?? 0;
       return {
         id: order.tracking_number || `#${order.id}`,
@@ -45,8 +50,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
         date: formatDate(order.createdAt),
         total: money(order.total ?? Number(order.subtotal || 0) + Number(order.shipping_cost || 0)),
         status: meta.label,
-        paymentStatus: order.payment_status,
-        orderStatus: order.payment_status === "paid" ? "sent" : order.payment_status === "failed" || order.payment_status === "refunded" ? "finalized" : "pending_shipping",
+        orderStatus,
         statusClass: meta.className,
         delivery: order.delivery_type === "pickup" ? `Retiro: ${order.branch?.name ?? "Sucursal"}` : order.shipping_rate?.name ?? "Delivery",
         itemCount: `${itemCount} ${itemCount === 1 ? "producto" : "productos"}`,

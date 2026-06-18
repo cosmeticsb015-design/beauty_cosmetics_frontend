@@ -5,20 +5,34 @@ import AdminShell from "../../components/AdminShell";
 import AdminFlash from "../../components/AdminFlash";
 import { noticeFromQuery } from "../../components/AdminFlash.utils";
 import { updateOrderStatusForm } from "../../actions";
-import { getStrapiMediaUrl, type StrapiOrderItem } from "../../../services/admin";
+import { getStrapiMediaUrl, type OrderFulfillmentStatus, type StrapiOrder, type StrapiOrderItem } from "../../../services/admin";
 
 function money(value?: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
 }
+const paymentStatusLabel: Record<string, string> = {
+  pending: "Pendiente de pago",
+  paid: "Pagado",
+  failed: "Pago fallido",
+  refunded: "Reembolsado",
+};
+
+function fulfillmentStatus(order: StrapiOrder): string {
+  return order.order_status ?? order.fulfillment_status ?? "pending_shipping";
+}
 function statusLabel(status: string) {
-  if (status === "paid") return "Enviado";
-  if (status === "failed" || status === "refunded") return "Finalizado";
+  if (status === "sent") return "Enviado";
+  if (status === "delivered") return "Entregado";
+  if (status === "finalized") return "Finalizado";
   return "Pendiente de envio";
 }
 function statusClass(status: string) {
-  if (status === "paid") return "bg-blue-100 text-blue-800";
-  if (status === "failed" || status === "refunded") return "bg-emerald-100 text-emerald-800";
+  if (status === "sent") return "bg-blue-100 text-blue-800";
+  if (status === "delivered" || status === "finalized") return "bg-emerald-100 text-emerald-800";
   return "bg-[#F5DDE5] text-[#9E3659]";
+}
+function orderValue<K extends keyof Omit<StrapiOrder, "attributes">>(order: StrapiOrder, key: K) {
+  return order[key] ?? order.attributes?.[key];
 }
 function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Sin fecha";
@@ -65,12 +79,13 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
       image: firstItemImage(item),
       branch: item.branch_stock?.branch?.name,
     }));
-    const transactionId = order.wompi_transaction_id;
-    const wompiStatus = order.wompi_transaction_status;
-    const paymentMethod = order.wompi_payment_method;
-    const authorizationCode = order.wompi_authorization_code;
-    const transactionMessage = order.wompi_transaction_message;
-    const paymentStatus = order.payment_status;
+    const orderStatus = fulfillmentStatus(order);
+    const transactionId = orderValue(order, "wompi_transaction_id");
+    const wompiStatus = orderValue(order, "wompi_transaction_status");
+    const paymentMethod = orderValue(order, "wompi_payment_method");
+    const authorizationCode = orderValue(order, "wompi_authorization_code");
+    const transactionMessage = orderValue(order, "wompi_transaction_message");
+    const paymentStatus = orderValue(order, "wompi_payment_status") ?? orderValue(order, "payment_status");
 
     return (
       <AdminShell active="orders">
@@ -79,7 +94,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="mb-4 flex items-center gap-2 text-[13px] text-[#554246]"><Link href="/admin/pedidos" className="transition-colors hover:text-[#9E3659]">Pedidos</Link><span>›</span><span className="font-semibold text-[#2D1F23]">Pedido {order.tracking_number}</span></div>
-              <div className="flex flex-wrap items-center gap-5"><h2 className="text-[38px] font-bold leading-none text-[#1F1F22]">Pedido {order.tracking_number}</h2><span className={`rounded-full px-5 py-2 text-[14px] font-medium ${statusClass(order.payment_status)}`}>{statusLabel(order.payment_status)}</span></div>
+              <div className="flex flex-wrap items-center gap-5"><h2 className="text-[38px] font-bold leading-none text-[#1F1F22]">Pedido {order.tracking_number}</h2><span className={`rounded-full px-5 py-2 text-[14px] font-medium ${statusClass(orderStatus)}`}>{statusLabel(orderStatus)}</span></div>
               <p className="mt-3 text-[15px] text-[#6B6063]">Creado: {formatDate(order.createdAt)} · Expira: {formatDate(order.expires_at)}</p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -118,18 +133,18 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
                   <span className="mt-1 block font-semibold text-[#1F1F22]">{transactionMessage || "No registrado"}</span>
                 </p>
                 <p>
-                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Estado interno</strong>
-                  <span className="mt-1 flex items-center gap-2 font-semibold text-[#1F1F22]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{paymentStatus}</span>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Estado de pago</strong>
+                  <span className="mt-1 flex items-center gap-2 font-semibold text-[#1F1F22]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{paymentStatusLabel[String(paymentStatus)] ?? paymentStatus}</span>
                 </p>
               </div>
             </article>
           </div>
 
           <section className="mt-7 rounded-[8px] border border-[#E7E4E5] bg-white p-7">
-            <h3 className="text-[24px] font-bold text-[#1F1F22]">Actualizar estado de pago</h3>
+            <h3 className="text-[24px] font-bold text-[#1F1F22]">Actualizar estado del pedido</h3>
             <form action={updateOrderStatusForm} className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <input type="hidden" name="id" value={order.documentId} />
-              <select name="payment_status" defaultValue={order.payment_status === "paid" ? "sent" : order.payment_status === "failed" || order.payment_status === "refunded" ? "finalized" : "pending_shipping"} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="sent">Enviado</option><option value="finalized">Finalizado</option></select>
+              <select name="order_status" defaultValue={orderStatus as OrderFulfillmentStatus} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="sent">Enviado</option><option value="delivered">Entregado</option><option value="finalized">Finalizado</option></select>
               <button className="h-12 rounded-[4px] bg-[#9E3659] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#84304C]">Guardar cambios</button>
             </form>
           </section>

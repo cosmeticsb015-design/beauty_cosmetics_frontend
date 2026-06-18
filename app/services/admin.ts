@@ -16,10 +16,14 @@ export type StrapiStock = { id: number; documentId: string; quantity: number; re
 export type StrapiBranch = { id: number; documentId: string; name: string; address: string; schedule?: string | null; notes?: string | null; active: boolean; stocks?: StrapiStock[] };
 export type StrapiShippingRate = { id: number; documentId: string; name: string; description?: string | null; cost: number; active: boolean };
 export type StrapiOrderItem = { id: number; documentId?: string; product_name: string; variant_label?: string | null; quantity: number; unit_price: number; product?: StrapiProduct | null; variant?: StrapiVariantOption | null; branch_stock?: StrapiStock | null };
+export type OrderPaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type OrderFulfillmentStatus = "pending_shipping" | "sent" | "delivered" | "finalized";
+
 export type StrapiOrder = {
-  id: number; documentId: string; tracking_number: string; customer_name: string; customer_email: string; customer_phone: string;
+  id: number; documentId: string; attributes?: Partial<Omit<StrapiOrder, "attributes">>; tracking_number: string; customer_name: string; customer_email: string; customer_phone: string;
   delivery_type: "delivery" | "pickup"; address?: string | null; subtotal: number; shipping_cost: number; total?: number;
-  payment_status: "pending" | "paid" | "failed" | "refunded";
+  payment_status: OrderPaymentStatus; internal_payment_status?: OrderPaymentStatus | null; wompi_payment_status?: OrderPaymentStatus | string | null;
+  order_status?: OrderFulfillmentStatus | string | null; fulfillment_status?: OrderFulfillmentStatus | string | null;
   wompi_transaction_id?: string | null; wompi_transaction_status?: string | null; wompi_payment_method?: string | null;
   wompi_authorization_code?: string | null; wompi_transaction_message?: string | null; expires_at?: string; createdAt?: string; updatedAt?: string;
   branch?: StrapiBranch | null; shipping_rate?: StrapiShippingRate | null; items?: StrapiOrderItem[];
@@ -60,6 +64,34 @@ async function adminRequest<T>(endpoint: string, init: RequestInit = {}) {
 }
 
 const withPagination = ({ page = 1, pageSize = 10 }: AdminListParams) => ({ pagination: { page, pageSize } });
+const orderScalarFields = [
+  "tracking_number",
+  "customer_name",
+  "customer_email",
+  "customer_phone",
+  "delivery_type",
+  "address",
+  "subtotal",
+  "shipping_cost",
+  "total",
+  "payment_status",
+  "internal_payment_status",
+  "wompi_payment_status",
+  "order_status",
+  "fulfillment_status",
+  "wompi_transaction_id",
+  "wompi_transaction_status",
+  "wompi_payment_method",
+  "wompi_authorization_code",
+  "wompi_transaction_message",
+  "wompi_payment_link_id",
+  "wompi_payment_link_url",
+  "wompi_payment_link_long_url",
+  "wompi_payment_link_qr_url",
+  "expires_at",
+  "createdAt",
+  "updatedAt",
+];
 const productPopulate = {
   brand: { fields: ["name", "slug", "active"] },
   category: { fields: ["name", "slug", "active"] },
@@ -129,10 +161,7 @@ export async function getAdminOrders(params: AdminListParams = {}) {
     ];
   }
   if (params.status && params.status !== "all") {
-    if (params.status === "pending_shipping") filters.payment_status = { $eq: "pending" };
-    else if (params.status === "sent") filters.payment_status = { $eq: "paid" };
-    else if (params.status === "finalized") filters.payment_status = { $in: ["failed", "refunded"] };
-    else filters.payment_status = { $eq: params.status };
+    filters.order_status = { $eq: params.status };
   }
   if (params.dateFrom || params.dateTo) {
     filters.createdAt = {
@@ -144,6 +173,7 @@ export async function getAdminOrders(params: AdminListParams = {}) {
     ...withPagination(params),
     sort: ["createdAt:desc"],
     filters: Object.keys(filters).length ? filters : undefined,
+    fields: orderScalarFields,
     populate: {
       branch: { fields: ["name", "address", "active"] },
       shipping_rate: { fields: ["name", "description", "cost", "active"] },
@@ -154,7 +184,7 @@ export async function getAdminOrders(params: AdminListParams = {}) {
 }
 
 export async function getAdminOrder(id: string) {
-  const query = qs.stringify({ populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
+  const query = qs.stringify({ fields: orderScalarFields, populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
   return adminRequest<StrapiResponse<StrapiOrder>>(`orders/${id}?${query}`);
 }
 
