@@ -102,16 +102,29 @@ export default function CheckoutPage() {
     })),
   };
 
+  const stockHasAvailability = (stock: CheckoutBranchStock, quantity: number, usedStock: Map<string, number>) => {
+    const alreadyUsed = usedStock.get(stock.documentId) || 0;
+    return Number(stock.quantity || 0) - alreadyUsed >= quantity;
+  };
+
+  const isBaseStock = (stock: CheckoutBranchStock) => {
+    const label = stock.variant?.label?.toLowerCase().trim();
+    const value = stock.variant?.value?.toLowerCase().trim();
+    return label === "default" || value === "general";
+  };
+
   const matchStockForItem = (item: (typeof items)[number], stocks: CheckoutBranchStock[], usedStock: Map<string, number>) => {
-    return stocks.find((stock) => {
-      const variant = stock.variant;
-      const product = variant?.product;
-      const stockKey = stock.documentId;
-      const alreadyUsed = usedStock.get(stockKey) || 0;
-      const available = Number(stock.quantity || 0) - alreadyUsed;
-      const variantMatches = item.variant_id ? variant?.documentId === item.variant_id : product?.documentId === item.product_id;
-      return variantMatches && available >= item.quantity;
-    });
+    if (item.variant_id) {
+      return stocks.find((stock) =>
+        stock.variant?.documentId === item.variant_id && stockHasAvailability(stock, item.quantity, usedStock)
+      );
+    }
+
+    const productStocks = stocks.filter((stock) => stock.variant?.product?.documentId === item.product_id);
+    return (
+      productStocks.find((stock) => isBaseStock(stock) && stockHasAvailability(stock, item.quantity, usedStock)) ??
+      productStocks.find((stock) => stockHasAvailability(stock, item.quantity, usedStock))
+    );
   };
 
   const handleWompiCheckout = async () => {

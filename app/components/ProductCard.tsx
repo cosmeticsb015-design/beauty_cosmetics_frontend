@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { getVariantOptions, StrapiProduct, StrapiVariantOption } from "../services/producst";
 import { useCart } from "../context/CartContext";
@@ -13,7 +13,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   const { addToCart } = useCart();
   const [variantOptions, setVariantOptions] = useState<StrapiVariantOption[] | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<StrapiVariantOption | null>(null);
-  const [variantLoading, setVariantLoading] = useState(false);
+  const [variantLoading, setVariantLoading] = useState(true);
   const [variantError, setVariantError] = useState<string | null>(null);
 
   function getDescriptionText(description: unknown): string {
@@ -49,8 +49,18 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
   const selectedVariantPrice = Number(selectedVariant?.price_override ?? product.price);
 
-  const loadVariantOptions = async (shouldAddIfEmpty = false) => {
-    if (variantOptions !== null) return;
+  const buildCartItem = (variant: StrapiVariantOption | null) => ({
+    product_id: product.documentId,
+    variant_id: variant?.documentId ?? null,
+    product_name: product.name,
+    variant_label: variant?.label ?? null,
+    unit_price: Number(variant?.price_override ?? product.price),
+    image_url: imageUrl,
+    category: product.category?.name || "Catálogo",
+    bg: "#FAF6F6",
+  });
+
+  const loadVariantOptions = async () => {
     setVariantLoading(true);
     setVariantError(null);
 
@@ -66,80 +76,71 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         );
       });
       setVariantOptions(options);
-
-      if (shouldAddIfEmpty) {
-        if (onAddToCart) {
-          onAddToCart(product, null);
-        } else {
-          addToCart({
-            product_id: product.documentId,
-            variant_id: null,
-            product_name: product.name,
-            variant_label: null,
-            unit_price: product.price,
-            image_url: imageUrl,
-            category: product.category?.name || "Catálogo",
-            bg: "#FAF6F6",
-          });
-        }
-      }
+      setSelectedVariant(null);
     } catch (error) {
       console.error("Error loading variant options:", error);
       setVariantError("No se pudo cargar las tonalidades.");
       setVariantOptions([]);
-      if (shouldAddIfEmpty) {
-        if (onAddToCart) {
-          onAddToCart(product, null);
-        } else {
-          addToCart({
-            product_id: product.documentId,
-            variant_id: null,
-            product_name: product.name,
-            variant_label: null,
-            unit_price: product.price,
-            image_url: imageUrl,
-            category: product.category?.name || "Catálogo",
-            bg: "#FAF6F6",
-          });
-        }
-      }
+      setSelectedVariant(null);
     } finally {
       setVariantLoading(false);
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    getVariantOptions(product.documentId)
+      .then((res) => {
+        if (cancelled) return;
+        const options = (res.data || []).filter((variant) => {
+          const label = variant.label?.toLowerCase().trim();
+          const value = variant.value?.toLowerCase().trim();
+          return (
+            variant.active !== false &&
+            label !== "default" &&
+            value !== "general"
+          );
+        });
+        setVariantOptions(options);
+        setSelectedVariant(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Error loading variant options:", error);
+        setVariantError("No se pudo cargar las tonalidades.");
+        setVariantOptions([]);
+        setSelectedVariant(null);
+      })
+      .finally(() => {
+        if (!cancelled) setVariantLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product.documentId]);
+
   const handleAddToCart = () => {
-    if (variantLoading) return;
+    if (variantLoading && selectedVariant) return;
 
     if (variantOptions === null) {
-      loadVariantOptions(true);
+      loadVariantOptions();
+      addToCart(buildCartItem(null));
       return;
     }
 
     const variant = selectedVariant ?? null;
-    const unitPrice = selectedVariantPrice;
 
     if (onAddToCart) {
       onAddToCart(product, variant);
       return;
     }
 
-    addToCart({
-      product_id: product.documentId,
-      variant_id: variant?.documentId || null,
-      product_name: product.name,
-      variant_label: variant?.label || null,
-      unit_price: unitPrice,
-      image_url: imageUrl,
-      category: product.category?.name || "Catálogo",
-      bg: "#FAF6F6",
-    });
+    addToCart(buildCartItem(variant));
   };
 
-  const variantButtonLabel = variantLoading
-    ? "Cargando tonos..."
-    : variantOptions === null
-    ? "Añadir al carrito"
+  const variantButtonLabel = variantOptions === null
+    ? "Añadir producto base"
     : selectedVariant
     ? "Añadir tono seleccionado"
     : "Añadir producto base";
@@ -195,6 +196,19 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
               Tonalidades opcionales
             </p>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedVariant(null);
+                  setVariantError(null);
+                }}
+                className={`h-9 rounded-full border-2 px-3 text-[11px] font-semibold uppercase transition-all duration-200 ${!selectedVariant
+                  ? "border-[#C15074] bg-[#FDE6ED] text-[#2D1F23]"
+                  : "border-[#E8D9DF] bg-white text-[#554246] hover:border-[#C15074] hover:text-[#C15074]"
+                }`}
+              >
+                Principal
+              </button>
               {variantOptions.map((variant) => {
                 const isSelected = selectedVariant?.documentId === variant.documentId;
                 const isColor = variant.value?.startsWith("#");

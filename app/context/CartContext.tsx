@@ -32,18 +32,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("cart");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && Array.isArray(parsed.items)) {
-          setItems(parsed.items);
+    const timeout = window.setTimeout(() => {
+      try {
+        const stored = localStorage.getItem("cart");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && Array.isArray(parsed.items)) {
+            setItems(parsed.items.map((item: CartItem) => ({ ...item, variant_id: item.variant_id ?? null, variant_label: item.variant_label ?? null })));
+          }
         }
+      } catch (error) {
+        console.error("Failed to load cart from localStorage", error);
+      } finally {
+        setIsLoaded(true);
       }
-    } catch (error) {
-      console.error("Failed to load cart from localStorage", error);
-    }
-    setIsLoaded(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, []);
 
   // Save cart to localStorage whenever items change
@@ -57,11 +62,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isLoaded]);
 
   const addToCart = (newItem: Omit<CartItem, "quantity">, quantityToAdd = 1) => {
+    const normalizedItem = { ...newItem, variant_id: newItem.variant_id ?? null, variant_label: newItem.variant_label ?? null };
+
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex(
         (item) =>
-          item.product_id === newItem.product_id &&
-          item.variant_id === newItem.variant_id
+          item.product_id === normalizedItem.product_id &&
+          (item.variant_id ?? null) === normalizedItem.variant_id
       );
 
       if (existingIndex > -1) {
@@ -73,14 +80,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return updated;
       }
 
-      return [...prevItems, { ...newItem, quantity: quantityToAdd }];
+      return [...prevItems, { ...normalizedItem, quantity: quantityToAdd }];
     });
   };
 
   const removeFromCart = (productId: string, variantId: string | null) => {
     setItems((prevItems) =>
       prevItems.filter(
-        (item) => !(item.product_id === productId && item.variant_id === variantId)
+        (item) => !(item.product_id === productId && (item.variant_id ?? null) === (variantId ?? null))
       )
     );
   };
@@ -89,7 +96,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prevItems) =>
       prevItems
         .map((item) => {
-          if (item.product_id === productId && item.variant_id === variantId) {
+          if (item.product_id === productId && (item.variant_id ?? null) === (variantId ?? null)) {
             const nextQty = item.quantity + delta;
             return { ...item, quantity: Math.max(1, nextQty) };
           }

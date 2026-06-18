@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
               <div className="mt-10">
                 <p className="text-xs text-[#554246] mb-3">
                   Elige tu Tono:{" "}
-                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label || "Selecciona una variante"}</span>
+                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label || "Producto principal"}</span>
                 </p>
                 <div className="flex gap-2 flex-wrap">
                   <button
