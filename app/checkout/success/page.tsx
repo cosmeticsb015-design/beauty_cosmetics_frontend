@@ -225,12 +225,14 @@ function OrderSummary({ order, kind }: { order: PublicOrder; kind: "paid" | "pen
                 <span>Subtotal</span>
                 <span>${order.subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center text-[#554246]">
-                <span>Envío</span>
-                <span className={order.shipping_cost === 0 ? "text-[#2E7D32] font-medium" : ""}>
-                  {order.shipping_cost === 0 ? "Gratis" : `$${order.shipping_cost.toFixed(2)}`}
-                </span>
-              </div>
+              {order.delivery_type === "delivery" && (
+                <div className="flex justify-between items-center text-[#554246]">
+                  <span>Envío</span>
+                  <span className={order.shipping_cost === 0 ? "text-[#2E7D32] font-medium" : ""}>
+                    {order.shipping_cost === 0 ? "Gratis" : `$${order.shipping_cost.toFixed(2)}`}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="h-px bg-[#F0E4E8] mb-6 mx-2" />

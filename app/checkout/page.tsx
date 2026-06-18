@@ -571,7 +571,9 @@ export default function CheckoutPage() {
                         <dt className="text-[11px] font-bold uppercase tracking-wider text-[#AC9CA0]">Entrega</dt>
                         <dd className="mt-1 font-semibold text-[#2D1F23]">{orderPayloadPreview.delivery_type === "delivery" ? "Envío a domicilio" : "Recoger en sucursal"}</dd>
                         <dd>{orderPayloadPreview.address || "Dirección pendiente"}</dd>
-                        <dd className="text-[#C15074]">Envío: ${orderPayloadPreview.shipping_cost.toFixed(2)}</dd>
+                        {orderPayloadPreview.delivery_type === "delivery" && (
+                          <dd className="text-[#C15074]">Envío: ${orderPayloadPreview.shipping_cost.toFixed(2)}</dd>
+                        )}
                       </div>
                     </dl>
                   </div>
@@ -743,10 +745,12 @@ export default function CheckoutPage() {
                     <span>Subtotal</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-[#554246]">
-                    <span>Envío</span>
-                    <span className="text-[#C15074] font-medium">${shippingCost.toFixed(2)}</span>
-                  </div>
+                  {deliveryMethod === "domicilio" && (
+                    <div className="flex justify-between items-center text-[#554246]">
+                      <span>Envío</span>
+                      <span className="text-[#C15074] font-medium">${shippingCost.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-[#554246]">
                     <span>Impuestos estimados</span>
                     <span>${taxes.toFixed(2)}</span>
