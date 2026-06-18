@@ -20,6 +20,19 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+
+## Environment variables
+
+Create a `.env.local` file and set the public WhatsApp number used by the floating contact button:
+
+```bash
+NEXT_PUBLIC_WHATSAPP_NUMBER=15551234567
+# Optional custom prefilled message
+NEXT_PUBLIC_WHATSAPP_MESSAGE="Hola, quiero más información sobre Beauty Cosmetics."
+```
+
+Use the number in international format, without `+`, spaces, or dashes. The floating WhatsApp button is hidden automatically in `/admin` routes.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

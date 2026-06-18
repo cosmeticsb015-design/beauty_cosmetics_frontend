@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import WhatsappFloatingButton from "./components/WhatsappFloatingButton";
 import { CartProvider } from "./context/CartContext";
 import { Suspense } from "react";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
           </Suspense>
           <main className="flex-1">{children}</main>
           <Footer />
+          <WhatsappFloatingButton />
         </CartProvider>
       </body>
     </html>

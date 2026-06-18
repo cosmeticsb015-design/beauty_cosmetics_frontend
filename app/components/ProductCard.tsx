@@ -43,9 +43,17 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     return text || fallback;
   }
 
-  const imageUrl = product.images?.[0]?.image?.url
-    ? `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "")}${product.images[0].image.url}`
-    : null;
+  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
+  const buildMediaUrl = (url?: string | null) => {
+    if (!url) return null;
+    return url.startsWith("http") ? url : `${apiBaseUrl}${url}`;
+  };
+
+  const imageUrl = buildMediaUrl(product.images?.[0]?.image?.url);
+
+  const getVariantImageUrl = (variant: StrapiVariantOption | null) => {
+    return buildMediaUrl(variant?.images?.[0]?.image?.url) ?? imageUrl;
+  };
 
   const selectedVariantPrice = Number(selectedVariant?.price_override ?? product.price);
 
@@ -55,7 +63,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     product_name: product.name,
     variant_label: variant?.label ?? null,
     unit_price: Number(variant?.price_override ?? product.price),
-    image_url: imageUrl,
+    image_url: getVariantImageUrl(variant),
     category: product.category?.name || "Catálogo",
     bg: "#FAF6F6",
   });
