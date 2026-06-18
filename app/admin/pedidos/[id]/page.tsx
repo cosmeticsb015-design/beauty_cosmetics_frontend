@@ -24,11 +24,6 @@ function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Sin fecha";
 }
 
-function paymentField(value?: string | null) {
-  const normalized = String(value ?? "").trim();
-  return normalized || "No registrado";
-}
-
 function whatsappHref(phone?: string | null) {
   const digits = String(phone ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -70,6 +65,12 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
       image: firstItemImage(item),
       branch: item.branch_stock?.branch?.name,
     }));
+    const transactionId = order.wompi_transaction_id;
+    const wompiStatus = order.wompi_transaction_status;
+    const paymentMethod = order.wompi_payment_method;
+    const authorizationCode = order.wompi_authorization_code;
+    const transactionMessage = order.wompi_transaction_message;
+    const paymentStatus = order.payment_status;
 
     return (
       <AdminShell active="orders">
@@ -93,31 +94,34 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
               <div className="mb-5 flex items-center gap-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><ReceiptText size={22} strokeWidth={1.8} /></span>
-                <p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Pago</p>
+                <h3 className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Pago</h3>
               </div>
-              <h3 className="flex items-start gap-2 break-all text-[18px] font-bold text-[#1F1F22]">
-                <CreditCard size={20} strokeWidth={1.9} className="mt-1 shrink-0" />
-                {paymentField(order.wompi_transaction_id)}
-              </h3>
-              <dl className="mt-4 space-y-3 text-[14px] text-[#6B6063]">
-                <div>
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Estado Wompi</dt>
-                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_transaction_status)}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Método</dt>
-                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_payment_method)}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Autorización</dt>
-                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_authorization_code)}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Mensaje</dt>
-                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_transaction_message)}</dd>
-                </div>
-              </dl>
-              <p className="mt-4 flex items-center gap-2 text-[16px] font-semibold text-[#6B6063]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{statusLabel(order.payment_status)} · {order.payment_status}</p>
+              <div className="space-y-4 text-[14px] text-[#6B6063]">
+                <p className="break-all">
+                  <strong className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[#9E3659]"><CreditCard size={16} strokeWidth={1.9} />Transacción</strong>
+                  <span className="mt-1 block font-semibold text-[#1F1F22]">{transactionId || "Sin transacción"}</span>
+                </p>
+                <p>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Estado Wompi</strong>
+                  <span className="mt-1 block font-semibold text-[#1F1F22]">{wompiStatus || "No registrado"}</span>
+                </p>
+                <p>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Método</strong>
+                  <span className="mt-1 block font-semibold text-[#1F1F22]">{paymentMethod || "No registrado"}</span>
+                </p>
+                <p>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Autorización</strong>
+                  <span className="mt-1 block font-semibold text-[#1F1F22]">{authorizationCode || "No registrado"}</span>
+                </p>
+                <p>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Mensaje</strong>
+                  <span className="mt-1 block font-semibold text-[#1F1F22]">{transactionMessage || "No registrado"}</span>
+                </p>
+                <p>
+                  <strong className="text-[11px] uppercase tracking-[0.14em] text-[#9E3659]">Estado interno</strong>
+                  <span className="mt-1 flex items-center gap-2 font-semibold text-[#1F1F22]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{paymentStatus}</span>
+                </p>
+              </div>
             </article>
           </div>
 
