@@ -66,22 +66,17 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         );
       });
       setVariantOptions(options);
-      if (options.length === 1) {
-        setSelectedVariant(options[0]);
-      }
 
-      if (shouldAddIfEmpty && options.length <= 1) {
-        const variant = options.length === 1 ? options[0] : null;
-        const unitPrice = variant?.price_override ?? product.price;
+      if (shouldAddIfEmpty) {
         if (onAddToCart) {
-          onAddToCart(product, variant);
+          onAddToCart(product, null);
         } else {
           addToCart({
             product_id: product.documentId,
-            variant_id: variant?.documentId || null,
+            variant_id: null,
             product_name: product.name,
-            variant_label: variant?.label || null,
-            unit_price: unitPrice,
+            variant_label: null,
+            unit_price: product.price,
             image_url: imageUrl,
             category: product.category?.name || "Catálogo",
             bg: "#FAF6F6",
@@ -93,9 +88,8 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       setVariantError("No se pudo cargar las tonalidades.");
       setVariantOptions([]);
       if (shouldAddIfEmpty) {
-        const variant = null;
         if (onAddToCart) {
-          onAddToCart(product, variant);
+          onAddToCart(product, null);
         } else {
           addToCart({
             product_id: product.documentId,
@@ -119,11 +113,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
     if (variantOptions === null) {
       loadVariantOptions(true);
-      return;
-    }
-
-    if (variantOptions.length > 0 && !selectedVariant) {
-      setVariantError("Selecciona una tonalidad antes de agregar al carrito.");
       return;
     }
 
@@ -151,9 +140,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     ? "Cargando tonos..."
     : variantOptions === null
     ? "Añadir al carrito"
-    : variantOptions.length > 0 && !selectedVariant
-    ? "Seleccionar tonalidad"
-    : "Añadir al carrito";
+    : selectedVariant
+    ? "Añadir tono seleccionado"
+    : "Añadir producto base";
 
   return (
     <div className="group relative flex flex-col bg-white border border-[#F0E4E8] rounded-[8px] overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer">
@@ -203,7 +192,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         {variantOptions && variantOptions.length > 0 && (
           <div className="relative z-30 mt-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C15074] mb-2">
-              Tonalidades
+              Tonalidades opcionales
             </p>
             <div className="flex flex-wrap gap-2">
               {variantOptions.map((variant) => {

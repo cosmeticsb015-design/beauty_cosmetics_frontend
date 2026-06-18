@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import {
   getProductById,
@@ -22,6 +22,7 @@ const buildUrl = (url?: string | null) => (url ? `${API_BASE}${url}` : null);
 // ── Page ──────────────────────────────────────────────────
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string; // documentId
 
   const { addToCart } = useCart();
@@ -33,9 +34,10 @@ export default function ProductDetailPage() {
   const [variantsLoading, setVariantsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeThumb, setActiveThumb] = useState(0);
+  const [quantity, setQuantity] = useState(1);
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const addSelectedProductToCart = (quantityToAdd = quantity) => {
+    if (!product) return false;
 
     const imageUrl = selectedVariant?.images?.[0]?.image?.url
       ? buildUrl(selectedVariant.images[0].image.url)
@@ -54,7 +56,19 @@ export default function ProductDetailPage() {
       image_url: imageUrl,
       category: product.category?.name || "Catálogo",
       bg: "#FAF6F6",
-    }, 1);
+    }, quantityToAdd);
+
+    return true;
+  };
+
+  const handleAddToCart = () => {
+    addSelectedProductToCart();
+  };
+
+  const handleCheckoutNow = () => {
+    if (addSelectedProductToCart()) {
+      router.push("/checkout");
+    }
   };
 
   useEffect(() => {
@@ -309,14 +323,47 @@ export default function ProductDetailPage() {
             ) : null}
 
             {/* Add to Cart */}
-            <button
-              id="product-detail-add-to-cart"
-              onClick={handleAddToCart}
-              className="mt-10 flex items-center justify-center gap-3 w-full bg-[#C9577F] hover:bg-[#9E3659] active:scale-[0.98] text-white font-semibold text-sm py-4 transition-all duration-200"
-            >
-              <ShoppingBag size={18} strokeWidth={2} />
-              Añadir al Carrito
-            </button>
+            <div className="mt-10 space-y-3">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#F0E4E8] bg-[#FDFCFD] px-4 py-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A7A7E]">Cantidad</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                    aria-label="Reducir cantidad"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#F0E4E8] text-[#554246] transition-colors hover:border-[#C15074] hover:text-[#C15074]"
+                  >
+                    <Minus size={14} strokeWidth={2.2} />
+                  </button>
+                  <span className="min-w-8 text-center text-base font-bold text-[#2D1F23]">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => current + 1)}
+                    aria-label="Aumentar cantidad"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#F0E4E8] text-[#554246] transition-colors hover:border-[#C15074] hover:text-[#C15074]"
+                  >
+                    <Plus size={14} strokeWidth={2.2} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                id="product-detail-add-to-cart"
+                onClick={handleAddToCart}
+                className="flex w-full items-center justify-center gap-3 bg-[#C9577F] py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#9E3659] active:scale-[0.98]"
+              >
+                <ShoppingBag size={18} strokeWidth={2} />
+                Añadir al Carrito
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCheckoutNow}
+                className="flex w-full items-center justify-center gap-3 border border-[#2D1F23] bg-white py-4 text-sm font-bold uppercase tracking-[0.16em] text-[#2D1F23] transition-colors hover:bg-[#2D1F23] hover:text-white"
+              >
+                Finalizar compra
+              </button>
+            </div>
 
             {/* Description */}
             <section className="mt-16 border-t border-[#EFE5E8] pt-7">

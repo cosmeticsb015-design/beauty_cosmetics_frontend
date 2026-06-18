@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle, Clock, XCircle, MapPin, Truck } from "lucide-react";
 import { strapi } from "../../lib/api";
+import { useCart } from "../../context/CartContext";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
 
@@ -70,6 +71,8 @@ function SuccessContent() {
   const [order, setOrder] = useState<PublicOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { clearCart } = useCart();
+  const cartClearedRef = useRef(false);
 
   useEffect(() => {
     const identifier = orderId || trackingNumber;
@@ -106,6 +109,13 @@ function SuccessContent() {
       cancelled = true;
     };
   }, [orderId, trackingNumber]);
+
+  useEffect(() => {
+    if (order?.payment_status === "paid" && !cartClearedRef.current) {
+      cartClearedRef.current = true;
+      clearCart();
+    }
+  }, [clearCart, order?.payment_status]);
 
   if (loading) return <StatusScreen kind="loading" />;
   if (error || !order) return <StatusScreen kind="error" message={error} />;
