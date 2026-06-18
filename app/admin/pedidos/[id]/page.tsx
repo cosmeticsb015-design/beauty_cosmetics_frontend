@@ -24,6 +24,11 @@ function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Sin fecha";
 }
 
+function paymentField(value?: string | null) {
+  const normalized = String(value ?? "").trim();
+  return normalized || "No registrado";
+}
+
 function whatsappHref(phone?: string | null) {
   const digits = String(phone ?? "").replace(/\D/g, "");
   if (!digits) return null;
@@ -85,7 +90,35 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
           <div className="mt-7 grid gap-6 lg:grid-cols-3">
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p></div><h3 className="text-[24px] font-bold text-[#1F1F22]">{order.customer_name}</h3><p className="mt-2 text-[16px] text-[#6B6063]">{order.customer_email}</p><p className="mt-1 text-[16px] text-[#6B6063]">{order.customer_phone}</p></article>
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><Truck size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Envio</p></div><h3 className="text-[18px] font-bold text-[#1F1F22]">{order.delivery_type === "pickup" ? order.branch?.name ?? "Retiro en sucursal" : order.address ?? "Direccion no definida"}</h3><p className="mt-8 flex items-center gap-2 text-[18px] text-[#6B6063]"><Zap size={18} strokeWidth={1.8} />{order.shipping_rate?.name ?? order.delivery_type} · {money(order.shipping_cost)}</p></article>
-            <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><ReceiptText size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Pago</p></div><h3 className="flex items-center gap-2 text-[18px] font-bold text-[#1F1F22]"><CreditCard size={20} strokeWidth={1.9} />{order.wompi_transaction_id ?? "Sin transaccion"}</h3><p className="mt-3 flex items-center gap-2 text-[16px] font-semibold text-[#6B6063]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{statusLabel(order.payment_status)}</p></article>
+            <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
+              <div className="mb-5 flex items-center gap-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><ReceiptText size={22} strokeWidth={1.8} /></span>
+                <p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Pago</p>
+              </div>
+              <h3 className="flex items-start gap-2 break-all text-[18px] font-bold text-[#1F1F22]">
+                <CreditCard size={20} strokeWidth={1.9} className="mt-1 shrink-0" />
+                {paymentField(order.wompi_transaction_id)}
+              </h3>
+              <dl className="mt-4 space-y-3 text-[14px] text-[#6B6063]">
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Estado Wompi</dt>
+                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_transaction_status)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Método</dt>
+                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_payment_method)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Autorización</dt>
+                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_authorization_code)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9E3659]">Mensaje</dt>
+                  <dd className="mt-1 font-semibold text-[#1F1F22]">{paymentField(order.wompi_transaction_message)}</dd>
+                </div>
+              </dl>
+              <p className="mt-4 flex items-center gap-2 text-[16px] font-semibold text-[#6B6063]"><span className="h-2 w-2 rounded-full bg-[#9E3659]" />{statusLabel(order.payment_status)} · {order.payment_status}</p>
+            </article>
           </div>
 
           <section className="mt-7 rounded-[8px] border border-[#E7E4E5] bg-white p-7">

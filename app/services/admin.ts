@@ -20,7 +20,8 @@ export type StrapiOrder = {
   id: number; documentId: string; tracking_number: string; customer_name: string; customer_email: string; customer_phone: string;
   delivery_type: "delivery" | "pickup"; address?: string | null; subtotal: number; shipping_cost: number; total?: number;
   payment_status: "pending" | "paid" | "failed" | "refunded";
-  wompi_transaction_id?: string | null; expires_at?: string; createdAt?: string; updatedAt?: string;
+  wompi_transaction_id?: string | null; wompi_transaction_status?: string | null; wompi_payment_method?: string | null;
+  wompi_authorization_code?: string | null; wompi_transaction_message?: string | null; expires_at?: string; createdAt?: string; updatedAt?: string;
   branch?: StrapiBranch | null; shipping_rate?: StrapiShippingRate | null; items?: StrapiOrderItem[];
 };
 export type StrapiStoreConfig = { id: number; documentId?: string; whatsapp_number?: string | null; notification_email?: string | null };
