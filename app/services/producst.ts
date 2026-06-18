@@ -105,7 +105,10 @@ export const getProducts = async (
     filters.active = { $eq: true };
 
     if (search) {
-        filters.name = { $containsi: search };
+        filters.$or = [
+            { name: { $containsi: search } },
+            { brand: { name: { $containsi: search } } },
+        ];
     }
 
     const query = qs.stringify(

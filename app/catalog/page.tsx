@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Flower2,
@@ -10,30 +10,55 @@ import {
   Droplets,
   ChevronDown,
   X,
+  Search,
+  Brush,
+  Eye,
+  Hand,
+  Heart,
+  Package,
+  Palette,
+  Scissors,
+  ShowerHead,
+  SprayCan,
+  Sun,
+  Waves,
 } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import { getBrands, getCategories, getProducts, StrapiBrand, StrapiCategory, StrapiProduct } from "../services/producst";
 
 
 // ── Icons Mapper ─────────────────────────────────────────
-const getCategoryIcon = (slug: string) => {
-  const norm = slug.toLowerCase();
-  if (norm.includes("skincare") || norm.includes("piel") || norm.includes("rostro")) {
-    return <Flower2 size={14} strokeWidth={1.8} />;
-  }
-  if (norm.includes("makeup") || norm.includes("maquillaje") || norm.includes("color")) {
-    return <Paintbrush size={14} strokeWidth={1.8} />;
-  }
-  if (norm.includes("fragrance") || norm.includes("fragancia") || norm.includes("perfume")) {
-    return <Wind size={14} strokeWidth={1.8} />;
-  }
-  if (norm.includes("wellness") || norm.includes("bienestar") || norm.includes("salud")) {
-    return <Sparkles size={14} strokeWidth={1.8} />;
-  }
-  if (norm.includes("bath") || norm.includes("body") || norm.includes("cuerpo") || norm.includes("bano")) {
-    return <Droplets size={14} strokeWidth={1.8} />;
-  }
-  return <Sparkles size={14} strokeWidth={1.8} />;
+type CategoryIconRule = { keywords: string[]; icon: ReactNode };
+
+const normalizeCategoryText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const categoryIconRules: CategoryIconRule[] = [
+  { keywords: ["labial", "labiales", "lip", "lips", "gloss"], icon: <Brush size={14} strokeWidth={1.8} /> },
+  { keywords: ["ojo", "ojos", "pestana", "pestanas", "ceja", "cejas", "mascara", "rimel"], icon: <Eye size={14} strokeWidth={1.8} /> },
+  { keywords: ["rostro", "cara", "face", "base", "corrector", "contorno", "rubor", "blush", "polvo"], icon: <Palette size={14} strokeWidth={1.8} /> },
+  { keywords: ["brocha", "brochas", "brush", "herramienta", "aplicador", "esponja"], icon: <Paintbrush size={14} strokeWidth={1.8} /> },
+  { keywords: ["skincare", "piel", "serum", "suero", "crema", "hidratante", "limpiador", "tonico"], icon: <Flower2 size={14} strokeWidth={1.8} /> },
+  { keywords: ["solar", "protector", "spf", "sun"], icon: <Sun size={14} strokeWidth={1.8} /> },
+  { keywords: ["fragancia", "fragrance", "perfume", "aroma", "colonia"], icon: <Wind size={14} strokeWidth={1.8} /> },
+  { keywords: ["cabello", "capilar", "hair", "shampoo", "acondicionador"], icon: <Scissors size={14} strokeWidth={1.8} /> },
+  { keywords: ["mano", "manos", "una", "unas", "nail", "nails"], icon: <Hand size={14} strokeWidth={1.8} /> },
+  { keywords: ["bano", "bath", "ducha", "jabon", "soap"], icon: <ShowerHead size={14} strokeWidth={1.8} /> },
+  { keywords: ["body", "cuerpo", "corporal", "locion"], icon: <Droplets size={14} strokeWidth={1.8} /> },
+  { keywords: ["spray", "fijador", "mist"], icon: <SprayCan size={14} strokeWidth={1.8} /> },
+  { keywords: ["bienestar", "wellness", "salud", "cuidado"], icon: <Heart size={14} strokeWidth={1.8} /> },
+  { keywords: ["set", "kit", "regalo", "gift", "combo"], icon: <Package size={14} strokeWidth={1.8} /> },
+  { keywords: ["nuevo", "tendencia", "especial", "oferta"], icon: <Sparkles size={14} strokeWidth={1.8} /> },
+  { keywords: ["maquillaje", "makeup", "color"], icon: <Paintbrush size={14} strokeWidth={1.8} /> },
+];
+
+const getCategoryIcon = (category: Pick<StrapiCategory, "slug" | "name">) => {
+  const normalized = normalizeCategoryText(`${category.slug} ${category.name}`);
+  const match = categoryIconRules.find((rule) => rule.keywords.some((keyword) => normalized.includes(keyword)));
+  return match?.icon ?? <Waves size={14} strokeWidth={1.8} />;
 };
 
 const sortOptions = [
@@ -50,6 +75,8 @@ function CatalogContent() {
   const [activeCategory, setActiveCategory] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("Relevance");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [dbCategories, setDbCategories] = useState<StrapiCategory[]>([]);
   const [dbBrands, setDbBrands] = useState<StrapiBrand[]>([]);
@@ -98,7 +125,12 @@ function CatalogContent() {
     setActiveCategory("all");
   }, [dbCategories, searchParams]);
 
-  // Fetch productos cuando cambian filtros o página
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSearchQuery(searchTerm.trim()), 350);
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
+
+  // Fetch productos cuando cambian filtros, búsqueda o página
   useEffect(() => {
     if (!activeCategory) return;
 
@@ -108,6 +140,7 @@ function CatalogContent() {
       pageSize: PAGE_SIZE,
       categorySlug: activeCategory,
       brandNames: selectedBrands.length > 0 ? selectedBrands : undefined,
+      search: searchQuery || undefined,
       sort:
         sortBy === "Price: Low to High" ? "price:asc" :
           sortBy === "Price: High to Low" ? "price:desc" :
@@ -123,12 +156,12 @@ function CatalogContent() {
         setError("Error al cargar los productos.");
         setLoading(false);
       });
-  }, [activeCategory, selectedBrands, sortBy, currentPage]);
+  }, [activeCategory, selectedBrands, sortBy, searchQuery, currentPage]);
 
   // Reset página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, selectedBrands, sortBy]);
+  }, [activeCategory, selectedBrands, sortBy, searchQuery]);
 
   const toggleBrand = (brandName: string) => {
     setSelectedBrands((prev) =>
@@ -226,7 +259,7 @@ function CatalogContent() {
                           }`}
                       >
                         <span className={isActive ? "text-[#C15074]" : "text-[#AC9CA0]"}>
-                          {getCategoryIcon(cat.slug)}
+                          {getCategoryIcon(cat)}
                         </span>
                         {cat.name}
                       </button>
@@ -244,6 +277,9 @@ function CatalogContent() {
                                   : "text-[#AC9CA0] hover:text-[#C15074] hover:bg-[#FCEDF0]/50"
                                   }`}
                               >
+                                <span className={isChildActive ? "text-[#C15074]" : "text-[#AC9CA0]"}>
+                                  {getCategoryIcon(child)}
+                                </span>
                                 {child.name}
                               </button>
                             );
@@ -355,7 +391,7 @@ function CatalogContent() {
                                 }`}
                             >
                               <span className={isActive ? "text-[#C15074]" : "text-[#AC9CA0]"}>
-                                {getCategoryIcon(cat.slug)}
+                                {getCategoryIcon(cat)}
                               </span>
                               {cat.name}
                             </button>
@@ -376,6 +412,9 @@ function CatalogContent() {
                                         : "text-[#AC9CA0] hover:text-[#C15074] hover:bg-[#FCEDF0]/50"
                                         }`}
                                     >
+                                      <span className={isChildActive ? "text-[#C15074]" : "text-[#AC9CA0]"}>
+                                        {getCategoryIcon(child)}
+                                      </span>
                                       {child.name}
                                     </button>
                                   );
@@ -430,6 +469,33 @@ function CatalogContent() {
 
           {/* ── Product Grid ── */}
           <div className="w-full">
+            <div className="mb-5 rounded-[10px] border border-[#F0E4E8] bg-white px-4 py-3 shadow-sm">
+              <label htmlFor="catalog-search" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#AC9CA0]">
+                Buscar productos o marcas
+              </label>
+              <div className="flex items-center gap-3 rounded-[6px] bg-[#FDF7F9] px-3 py-2.5 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-[#C15074]">
+                <Search size={18} strokeWidth={1.8} className="shrink-0 text-[#C15074]" />
+                <input
+                  id="catalog-search"
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Busca por producto o marca, ej. labial, AVON..."
+                  className="w-full bg-transparent text-sm text-[#2D1F23] outline-none placeholder:text-[#BFAEB4]"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#AC9CA0] transition hover:bg-[#FCEDF0] hover:text-[#C15074]"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X size={14} strokeWidth={1.9} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-3">
@@ -468,7 +534,7 @@ function CatalogContent() {
             {/* Grid */}
             {dbProducts.length === 0 ? (
               <div className="py-20 text-center text-[#AC9CA0] text-sm">
-                No hay productos en esta categoría.
+                {searchQuery ? `No encontramos productos o marcas para “${searchQuery}”.` : "No hay productos en esta categoría."}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
