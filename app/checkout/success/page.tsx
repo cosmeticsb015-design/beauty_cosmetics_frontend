@@ -3,14 +3,40 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle, Clock, XCircle, MapPin, Truck } from "lucide-react";
 import { strapi } from "../../lib/api";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
+
+type StrapiImage = {
+  url?: string | null;
+  formats?: { thumbnail?: { url?: string | null }; small?: { url?: string | null } } | null;
+  alternativeText?: string | null;
+};
+
+type ProductImageRelation = { image?: StrapiImage | null };
+
+function mediaUrl(url?: string | null) {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url}`;
+}
+
+function orderItemImageUrl(item: PublicOrderItem) {
+  const image = item.image ?? item.product_image ?? item.product?.images?.[0]?.image ?? null;
+  return mediaUrl(image?.formats?.thumbnail?.url ?? image?.formats?.small?.url ?? image?.url ?? item.image_url);
+}
 
 interface PublicOrderItem {
   product_name: string;
   variant_label?: string | null;
   unit_price: number;
   quantity: number;
+  image_url?: string | null;
+  image?: StrapiImage | null;
+  product_image?: StrapiImage | null;
+  product?: { images?: ProductImageRelation[] | null } | null;
 }
 
 interface PublicOrder {
@@ -49,14 +75,20 @@ function SuccessContent() {
     const identifier = orderId || trackingNumber;
 
     if (!identifier) {
-      setError("No se encontró información del pedido.");
-      setLoading(false);
+      window.setTimeout(() => {
+        setError("No se encontró información del pedido.");
+        setLoading(false);
+      }, 0);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    window.setTimeout(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setError(null);
+      }
+    }, 0);
 
     strapi
       .get<{ data: PublicOrder }>(`orders/public/${identifier}`)
@@ -157,28 +189,35 @@ function OrderSummary({ order, kind }: { order: PublicOrder; kind: "paid" | "pen
             <h2 className="text-lg font-bold text-[#2D1F23] mb-6">Resumen de productos</h2>
 
             <div className="flex flex-col gap-4 mb-8">
-              {order.items.map((item, index) => (
-                <div
-                  key={`${item.product_name}-${index}`}
-                  className="bg-white p-4 rounded-[8px] flex items-center gap-4 shadow-sm border border-[#F0E4E8]/60"
-                >
-                  <div className="w-16 h-16 rounded-[4px] relative flex items-center justify-center shrink-0 bg-[#F5F0EB]">
-                    <div className="w-6 h-10 bg-white/60 rounded-[2px]" />
+              {order.items.map((item, index) => {
+                const imageUrl = orderItemImageUrl(item);
+                return (
+                  <div
+                    key={`${item.product_name}-${index}`}
+                    className="bg-white p-4 rounded-[8px] flex items-center gap-4 shadow-sm border border-[#F0E4E8]/60"
+                  >
+                    <div className="w-16 h-16 rounded-[4px] relative flex items-center justify-center shrink-0 overflow-hidden bg-[#F5F0EB] border border-[#F0E4E8]">
+                      {imageUrl ? (
+                        <Image src={imageUrl} alt={item.product_name} fill sizes="64px" className="object-cover" />
+                      ) : (
+                        <div className="w-6 h-10 bg-white/60 rounded-[2px]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {item.variant_label && (
+                        <p className="text-[9px] font-bold tracking-[0.15em] text-[#D4738F] uppercase mb-1">
+                          {item.variant_label}
+                        </p>
+                      )}
+                      <p className="text-[13px] font-bold text-[#2D1F23] truncate">{item.product_name}</p>
+                      <p className="text-[11px] text-[#AC9CA0] mt-0.5">Cantidad: {item.quantity}</p>
+                    </div>
+                    <span className="text-[13px] font-bold text-[#2D1F23]">
+                      ${(item.unit_price * item.quantity).toFixed(2)}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    {item.variant_label && (
-                      <p className="text-[9px] font-bold tracking-[0.15em] text-[#D4738F] uppercase mb-1">
-                        {item.variant_label}
-                      </p>
-                    )}
-                    <p className="text-[13px] font-bold text-[#2D1F23] truncate">{item.product_name}</p>
-                    <p className="text-[11px] text-[#AC9CA0] mt-0.5">Cantidad: {item.quantity}</p>
-                  </div>
-                  <span className="text-[13px] font-bold text-[#2D1F23]">
-                    ${(item.unit_price * item.quantity).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex flex-col gap-3 text-sm mb-6 px-2">

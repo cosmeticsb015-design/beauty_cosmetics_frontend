@@ -27,7 +27,6 @@ export default function CheckoutPage() {
     telefono: "",
     direccion: "",
     ciudad: "",
-    codigoPostal: "",
     instrucciones: "",
     branchDocumentId: "",
     shippingRateDocumentId: "",
@@ -85,7 +84,7 @@ export default function CheckoutPage() {
     customer_email: formData.correo,
     customer_phone: formData.telefono,
     delivery_type: deliveryMethod === "domicilio" ? "delivery" : "pickup",
-    address: deliveryMethod === "domicilio" ? [formData.direccion, formData.ciudad, formData.codigoPostal].filter(Boolean).join(", ") : selectedBranch?.address || "",
+    address: deliveryMethod === "domicilio" ? [formData.direccion, formData.ciudad].filter(Boolean).join(", ") : selectedBranch?.address || "",
     instructions: formData.instrucciones,
     branch: deliveryMethod === "sucursal" ? formData.branchDocumentId : null,
     shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
@@ -164,7 +163,7 @@ export default function CheckoutPage() {
         customer_phone: formData.telefono.trim(),
         delivery_type: deliveryMethod === "domicilio" ? "delivery" : "pickup",
         address: deliveryMethod === "domicilio"
-          ? [formData.direccion, formData.ciudad, formData.codigoPostal].filter(Boolean).join(", ")
+          ? [formData.direccion, formData.ciudad].filter(Boolean).join(", ")
           : selectedBranch?.address || "Retiro en sucursal",
         branch: deliveryMethod === "sucursal" ? formData.branchDocumentId : null,
         shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
@@ -372,29 +371,16 @@ export default function CheckoutPage() {
                         </div>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="flex flex-col gap-2">
-                          <label htmlFor="codigoPostal" className="text-xs text-[#554246]">Código Postal</label>
-                          <input
-                            id="codigoPostal"
-                            type="text"
-                            placeholder="Ej. 28001"
-                            value={formData.codigoPostal}
-                            onChange={(e) => setFormData({ ...formData, codigoPostal: e.target.value })}
-                            className="w-full bg-[#F9F7F8] border border-transparent focus:border-[#C15074] rounded-[4px] px-4 py-3.5 text-sm text-[#2D1F23] placeholder:text-[#AC9CA0] outline-none transition-colors"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <label htmlFor="telefonoEntrega" className="text-xs text-[#554246]">Teléfono de contacto</label>
-                          <input
-                            id="telefonoEntrega"
-                            type="tel"
-                            placeholder="Ej. +34 600 000 000"
-                            value={formData.telefono}
-                            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                            className="w-full bg-[#F9F7F8] border border-transparent focus:border-[#C15074] rounded-[4px] px-4 py-3.5 text-sm text-[#2D1F23] placeholder:text-[#AC9CA0] outline-none transition-colors"
-                          />
-                        </div>
+                      <div className="flex flex-col gap-2">
+                        <label htmlFor="telefonoEntrega" className="text-xs text-[#554246]">Teléfono de contacto</label>
+                        <input
+                          id="telefonoEntrega"
+                          type="tel"
+                          placeholder="Ej. +34 600 000 000"
+                          value={formData.telefono}
+                          onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                          className="w-full bg-[#F9F7F8] border border-transparent focus:border-[#C15074] rounded-[4px] px-4 py-3.5 text-sm text-[#2D1F23] placeholder:text-[#AC9CA0] outline-none transition-colors"
+                        />
                       </div>
 
                       <div className="flex flex-col gap-2">
@@ -539,7 +525,7 @@ export default function CheckoutPage() {
                         <>
                           <p>{formData.direccion}</p>
                           {formData.instrucciones && <p className="text-[#AC9CA0]">{formData.instrucciones}</p>}
-                          <p>{formData.ciudad}, {formData.codigoPostal}</p>
+                          <p>{formData.ciudad}</p>
                         </>
                       ) : selectedBranch ? (
                         <>
