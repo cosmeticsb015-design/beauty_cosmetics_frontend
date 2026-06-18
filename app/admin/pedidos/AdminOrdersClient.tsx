@@ -18,7 +18,8 @@ import {
   X,
 } from "lucide-react";
 import AdminShell from "../components/AdminShell";
-import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
+import AdminFlash from "../components/AdminFlash";
+import type { AdminNotice } from "../components/AdminFlash.utils";
 import { updateOrderStatusForm } from "../actions";
 
 export type OrderStatIcon = "shopping-cart" | "clipboard-clock" | "truck";
@@ -43,21 +44,27 @@ type AdminOrdersClientProps = {
   orders: OrderRow[];
   totalLabel: string;
   pagination: { page: number; pageCount: number; total: number };
-  filters: { status: string; search: string };
+  filters: { status: string; search: string; dateFrom: string; dateTo: string };
   saved?: boolean;
   notice?: AdminNotice;
 };
 
 const tabs = [
+  { label: "Todos", value: "all" },
   { label: "Pendientes de envio", value: "pending_shipping" },
   { label: "Enviados", value: "shipped" },
   { label: "Entregados", value: "delivered" },
 ];
 
-const statusOptions = [
+const fulfillmentStatusOptions = [
   { value: "pending_shipping", label: "Pendiente de envio" },
   { value: "shipped", label: "Enviado" },
   { value: "delivered", label: "Entregado" },
+];
+
+const exportStatusOptions = [
+  { value: "all", label: "Todos los estados" },
+  ...fulfillmentStatusOptions,
 ];
 
 export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false, notice }: AdminOrdersClientProps) {
@@ -66,13 +73,17 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
   const pathname = usePathname();
   const router = useRouter();
 
-  const hrefFor = (next: { page?: number; status?: string; search?: string }) => {
+  const hrefFor = (next: { page?: number; status?: string; search?: string; dateFrom?: string; dateTo?: string }) => {
     const params = new URLSearchParams();
     const status = next.status ?? filters.status;
     const search = next.search ?? filters.search;
     const page = next.page ?? pagination.page;
+    const dateFrom = next.dateFrom ?? filters.dateFrom;
+    const dateTo = next.dateTo ?? filters.dateTo;
     if (status) params.set("status", status);
     if (search) params.set("search", search);
+    if (dateFrom) params.set("date_from", dateFrom);
+    if (dateTo) params.set("date_to", dateTo);
     if (page > 1) params.set("page", String(page));
     const query = params.toString();
     return query ? `${pathname}?${query}` : pathname;
@@ -131,6 +142,14 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
                 <Search size={17} strokeWidth={1.8} />
                 <input name="search" defaultValue={filters.search} placeholder="Buscar pedido o cliente" className="w-48 bg-transparent outline-none" />
               </label>
+              <label className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[14px] text-[#554246]">
+                Desde
+                <input type="date" name="date_from" defaultValue={filters.dateFrom} className="bg-transparent text-[15px] outline-none" />
+              </label>
+              <label className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[14px] text-[#554246]">
+                Hasta
+                <input type="date" name="date_to" defaultValue={filters.dateTo} className="bg-transparent text-[15px] outline-none" />
+              </label>
               <button className="inline-flex h-11 items-center gap-3 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] text-[#554246]">
                 <ListFilter size={17} strokeWidth={1.8} /> Aplicar filtros
               </button>
@@ -177,7 +196,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
           <form action={updateOrderStatusForm} className="w-full max-w-[660px] overflow-hidden rounded-[4px] border border-[#E7BFC9] bg-white shadow-xl">
             <input type="hidden" name="id" value={selectedOrder.documentId} />
             <div className="flex items-start justify-between px-8 py-7"><div><h3 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Actualizar Estado del Pedido</h3><span className="mt-2 inline-flex rounded-[3px] bg-[#F1EEF0] px-3 py-1 text-[17px] font-bold text-[#9E3659]">{selectedOrder.id}</span></div><button type="button" aria-label="Cerrar modal" onClick={() => setSelectedOrder(null)} className="text-[#5F5F61] transition-colors hover:text-[#9E3659]"><X size={28} strokeWidth={1.8} /></button></div>
-            <div className="border-y border-[#E7BFC9] px-8 py-8"><label htmlFor="order-status" className="text-[15px] text-[#5F5F61]">Estado del pedido</label><div className="relative mt-5"><select id="order-status" name="order_status" defaultValue={selectedOrder.orderStatus} className="h-12 w-full appearance-none bg-white px-4 text-[19px] text-[#1F1F22] outline-none">{statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={22} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /></div></div>
+            <div className="border-y border-[#E7BFC9] px-8 py-8"><label htmlFor="order-status" className="text-[15px] text-[#5F5F61]">Estado del pedido</label><div className="relative mt-5"><select id="order-status" name="order_status" defaultValue={selectedOrder.orderStatus} className="h-12 w-full appearance-none bg-white px-4 text-[19px] text-[#1F1F22] outline-none">{fulfillmentStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={22} strokeWidth={1.8} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /></div></div>
             <div className="flex flex-col gap-4 bg-[#F5F5F5] px-8 py-7 sm:flex-row sm:justify-end"><button type="button" onClick={() => setSelectedOrder(null)} className="h-13 min-w-[190px] rounded-[2px] border border-[#5F5F61] px-8 text-[17px] font-semibold text-[#5F5F61] transition-colors hover:border-[#9E3659] hover:text-[#9E3659]">Cancelar</button><button className="h-13 min-w-[260px] rounded-[2px] bg-[#9E3659] px-8 text-[17px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]">Actualizar Estado</button></div>
           </form>
         </div>
@@ -186,7 +205,6 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
       {exportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4">
           <form method="GET" action="/admin/pedidos/export" className="w-full max-w-[620px] overflow-hidden rounded-[4px] border border-[#E7BFC9] bg-white shadow-xl">
-            <input type="hidden" name="status" value={filters.status} />
             {filters.search && <input type="hidden" name="search" value={filters.search} />}
             <div className="flex items-start justify-between px-8 py-7">
               <div>
@@ -196,13 +214,19 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
               <button type="button" aria-label="Cerrar exportacion" onClick={() => setExportOpen(false)} className="text-[#5F5F61] transition-colors hover:text-[#9E3659]"><X size={28} strokeWidth={1.8} /></button>
             </div>
             <div className="grid gap-5 border-y border-[#E7BFC9] px-8 py-8 md:grid-cols-2">
+              <label className="text-[15px] text-[#5F5F61] md:col-span-2">
+                Estado
+                <select name="status" defaultValue={filters.status} className="mt-2 h-12 w-full rounded-[4px] border border-[#E7BFC9] px-4 text-[16px] text-[#1F1F22] outline-none focus:border-[#9E3659]">
+                  {exportStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
               <label className="text-[15px] text-[#5F5F61]">
                 Desde
-                <input type="date" name="date_from" className="mt-2 h-12 w-full rounded-[4px] border border-[#E7BFC9] px-4 text-[16px] text-[#1F1F22] outline-none focus:border-[#9E3659]" />
+                <input type="date" name="date_from" defaultValue={filters.dateFrom} className="mt-2 h-12 w-full rounded-[4px] border border-[#E7BFC9] px-4 text-[16px] text-[#1F1F22] outline-none focus:border-[#9E3659]" />
               </label>
               <label className="text-[15px] text-[#5F5F61]">
                 Hasta
-                <input type="date" name="date_to" className="mt-2 h-12 w-full rounded-[4px] border border-[#E7BFC9] px-4 text-[16px] text-[#1F1F22] outline-none focus:border-[#9E3659]" />
+                <input type="date" name="date_to" defaultValue={filters.dateTo} className="mt-2 h-12 w-full rounded-[4px] border border-[#E7BFC9] px-4 text-[16px] text-[#1F1F22] outline-none focus:border-[#9E3659]" />
               </label>
               <div className="md:col-span-2 rounded-[6px] bg-[#FCEDF0] px-4 py-3 text-[14px] text-[#6B6063]">
                 <p><strong className="text-[#9E3659]">Opcion Todos:</strong> deja Desde y Hasta vacios.</p>

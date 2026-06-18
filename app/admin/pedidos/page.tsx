@@ -19,22 +19,29 @@ function statusMeta(status: string) {
   return { label: "PENDIENTE DE ENVIO", className: "border-[#E8C1CD] bg-[#FCEDF0] text-[#9E3659]" };
 }
 
-const validStatuses = ["pending_shipping", "shipped", "delivered"] as const;
+const validStatuses = ["all", "pending_shipping", "shipped", "delivered"] as const;
 
-type SearchParams = Promise<{ page?: string; status?: string; search?: string; saved?: string; error?: string; message?: string }>;
+type SearchParams = Promise<{ page?: string; status?: string; search?: string; date_from?: string; date_to?: string; saved?: string; error?: string; message?: string }>;
 
 export default async function AdminOrdersPage({ searchParams }: { searchParams?: SearchParams }) {
   const query = searchParams ? await searchParams : {};
   const page = Math.max(1, Number(query.page ?? 1) || 1);
-  const status = validStatuses.includes(query.status as (typeof validStatuses)[number]) ? query.status! : "pending_shipping";
+  const status = validStatuses.includes(query.status as (typeof validStatuses)[number]) ? query.status! : "all";
   const search = typeof query.search === "string" ? query.search.trim() : "";
+  const dateFrom = typeof query.date_from === "string" ? query.date_from : "";
+  const dateTo = typeof query.date_to === "string" ? query.date_to : "";
+
+  let clientProps: React.ComponentProps<typeof AdminOrdersClient> | null = null;
+  let loadError: unknown = null;
 
   try {
-    const [response, pendingResponse, shippedResponse, deliveredResponse] = await Promise.all([
-      getAdminOrders({ page, pageSize: 10, status, search }),
-      getAdminOrders({ page: 1, pageSize: 1, status: "pending_shipping" }),
-      getAdminOrders({ page: 1, pageSize: 1, status: "shipped" }),
-      getAdminOrders({ page: 1, pageSize: 1, status: "delivered" }),
+    const dateFilters = { dateFrom, dateTo };
+    const [response, allResponse, pendingResponse, shippedResponse, deliveredResponse] = await Promise.all([
+      getAdminOrders({ page, pageSize: 10, status, search, ...dateFilters }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "all", search, ...dateFilters }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "pending_shipping", search, ...dateFilters }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "shipped", search, ...dateFilters }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "delivered", search, ...dateFilters }),
     ]);
 
     const orders: OrderRow[] = response.data.map((order) => {
@@ -57,31 +64,36 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
     });
 
     const pagination = response.meta.pagination ?? { page, pageSize: 10, pageCount: 1, total: orders.length };
+    const all = allResponse.meta.pagination?.total ?? 0;
     const pending = pendingResponse.meta.pagination?.total ?? 0;
     const shipped = shippedResponse.meta.pagination?.total ?? 0;
     const delivered = deliveredResponse.meta.pagination?.total ?? 0;
     const stats: OrderStat[] = [
-      { label: "TOTAL PEDIDOS", value: String(pagination.total), icon: "shopping-cart", note: "Desde Strapi", noteTone: "text-[#6B6063]" },
+      { label: "TOTAL PEDIDOS", value: String(all), icon: "shopping-cart", note: dateFrom || dateTo ? "Rango aplicado" : "Desde Strapi", noteTone: "text-[#6B6063]" },
       { label: "PENDIENTES DE ENVIO", value: String(pending), icon: "clipboard-clock", note: `${pending} activos`, noteTone: pending ? "text-red-600" : "text-emerald-700" },
       { label: "ENVIADOS", value: String(shipped), icon: "truck", note: `${delivered} entregados`, noteTone: "text-emerald-700" },
     ];
 
-    return (
-      <AdminOrdersClient
-        stats={stats}
-        orders={orders}
-        totalLabel={`Mostrando ${orders.length} de ${pagination.total} pedidos`}
-        pagination={{ page: pagination.page, pageCount: pagination.pageCount, total: pagination.total }}
-        filters={{ status, search }}
-        saved={query.saved === "1"}
-        notice={noticeFromQuery(query, "Pedido actualizado correctamente.")}
-      />
-    );
+    clientProps = {
+      stats,
+      orders,
+      totalLabel: `Mostrando ${orders.length} de ${pagination.total} pedidos`,
+      pagination: { page: pagination.page, pageCount: pagination.pageCount, total: pagination.total },
+      filters: { status, search, dateFrom, dateTo },
+      saved: query.saved === "1",
+      notice: noticeFromQuery(query, "Pedido actualizado correctamente."),
+    };
   } catch (error) {
+    loadError = error;
+  }
+
+  if (loadError) {
     return (
       <AdminShell active="orders" searchPlaceholder="Buscar pedidos, clientes, IDs...">
-        <AdminDataError title="No se pudieron cargar pedidos desde Strapi" error={error} permissions={["Order: find/findOne/update", "Order-item: find/findOne", "Branch: find/findOne", "Shipping-rate: find/findOne", "Product: find/findOne", "Variant-option: find/findOne"]} />
+        <AdminDataError title="No se pudieron cargar pedidos desde Strapi" error={loadError} permissions={["Order: find/findOne/update", "Order-item: find/findOne", "Branch: find/findOne", "Shipping-rate: find/findOne", "Product: find/findOne", "Variant-option: find/findOne"]} />
       </AdminShell>
     );
   }
+
+  return <AdminOrdersClient {...clientProps!} />;
 }
