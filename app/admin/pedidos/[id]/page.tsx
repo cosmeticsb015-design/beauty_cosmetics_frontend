@@ -18,17 +18,16 @@ const paymentStatusLabel: Record<string, string> = {
 };
 
 function fulfillmentStatus(order: StrapiOrder): string {
-  return order.order_status ?? order.fulfillment_status ?? "pending_shipping";
+  return order.fulfillment_status ?? order.order_status ?? "pending_shipping";
 }
 function statusLabel(status: string) {
-  if (status === "sent") return "Enviado";
+  if (status === "shipped") return "Enviado";
   if (status === "delivered") return "Entregado";
-  if (status === "finalized") return "Finalizado";
   return "Pendiente de envio";
 }
 function statusClass(status: string) {
-  if (status === "sent") return "bg-blue-100 text-blue-800";
-  if (status === "delivered" || status === "finalized") return "bg-emerald-100 text-emerald-800";
+  if (status === "shipped") return "bg-blue-100 text-blue-800";
+  if (status === "delivered") return "bg-emerald-100 text-emerald-800";
   return "bg-[#F5DDE5] text-[#9E3659]";
 }
 function orderValue<K extends keyof Omit<StrapiOrder, "attributes">>(order: StrapiOrder, key: K) {
@@ -144,7 +143,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
             <h3 className="text-[24px] font-bold text-[#1F1F22]">Actualizar estado del pedido</h3>
             <form action={updateOrderStatusForm} className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <input type="hidden" name="id" value={order.documentId} />
-              <select name="order_status" defaultValue={orderStatus as OrderFulfillmentStatus} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="sent">Enviado</option><option value="delivered">Entregado</option><option value="finalized">Finalizado</option></select>
+              <select name="order_status" defaultValue={orderStatus as OrderFulfillmentStatus} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="shipped">Enviado</option><option value="delivered">Entregado</option></select>
               <button className="h-12 rounded-[4px] bg-[#9E3659] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#84304C]">Guardar cambios</button>
             </form>
           </section>

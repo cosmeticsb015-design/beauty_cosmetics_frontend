@@ -50,16 +50,14 @@ type AdminOrdersClientProps = {
 
 const tabs = [
   { label: "Pendientes de envio", value: "pending_shipping" },
-  { label: "Enviados", value: "sent" },
+  { label: "Enviados", value: "shipped" },
   { label: "Entregados", value: "delivered" },
-  { label: "Finalizados", value: "finalized" },
 ];
 
 const statusOptions = [
   { value: "pending_shipping", label: "Pendiente de envio" },
-  { value: "sent", label: "Enviado" },
+  { value: "shipped", label: "Enviado" },
   { value: "delivered", label: "Entregado" },
-  { value: "finalized", label: "Finalizado" },
 ];
 
 export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false, notice }: AdminOrdersClientProps) {

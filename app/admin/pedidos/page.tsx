@@ -11,16 +11,15 @@ function formatDate(value?: string) {
   return value ? new Intl.DateTimeFormat("es-SV", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) : "Sin fecha";
 }
 function fulfillmentStatus(order: { order_status?: string | null; fulfillment_status?: string | null }) {
-  return order.order_status ?? order.fulfillment_status ?? "pending_shipping";
+  return order.fulfillment_status ?? order.order_status ?? "pending_shipping";
 }
 function statusMeta(status: string) {
-  if (status === "sent") return { label: "ENVIADO", className: "border-blue-200 bg-blue-50 text-blue-700" };
+  if (status === "shipped") return { label: "ENVIADO", className: "border-blue-200 bg-blue-50 text-blue-700" };
   if (status === "delivered") return { label: "ENTREGADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
-  if (status === "finalized") return { label: "FINALIZADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
   return { label: "PENDIENTE DE ENVIO", className: "border-[#E8C1CD] bg-[#FCEDF0] text-[#9E3659]" };
 }
 
-const validStatuses = ["pending_shipping", "sent", "delivered", "finalized"] as const;
+const validStatuses = ["pending_shipping", "shipped", "delivered"] as const;
 
 type SearchParams = Promise<{ page?: string; status?: string; search?: string; saved?: string; error?: string; message?: string }>;
 
@@ -31,11 +30,11 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
   const search = typeof query.search === "string" ? query.search.trim() : "";
 
   try {
-    const [response, pendingResponse, paidResponse, failedResponse] = await Promise.all([
+    const [response, pendingResponse, shippedResponse, deliveredResponse] = await Promise.all([
       getAdminOrders({ page, pageSize: 10, status, search }),
       getAdminOrders({ page: 1, pageSize: 1, status: "pending_shipping" }),
-      getAdminOrders({ page: 1, pageSize: 1, status: "sent" }),
-      getAdminOrders({ page: 1, pageSize: 1, status: "finalized" }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "shipped" }),
+      getAdminOrders({ page: 1, pageSize: 1, status: "delivered" }),
     ]);
 
     const orders: OrderRow[] = response.data.map((order) => {
@@ -59,12 +58,12 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
 
     const pagination = response.meta.pagination ?? { page, pageSize: 10, pageCount: 1, total: orders.length };
     const pending = pendingResponse.meta.pagination?.total ?? 0;
-    const paid = paidResponse.meta.pagination?.total ?? 0;
-    const failed = failedResponse.meta.pagination?.total ?? 0;
+    const shipped = shippedResponse.meta.pagination?.total ?? 0;
+    const delivered = deliveredResponse.meta.pagination?.total ?? 0;
     const stats: OrderStat[] = [
       { label: "TOTAL PEDIDOS", value: String(pagination.total), icon: "shopping-cart", note: "Desde Strapi", noteTone: "text-[#6B6063]" },
       { label: "PENDIENTES DE ENVIO", value: String(pending), icon: "clipboard-clock", note: `${pending} activos`, noteTone: pending ? "text-red-600" : "text-emerald-700" },
-      { label: "ENVIADOS", value: String(paid), icon: "truck", note: `${failed} finalizados`, noteTone: "text-emerald-700" },
+      { label: "ENVIADOS", value: String(shipped), icon: "truck", note: `${delivered} entregados`, noteTone: "text-emerald-700" },
     ];
 
     return (

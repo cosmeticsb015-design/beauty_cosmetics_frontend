@@ -17,7 +17,7 @@ export type StrapiBranch = { id: number; documentId: string; name: string; addre
 export type StrapiShippingRate = { id: number; documentId: string; name: string; description?: string | null; cost: number; active: boolean };
 export type StrapiOrderItem = { id: number; documentId?: string; product_name: string; variant_label?: string | null; quantity: number; unit_price: number; product?: StrapiProduct | null; variant?: StrapiVariantOption | null; branch_stock?: StrapiStock | null };
 export type OrderPaymentStatus = "pending" | "paid" | "failed" | "refunded";
-export type OrderFulfillmentStatus = "pending_shipping" | "sent" | "delivered" | "finalized";
+export type OrderFulfillmentStatus = "pending_shipping" | "shipped" | "delivered";
 
 export type StrapiOrder = {
   id: number; documentId: string; attributes?: Partial<Omit<StrapiOrder, "attributes">>; tracking_number: string; customer_name: string; customer_email: string; customer_phone: string;
@@ -161,7 +161,7 @@ export async function getAdminOrders(params: AdminListParams = {}) {
     ];
   }
   if (params.status && params.status !== "all") {
-    filters.order_status = { $eq: params.status };
+    filters.fulfillment_status = { $eq: params.status };
   }
   if (params.dateFrom || params.dateTo) {
     filters.createdAt = {
