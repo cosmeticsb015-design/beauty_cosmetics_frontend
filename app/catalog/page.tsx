@@ -76,12 +76,12 @@ function CatalogContent() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("Relevance");
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [dbCategories, setDbCategories] = useState<StrapiCategory[]>([]);
   const [dbBrands, setDbBrands] = useState<StrapiBrand[]>([]);
   const [dbProducts, setDbProducts] = useState<StrapiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedProducts, setHasLoadedProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 12, pageCount: 1, total: 0 });
@@ -125,43 +125,50 @@ function CatalogContent() {
     setActiveCategory("all");
   }, [dbCategories, searchParams]);
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => setSearchQuery(searchTerm.trim()), 350);
-    return () => window.clearTimeout(timeout);
-  }, [searchTerm]);
+  const normalizedSearch = searchTerm.trim();
 
   // Fetch productos cuando cambian filtros, búsqueda o página
   useEffect(() => {
     if (!activeCategory) return;
 
+    let cancelled = false;
     setLoading(true);
     getProducts({
       page: currentPage,
       pageSize: PAGE_SIZE,
       categorySlug: activeCategory,
       brandNames: selectedBrands.length > 0 ? selectedBrands : undefined,
-      search: searchQuery || undefined,
+      search: normalizedSearch || undefined,
       sort:
         sortBy === "Price: Low to High" ? "price:asc" :
           sortBy === "Price: High to Low" ? "price:desc" :
             sortBy === "Newest" ? "createdAt:desc" : undefined,
     })
       .then((res) => {
+        if (cancelled) return;
         setDbProducts(res.data || []);
         if (res.meta?.pagination) setPagination(res.meta.pagination);
-        setLoading(false);
       })
       .catch((err) => {
+        if (cancelled) return;
         console.error(err);
         setError("Error al cargar los productos.");
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setHasLoadedProducts(true);
         setLoading(false);
       });
-  }, [activeCategory, selectedBrands, sortBy, searchQuery, currentPage]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategory, selectedBrands, sortBy, normalizedSearch, currentPage]);
 
   // Reset página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, selectedBrands, sortBy, searchQuery]);
+  }, [activeCategory, selectedBrands, sortBy, normalizedSearch]);
 
   const toggleBrand = (brandName: string) => {
     setSelectedBrands((prev) =>
@@ -169,7 +176,7 @@ function CatalogContent() {
     );
   };
 
-  if (loading) {
+  if (loading && !hasLoadedProducts) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 rounded-full border-4 border-[#C15074] border-t-transparent animate-spin" />
@@ -502,6 +509,7 @@ function CatalogContent() {
                 <p className="text-xs text-[#AC9CA0]">
                   Mostrando <span className="font-semibold text-[#2D1F23]">{dbProducts.length}</span> de{" "}
                   <span className="font-semibold text-[#2D1F23]">{pagination.total}</span> productos
+                  {loading && <span className="ml-2 text-[#C15074]">Actualizando...</span>}
                 </p>
                 <button
                   type="button"
@@ -534,7 +542,7 @@ function CatalogContent() {
             {/* Grid */}
             {dbProducts.length === 0 ? (
               <div className="py-20 text-center text-[#AC9CA0] text-sm">
-                {searchQuery ? `No encontramos productos o marcas para “${searchQuery}”.` : "No hay productos en esta categoría."}
+                {normalizedSearch ? `No encontramos productos o marcas para “${normalizedSearch}”.` : "No hay productos en esta categoría."}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
