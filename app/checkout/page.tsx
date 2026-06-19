@@ -58,6 +58,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutLoadingMessage, setCheckoutLoadingMessage] = useState("Preparando pago seguro...");
   const checkoutInFlightRef = useRef(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
@@ -176,6 +177,8 @@ export default function CheckoutPage() {
     }
 
     checkoutInFlightRef.current = true;
+    let redirectingToWompi = false;
+    setCheckoutLoadingMessage("Validando disponibilidad de productos...");
     setCheckoutLoading(true);
 
     try {
@@ -193,6 +196,8 @@ export default function CheckoutPage() {
         usedStock.set(stock.documentId, (usedStock.get(stock.documentId) || 0) + item.quantity);
         return { branch_stock: stock.documentId, quantity: item.quantity };
       });
+
+      setCheckoutLoadingMessage("Generando enlace de pago seguro con Wompi...");
 
       const checkoutPayment = await createCheckoutPayment({
         checkout_attempt_id: checkoutAttemptId,
@@ -212,15 +217,20 @@ export default function CheckoutPage() {
       const paymentUrl = checkoutPayment.payment.payment_url;
       if (!paymentUrl) throw new Error("Wompi no devolvió una URL de pago válida.");
 
+      setCheckoutLoadingMessage("Enlace listo. Redirigiendo a Wompi...");
+      redirectingToWompi = true;
       clearCheckoutAttemptId();
-      window.location.assign(paymentUrl);
+      window.setTimeout(() => window.location.assign(paymentUrl), 450);
     } catch (error) {
       console.error("Error creating Wompi checkout:", error);
       const message = error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.";
       setCheckoutError(message.includes("409") || message.toLowerCase().includes("procesando") ? "Tu pago ya se está procesando. Por favor espera unos segundos." : message);
     } finally {
-      checkoutInFlightRef.current = false;
-      setCheckoutLoading(false);
+      if (!redirectingToWompi) {
+        checkoutInFlightRef.current = false;
+        setCheckoutLoading(false);
+        setCheckoutLoadingMessage("Preparando pago seguro...");
+      }
     }
   };
 
@@ -228,6 +238,26 @@ export default function CheckoutPage() {
     if (step === 3 && !canContinueToPayment) return;
     setCurrentStep(step);
   };
+
+  const paymentLoadingOverlay = checkoutLoading ? (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/85 px-4 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="w-full max-w-[420px] rounded-[18px] border border-[#F1CCD5] bg-white px-8 py-9 text-center shadow-[0_24px_70px_rgba(45,31,35,0.18)]">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#FCEDF0]">
+          <div className="relative h-12 w-12">
+            <span className="absolute inset-0 rounded-full border-4 border-[#F1CCD5]" />
+            <span className="absolute inset-0 rounded-full border-4 border-[#C15074] border-t-transparent animate-spin" />
+            <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#C15074] animate-pulse" />
+          </div>
+        </div>
+        <h2 className="mt-6 text-[22px] font-black text-[#2D1F23]">Preparando pago seguro</h2>
+        <p className="mt-3 text-[15px] leading-relaxed text-[#6B6063]">{checkoutLoadingMessage}</p>
+        <div className="mt-7 h-2 overflow-hidden rounded-full bg-[#F7E4EA]">
+          <div className="h-full w-1/2 rounded-full bg-[#C15074] shadow-[0_0_18px_rgba(193,80,116,0.45)] animate-[pulse_1.4s_ease-in-out_infinite]" />
+        </div>
+        <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#AC9CA0]">No cierres esta ventana</p>
+      </div>
+    </div>
+  ) : null;
 
   if (!mounted) {
     return (
@@ -251,6 +281,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {paymentLoadingOverlay}
       <div className={`mx-auto px-4 md:px-8 py-16 ${currentStep === 3 ? "max-w-5xl" : "max-w-3xl"}`}>
 
         <div className={`flex flex-col lg:flex-row gap-12 items-start ${currentStep === 3 ? "w-full" : ""}`}>
@@ -828,7 +859,7 @@ export default function CheckoutPage() {
                       : "bg-[#D4738F]/40 cursor-not-allowed"
                     }`}
                 >
-                  <Lock size={16} strokeWidth={2.5} /> {checkoutLoading ? "Procesando pago..." : "Proceder al Pago Seguro con Wompi"}
+                  {checkoutLoading ? <span className="h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin" /> : <Lock size={16} strokeWidth={2.5} />} {checkoutLoading ? "Generando enlace seguro..." : "Proceder al Pago Seguro con Wompi"}
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#AC9CA0]">
