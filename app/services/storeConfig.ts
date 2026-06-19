@@ -13,8 +13,7 @@ export async function getPublicStoreConfig() {
     return await strapi.get<StrapiResponse<PublicStoreConfig>>("store-config", {
       next: { revalidate: 60 },
     });
-  } catch (error) {
-    console.warn("Could not load public store config:", error);
+  } catch {
     return { data: null, meta: {} } satisfies StrapiResponse<PublicStoreConfig | null>;
   }
 }

@@ -106,7 +106,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
             <p className="mt-1 text-[17px] text-[#6B6063]">Supervisa y procesa las ordenes de tus clientes en tiempo real.</p>
           </div>
           <button type="button" onClick={() => setExportOpen(true)} className="inline-flex h-12 items-center justify-center rounded-[4px] bg-[#9E3659] px-9 text-[15px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]">
-            Exportar para Excel
+            Exportar a Excel
           </button>
         </div>
 
@@ -209,7 +209,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
             <div className="flex items-start justify-between px-8 py-7">
               <div>
                 <h3 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Exportar pedidos</h3>
-                <p className="mt-2 text-[16px] text-[#6B6063]">Descarga un CSV compatible con Excel. Deja el rango vacio para exportar todos los pedidos filtrados o selecciona fechas para limitarlo.</p>
+                <p className="mt-2 text-[16px] text-[#6B6063]">Descarga un archivo de Excel ordenado por columnas. Deja el rango vacio para exportar todos los pedidos filtrados o selecciona fechas para limitarlo.</p>
               </div>
               <button type="button" aria-label="Cerrar exportacion" onClick={() => setExportOpen(false)} className="text-[#5F5F61] transition-colors hover:text-[#9E3659]"><X size={28} strokeWidth={1.8} /></button>
             </div>
@@ -235,7 +235,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
             </div>
             <div className="flex flex-col gap-4 bg-[#F5F5F5] px-8 py-7 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setExportOpen(false)} className="h-13 min-w-[170px] rounded-[2px] border border-[#5F5F61] px-8 text-[17px] font-semibold text-[#5F5F61] transition-colors hover:border-[#9E3659] hover:text-[#9E3659]">Cancelar</button>
-              <button className="h-13 min-w-[230px] rounded-[2px] bg-[#9E3659] px-8 text-[17px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]">Descargar CSV</button>
+              <button className="h-13 min-w-[230px] rounded-[2px] bg-[#9E3659] px-8 text-[17px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]">Descargar Excel</button>
             </div>
           </form>
         </div>

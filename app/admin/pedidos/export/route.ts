@@ -16,10 +16,16 @@ function statusLabel(status: string) {
   return "Pendiente de pago";
 }
 
-function escapeCsvCell(value: unknown) {
-  const text = String(value ?? "");
-  const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
-  return `"${safeText.replace(/"/g, '""')}"`;
+function escapeXml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function excelCell(value: unknown, styleId = "Data") {
+  return `<Cell ss:StyleID="${styleId}"><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`;
 }
 
 async function fetchAllOrders(params: { status?: string; search?: string; dateFrom?: string; dateTo?: string }) {
@@ -76,15 +82,37 @@ export async function GET(request: NextRequest) {
     "Pedido", "Fecha", "Estado de pago", "Cliente", "Email", "Telefono", "Tipo de entrega", "Sucursal", "Tarifa", "Direccion", "Subtotal", "Costo envio", "Total", "Transaccion Wompi", "Producto", "Variante", "Cantidad", "Precio unitario", "Subtotal item", "Stock/Sucursal",
   ];
 
-  const csv = [headers, ...rows]
-    .map((row) => row.map(escapeCsvCell).join(";"))
-    .join("\r\n");
+  const title = orderId ? `Pedido ${orders[0]?.tracking_number ?? orderId}` : "Exportacion de pedidos";
+  const generatedAt = new Intl.DateTimeFormat("es-SV", { dateStyle: "medium", timeStyle: "short" }).format(new Date());
+  const worksheetRows = [
+    `<Row ss:Height="24"><Cell ss:MergeAcross="${headers.length - 1}" ss:StyleID="Title"><Data ss:Type="String">${escapeXml(title)}</Data></Cell></Row>`,
+    `<Row><Cell ss:MergeAcross="${headers.length - 1}" ss:StyleID="Meta"><Data ss:Type="String">Generado: ${escapeXml(generatedAt)}${dateFrom || dateTo ? ` | Rango: ${escapeXml(dateFrom ?? "inicio")} - ${escapeXml(dateTo ?? "hoy")}` : ""}</Data></Cell></Row>`,
+    `<Row>${headers.map((header) => excelCell(header, "Header")).join("")}</Row>`,
+    ...rows.map((row) => `<Row>${row.map((cell) => excelCell(cell)).join("")}</Row>`),
+  ];
+
+  const workbook = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Styles>
+    <Style ss:ID="Title"><Font ss:Bold="1" ss:Size="14"/><Interior ss:Color="#F5DDE5" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Meta"><Font ss:Color="#6B6063"/><Interior ss:Color="#FAFAFA" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#9E3659" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+    <Style ss:ID="Data"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E7BFC9"/></Borders></Style>
+  </Styles>
+  <Worksheet ss:Name="Pedidos">
+    <Table>
+      ${headers.map(() => '<Column ss:Width="120"/>').join("\n      ")}
+      ${worksheetRows.join("\n      ")}
+    </Table>
+  </Worksheet>
+</Workbook>`;
   const suffix = orderId ? `pedido-${orders[0]?.tracking_number ?? orderId}` : dateFrom || dateTo ? `${dateFrom ?? "inicio"}_${dateTo ?? "hoy"}` : "todos";
 
-  return new Response(`\uFEFF${csv}`, {
+  return new Response(workbook, {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="pedidos-${suffix}.csv"`,
+      "Content-Type": "application/vnd.ms-excel; charset=utf-8",
+      "Content-Disposition": `attachment; filename="pedidos-${suffix}.xls"`,
       "Cache-Control": "no-store",
     },
   });

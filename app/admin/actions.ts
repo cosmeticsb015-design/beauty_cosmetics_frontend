@@ -295,7 +295,13 @@ export async function updateOrderStatus(_prev: AdminMutationState, formData: For
 }
 
 export async function saveStoreConfig(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
-  try { await updateEntity("store-config", "", { whatsapp_number: sanitizeText(formData.get("whatsapp_number")), notification_email: sanitizeText(formData.get("notification_email")) }); revalidatePath("/admin/contenido"); return { ok: true, message: "Configuración guardada." }; }
+  const whatsapp_number = sanitizeText(formData.get("whatsapp_number"));
+  const notification_email = sanitizeText(formData.get("notification_email"));
+  const data: Record<string, string> = {};
+  if (whatsapp_number) data.whatsapp_number = whatsapp_number;
+  if (notification_email) data.notification_email = notification_email;
+  if (!Object.keys(data).length) return { ok: false, message: "Agrega al menos WhatsApp o email de notificaciones." };
+  try { await updateEntity("store-config", "", data); revalidatePath("/admin/contenido"); revalidatePath("/"); return { ok: true, message: "Configuración guardada." }; }
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar la configuración." }; }
 }
 
