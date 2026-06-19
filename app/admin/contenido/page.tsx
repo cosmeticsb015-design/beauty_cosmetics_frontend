@@ -45,8 +45,8 @@ function BannerEditor({ banner, index }: { banner: Partial<StrapiHomeBanner>; in
 
       <div className="mb-6 flex min-h-[210px] flex-col items-center justify-center rounded-[8px] border-2 border-dashed border-[#C9CEDD] bg-[#F6F7F9] p-5 text-center text-[#4B5262]">
         {desktopImage?.url ? <img src={getStrapiMediaUrl(desktopImage.url) ?? ""} alt={banner.name ?? "Banner"} className="mb-4 max-h-[210px] w-full rounded-[6px] object-cover" /> : <ImageIcon size={36} strokeWidth={1.8} />}
-        <p className="mt-3 font-medium">Recomendado: 1920×600px (Desktop)</p>
-        <p className="text-sm text-[#6B6063]">Opcional móvil: 1080×1350px. Peso máximo: 8MB.</p>
+        <p className="mt-3 font-medium">Recomendado: 1200×630px (Desktop)</p>
+        <p className="text-sm text-[#6B6063]">Opcional móvil: 1080×608px. Peso máximo: 8MB.</p>
         <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#8E94A3] bg-white px-5 py-2 text-sm font-bold text-[#1F1F22]">
           <UploadCloud size={17} /> Subir imagen desktop
           <input name={`banner_desktop_image_${index}`} type="file" accept="image/*" className="sr-only" />
@@ -129,7 +129,7 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
           <section className="border-t border-[#E7BFC9] px-7 py-8">
             <div className="mb-6">
               <h3 className="text-[26px] font-bold text-[#1F1F22]">Banners del Home</h3>
-              <p className="mt-1 text-[17px] text-[#6B6063]">Administra el carrusel principal. Medidas: desktop 1920×600px y móvil 1080×1350px.</p>
+              <p className="mt-1 text-[17px] text-[#6B6063]">Administra el carrusel principal tipo tarjetas. Medidas: desktop 1200×630px y móvil 1080×608px.</p>
             </div>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {banners.slice(start, start + PAGE_SIZE).map((banner) => (
