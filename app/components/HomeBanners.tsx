@@ -61,9 +61,9 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
             type="button"
             onClick={() => scrollSlider("prev")}
             aria-label="Ver banners anteriores"
-            className="absolute left-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:flex"
+            className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:left-1 md:h-12 md:w-12"
           >
-            <ChevronLeft size={38} strokeWidth={2.2} />
+            <ChevronLeft className="h-7 w-7 md:h-[38px] md:w-[38px]" strokeWidth={2.2} />
           </button>
         ) : null}
 
@@ -101,9 +101,9 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
             type="button"
             onClick={() => scrollSlider("next")}
             aria-label="Ver más banners"
-            className="absolute right-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:flex"
+            className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:right-1 md:h-12 md:w-12"
           >
-            <ChevronRight size={38} strokeWidth={2.2} />
+            <ChevronRight className="h-7 w-7 md:h-[38px] md:w-[38px]" strokeWidth={2.2} />
           </button>
         ) : null}
       </div>
