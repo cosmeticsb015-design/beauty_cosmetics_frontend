@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       order.branch?.name ?? "",
       order.shipping_rate?.name ?? "",
       order.address ?? "",
+      order.instructions ?? order.delivery_instructions ?? order.notes ?? "",
       money(order.subtotal),
       money(order.shipping_cost),
       money(total),
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
   });
 
   const headers = [
-    "Pedido", "Fecha", "Estado de pago", "Cliente", "Email", "Telefono", "Tipo de entrega", "Sucursal", "Tarifa", "Direccion", "Subtotal", "Costo envio", "Total", "Transaccion Wompi", "Producto", "Variante", "Cantidad", "Precio unitario", "Subtotal item", "Stock/Sucursal",
+    "Pedido", "Fecha", "Estado de pago", "Cliente", "Email", "Telefono", "Tipo de entrega", "Sucursal", "Tarifa", "Direccion", "Instrucciones adicionales", "Subtotal", "Costo envio", "Total", "Transaccion Wompi", "Producto", "Variante", "Cantidad", "Precio unitario", "Subtotal item", "Stock/Sucursal",
   ];
 
   const title = orderId ? `Pedido ${orders[0]?.tracking_number ?? orderId}` : "Exportacion de pedidos";

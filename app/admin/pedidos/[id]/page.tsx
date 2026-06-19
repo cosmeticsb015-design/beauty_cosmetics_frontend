@@ -49,6 +49,10 @@ function firstItemImage(item: StrapiOrderItem) {
   return getStrapiMediaUrl(formats?.thumbnail?.url ?? formats?.small?.url ?? image?.url);
 }
 
+function orderDeliveryInstructions(order: StrapiOrder) {
+  return order.instructions ?? order.delivery_instructions ?? order.notes ?? null;
+}
+
 function deliverySummary(order: StrapiOrder) {
   if (order.delivery_type === "pickup") {
     return {
@@ -109,6 +113,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
     const transactionMessage = orderValue(order, "wompi_transaction_message");
     const paymentStatus = orderValue(order, "wompi_payment_status") ?? orderValue(order, "payment_status");
     const delivery = deliverySummary(order);
+    const deliveryInstructions = orderDeliveryInstructions(order);
 
     return (
       <AdminShell active="orders">
@@ -144,6 +149,12 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
                   <p className="mt-1 text-[16px] font-semibold text-[#1F1F22]">{delivery.secondaryValue}</p>
                   <p className="mt-1 text-[14px] text-[#6B6063]">{delivery.meta}</p>
                 </div>
+                {deliveryInstructions ? (
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9E3659]">Instrucciones adicionales</p>
+                    <p className="mt-1 whitespace-pre-line text-[15px] text-[#1F1F22]">{deliveryInstructions}</p>
+                  </div>
+                ) : null}
                 <p className="flex items-center gap-2 text-[17px] text-[#6B6063]"><Zap size={18} strokeWidth={1.8} />Costo: {money(order.shipping_cost)}</p>
               </div>
             </article>

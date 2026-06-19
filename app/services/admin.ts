@@ -21,7 +21,7 @@ export type OrderFulfillmentStatus = "pending_shipping" | "shipped" | "delivered
 
 export type StrapiOrder = {
   id: number; documentId: string; attributes?: Partial<Omit<StrapiOrder, "attributes">>; tracking_number: string; customer_name: string; customer_email: string; customer_phone: string;
-  delivery_type: "delivery" | "pickup"; address?: string | null; subtotal: number; shipping_cost: number; total?: number;
+  delivery_type: "delivery" | "pickup"; address?: string | null; instructions?: string | null; delivery_instructions?: string | null; notes?: string | null; subtotal: number; shipping_cost: number; total?: number;
   payment_status: OrderPaymentStatus; internal_payment_status?: OrderPaymentStatus | null; wompi_payment_status?: OrderPaymentStatus | string | null;
   order_status?: OrderFulfillmentStatus | string | null; fulfillment_status?: OrderFulfillmentStatus | string | null;
   wompi_transaction_id?: string | null; wompi_transaction_status?: string | null; wompi_payment_method?: string | null;
@@ -73,6 +73,9 @@ const orderScalarFields = [
   "customer_phone",
   "delivery_type",
   "address",
+  "instructions",
+  "delivery_instructions",
+  "notes",
   "subtotal",
   "shipping_cost",
   "total",
