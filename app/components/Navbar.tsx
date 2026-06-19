@@ -9,8 +9,6 @@ import { useCart } from "../context/CartContext";
 
 const navLinks = [
   { label: "INICIO", href: "/" },
-  { label: "MAQUILLAJE", href: "/catalog?category=makeup" },
-  { label: "CUIDADO DE PIEL", href: "/catalog?category=skincare" },
   { label: "CATÁLOGO", href: "/catalog" },
   { label: "ABOUT", href: "/about" },
   { label: "FAQ", href: "/faq" },

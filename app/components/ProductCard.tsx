@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { getVariantOptions, StrapiProduct, StrapiVariantOption } from "../services/producst";
@@ -12,12 +13,14 @@ export interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const router = useRouter();
   const { addToCart } = useCart();
   const [variantOptions, setVariantOptions] = useState<StrapiVariantOption[] | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<StrapiVariantOption | null>(null);
   const [variantLoading, setVariantLoading] = useState(true);
   const [variantError, setVariantError] = useState<string | null>(null);
   const [variantPage, setVariantPage] = useState(0);
+  const [showVariantPicker, setShowVariantPicker] = useState(false);
 
   function getDescriptionText(description: unknown): string {
     const fallback = "Sin descripción disponible.";
@@ -71,34 +74,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     bg: "#FAF6F6",
   });
 
-  const loadVariantOptions = async () => {
-    setVariantLoading(true);
-    setVariantError(null);
-
-    try {
-      const res = await getVariantOptions(product.documentId);
-      const options = (res.data || []).filter((variant) => {
-        const label = variant.label?.toLowerCase().trim();
-        const value = variant.value?.toLowerCase().trim();
-        return (
-          variant.active !== false &&
-          label !== "default" &&
-          value !== "general"
-        );
-      });
-      setVariantOptions(options);
-      setSelectedVariant(null);
-      setVariantPage(0);
-    } catch (error) {
-      console.error("Error loading variant options:", error);
-      setVariantError("No se pudo cargar las tonalidades.");
-      setVariantOptions([]);
-      setSelectedVariant(null);
-    } finally {
-      setVariantLoading(false);
-    }
-  };
-
   useEffect(() => {
     let cancelled = false;
     getVariantOptions(product.documentId)
@@ -116,6 +91,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         setVariantOptions(options);
         setSelectedVariant(null);
         setVariantPage(0);
+        setShowVariantPicker(false);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -133,17 +109,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     };
   }, [product.documentId]);
 
-  const handleAddToCart = () => {
-    if (variantLoading && selectedVariant) return;
-
-    if (variantOptions === null) {
-      loadVariantOptions();
-      addToCart(buildCartItem(null));
-      return;
-    }
-
-    const variant = selectedVariant ?? null;
-
+  const addProductToCart = (variant: StrapiVariantOption | null) => {
     if (onAddToCart) {
       onAddToCart(product, variant);
       return;
@@ -152,7 +118,30 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     addToCart(buildCartItem(variant));
   };
 
-  const variantButtonLabel = selectedVariant ? "Añadir tono seleccionado" : "Añadir al carrito";
+  const hasVariantChoices = Boolean(variantOptions && variantOptions.length > 0);
+
+  const handleAddToCart = () => {
+    if (variantLoading) return;
+
+    if (hasVariantChoices && !showVariantPicker) {
+      setShowVariantPicker(true);
+      return;
+    }
+
+    addProductToCart(selectedVariant ?? null);
+  };
+
+  const handleBuyNow = () => {
+    if (variantLoading) return;
+    addProductToCart(selectedVariant ?? null);
+    router.push("/checkout");
+  };
+
+  const variantButtonLabel = showVariantPicker
+    ? selectedVariant
+      ? "Añadir tono seleccionado"
+      : "Añadir sin tono"
+    : "Añadir al carrito";
 
   const variantTotalPages = variantOptions ? Math.ceil(variantOptions.length / CARD_VARIANTS_PER_PAGE) : 0;
   const variantStart = variantPage * CARD_VARIANTS_PER_PAGE;
@@ -204,25 +193,12 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           {getDescriptionText(product.description)}
         </p>
 
-        {variantOptions && variantOptions.length > 0 && (
+        {showVariantPicker && variantOptions && variantOptions.length > 0 && (
           <div className="relative z-30 mt-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C15074] mb-2">
               Elige tonalidad
             </p>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedVariant(null);
-                  setVariantError(null);
-                }}
-                className={`h-9 rounded-full border-2 px-3 text-[11px] font-semibold uppercase transition-all duration-200 ${!selectedVariant
-                  ? "border-[#C15074] bg-[#FDE6ED] text-[#2D1F23]"
-                  : "border-[#E8D9DF] bg-white text-[#554246] hover:border-[#C15074] hover:text-[#C15074]"
-                }`}
-              >
-                Sin tono
-              </button>
               {visibleVariantOptions.map((variant) => {
                 const isSelected = selectedVariant?.documentId === variant.documentId;
                 const isColor = variant.value?.startsWith("#");
@@ -231,7 +207,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                     key={variant.documentId}
                     type="button"
                     onClick={() => {
-                      setSelectedVariant(variant);
+                      setSelectedVariant((current) => current?.documentId === variant.documentId ? null : variant);
                       setVariantError(null);
                     }}
                     className={`h-9 w-9 rounded-full border-2 transition-all duration-200 flex items-center justify-center px-3 text-[11px] font-semibold uppercase ${isSelected
@@ -284,6 +260,15 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           >
             <ShoppingCart size={13} strokeWidth={2} />
             {variantButtonLabel}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={variantLoading}
+            className="flex items-center justify-center gap-2 w-full border border-[#C15074] bg-white hover:bg-[#FCEDF0] active:scale-[0.98] text-[#C15074] text-[10px] font-bold tracking-widest uppercase py-2.5 rounded-[4px] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Comprar ahora
           </button>
 
           <Link

@@ -36,10 +36,7 @@ const explorarLinks = [
 ];
 
 const soporteLinks = [
-  { label: "Envíos", href: "/shipping" },
-  { label: "Contacto", href: "/contact" },
   { label: "Preguntas Frecuentes", href: "/faq" },
-  { label: "Términos y Condiciones", href: "/terminos-y-condiciones" },
   { label: "Seguimiento", href: "/tracking" },
 ];
 
@@ -119,6 +116,17 @@ export default function Footer() {
                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
               </svg>
             </a>
+            <a
+              href="https://www.tiktok.com/@beautycosmetics_sv?_r=1&_t=ZS-97KUhWuXQA9"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
+              className="w-9 h-9 rounded-full border border-[#E8D5DB] flex items-center justify-center text-[#C15074] hover:bg-[#FCEDF0] transition-colors duration-200"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M16.6 5.82a5.6 5.6 0 0 0 3.28 1.05v3.18a8.7 8.7 0 0 1-3.31-.66v5.64a5.74 5.74 0 1 1-5.74-5.74c.34 0 .67.03.99.09v3.28a2.55 2.55 0 1 0 1.57 2.36V2h3.15c.1 1.43.86 2.83 2.06 3.82Z" />
+              </svg>
+            </a>
           </div>
         </div>
 
@@ -166,10 +174,6 @@ export default function Footer() {
       <div className="border-t border-[#F0E4E8] w-full py-5 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#AC9CA0]">
           <p>© {new Date().getFullYear()} BEAUTY COSMETICS. TODOS LOS DERECHOS RESERVADOS.</p>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-[#C15074] transition-colors">PRIVACIDAD</Link>
-            <Link href="/terms" className="hover:text-[#C15074] transition-colors">TÉRMINOS</Link>
-          </div>
         </div>
       </div>
 
