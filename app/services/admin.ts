@@ -1,7 +1,7 @@
 import "server-only";
 import qs from "qs";
 import { cookies } from "next/headers";
-import type { ProductImageRelation, StrapiBrand, StrapiCategory, StrapiProduct, StrapiResponse, StrapiVariantOption } from "./producst";
+import type { ProductImageRelation, StrapiBrand, StrapiCategory, StrapiImage, StrapiProduct, StrapiResponse, StrapiVariantOption } from "./producst";
 
 import { ADMIN_SESSION_COOKIE } from "../lib/admin-auth";
 export { ADMIN_SESSION_COOKIE };
@@ -28,7 +28,9 @@ export type StrapiOrder = {
   wompi_authorization_code?: string | null; wompi_transaction_message?: string | null; expires_at?: string; createdAt?: string; updatedAt?: string;
   branch?: StrapiBranch | null; shipping_rate?: StrapiShippingRate | null; items?: StrapiOrderItem[];
 };
-export type StrapiStoreConfig = { id: number; documentId?: string; whatsapp_number?: string | null; notification_email?: string | null };
+export type HomeBannerDisplayScope = "desktop_and_mobile" | "desktop_only" | "mobile_only";
+export type StrapiHomeBanner = { id?: number; name: string; home_position: number; destination_url?: string | null; display_scope: HomeBannerDisplayScope; active?: boolean; desktop_image?: StrapiImage | null; mobile_image?: StrapiImage | null };
+export type StrapiStoreConfig = { id: number; documentId?: string; whatsapp_number?: string | null; notification_email?: string | null; home_banners?: StrapiHomeBanner[] };
 
 export function getAdminTokenFromCookieStore(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
@@ -214,10 +216,10 @@ export async function getAdminShippingRates() {
 
 export async function getAdminStoreConfig() {
   try {
-    return await adminRequest<StrapiResponse<StrapiStoreConfig>>("store-config");
+    return await adminRequest<StrapiResponse<StrapiStoreConfig>>("store-config?populate[home_banners][populate][0]=desktop_image&populate[home_banners][populate][1]=mobile_image");
   } catch (error) {
     if (error instanceof Error && error.message.includes("Not Found")) {
-      return { data: { id: 0, whatsapp_number: null, notification_email: null }, meta: {} } satisfies StrapiResponse<StrapiStoreConfig>;
+      return { data: { id: 0, whatsapp_number: null, notification_email: null, home_banners: [] }, meta: {} } satisfies StrapiResponse<StrapiStoreConfig>;
     }
     throw error;
   }

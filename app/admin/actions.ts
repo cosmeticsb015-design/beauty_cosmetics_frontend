@@ -86,6 +86,26 @@ async function adminRefererPath(fallback: string) {
 
 const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_PRODUCT_IMAGES_PER_SAVE = 8;
+const MAX_BANNER_IMAGE_SIZE = 8 * 1024 * 1024;
+
+function getOptionalImageFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+async function uploadBannerImage(formData: FormData, key: string) {
+  const file = getOptionalImageFile(formData, key);
+  if (!file) return null;
+  if (!file.type.startsWith("image/")) throw new Error("Solo se permiten imagenes en banners.");
+  if (file.size > MAX_BANNER_IMAGE_SIZE) throw new Error("Cada banner debe pesar maximo 8MB.");
+  const uploaded = await uploadAdminFile(file);
+  return uploaded[0]?.id ?? null;
+}
+
+function sanitizeDisplayScope(value: FormDataEntryValue | null) {
+  const scope = sanitizeText(value, "desktop_and_mobile");
+  return ["desktop_and_mobile", "desktop_only", "mobile_only"].includes(scope) ? scope : "desktop_and_mobile";
+}
 
 function getImageFiles(formData: FormData) {
   return formData
@@ -297,11 +317,40 @@ export async function updateOrderStatus(_prev: AdminMutationState, formData: For
 export async function saveStoreConfig(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
   const whatsapp_number = sanitizeText(formData.get("whatsapp_number"));
   const notification_email = sanitizeText(formData.get("notification_email"));
-  const data: Record<string, string> = {};
-  if (whatsapp_number) data.whatsapp_number = whatsapp_number;
-  if (notification_email) data.notification_email = notification_email;
-  if (!Object.keys(data).length) return { ok: false, message: "Agrega al menos WhatsApp o email de notificaciones." };
-  try { await updateEntity("store-config", "", data); revalidatePath("/admin/contenido"); revalidatePath("/"); return { ok: true, message: "Configuración guardada." }; }
+  const bannerIndexes = Array.from(new Set(Array.from(formData.keys()).map((key) => key.match(/^banner_(?:id|name|position|url|scope|active|desktop_existing|mobile_existing|desktop_image|mobile_image)_(\d+)$/)?.[1]).filter(Boolean) as string[]));
+
+  try {
+    const home_banners = [];
+    for (const index of bannerIndexes) {
+      const name = sanitizeText(formData.get(`banner_name_${index}`));
+      const existingDesktop = sanitizeText(formData.get(`banner_desktop_existing_${index}`));
+      const uploadedDesktop = await uploadBannerImage(formData, `banner_desktop_image_${index}`);
+      const desktopImage = uploadedDesktop ?? (existingDesktop ? Number(existingDesktop) : null);
+      if (!name && !desktopImage) continue;
+      if (!name || !desktopImage) return { ok: false, message: "Cada banner necesita nombre e imagen de escritorio." };
+
+      const id = sanitizeText(formData.get(`banner_id_${index}`));
+      const existingMobile = sanitizeText(formData.get(`banner_mobile_existing_${index}`));
+      const uploadedMobile = await uploadBannerImage(formData, `banner_mobile_image_${index}`);
+      const mobileImage = uploadedMobile ?? (existingMobile ? Number(existingMobile) : null);
+      const banner: Record<string, unknown> = {
+        ...(id ? { id: Number(id) } : {}),
+        name,
+        home_position: Math.max(1, sanitizeNumber(formData.get(`banner_position_${index}`), home_banners.length + 1)),
+        destination_url: sanitizeText(formData.get(`banner_url_${index}`)) || null,
+        display_scope: sanitizeDisplayScope(formData.get(`banner_scope_${index}`)),
+        active: sanitizeBoolean(formData.get(`banner_active_${index}`)),
+        desktop_image: desktopImage,
+      };
+      if (mobileImage) banner.mobile_image = mobileImage;
+      home_banners.push(banner);
+    }
+
+    await updateEntity("store-config", "", { whatsapp_number, notification_email, home_banners });
+    revalidatePath("/admin/contenido");
+    revalidatePath("/");
+    return { ok: true, message: "Configuración guardada." };
+  }
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar la configuración." }; }
 }
 
