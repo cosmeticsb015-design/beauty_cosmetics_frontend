@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { HomeBanner } from "../services/storeConfig";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
@@ -24,15 +24,34 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
     .filter((banner) => banner.active !== false && banner.desktop_image?.url)
     .sort((a, b) => (a.home_position ?? 0) - (b.home_position ?? 0));
 
-  if (!visibleBanners.length) return null;
-
   const scrollSlider = (direction: "prev" | "next") => {
     const slider = sliderRef.current;
     if (!slider) return;
     const card = slider.querySelector<HTMLElement>("[data-home-banner-card]");
-    const amount = card ? card.offsetWidth + 12 : slider.clientWidth * 0.85;
+    const amount = card ? card.offsetWidth + 12 : slider.clientWidth;
+    const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
+    const nextLeft = direction === "next" ? slider.scrollLeft + amount : slider.scrollLeft - amount;
+
+    if (direction === "next" && nextLeft >= maxScrollLeft - 8) {
+      slider.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (direction === "prev" && nextLeft <= 0) {
+      slider.scrollTo({ left: maxScrollLeft, behavior: "smooth" });
+      return;
+    }
+
     slider.scrollBy({ left: direction === "next" ? amount : -amount, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (visibleBanners.length <= 1) return;
+    const interval = window.setInterval(() => scrollSlider("next"), 4500);
+    return () => window.clearInterval(interval);
+  }, [visibleBanners.length]);
+
+  if (!visibleBanners.length) return null;
 
   return (
     <section className="bg-[#FFF7F9] py-6 sm:py-7" aria-label="Promociones destacadas">
@@ -67,7 +86,7 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
                 id={`home-banner-${banner.id ?? banner.home_position}`}
                 data-home-banner-card
                 key={`${banner.id ?? banner.name}-${banner.home_position}`}
-                className={`${scopeClass(banner.display_scope)} group relative min-w-[86%] snap-center overflow-hidden rounded-[10px] bg-white shadow-[0_12px_28px_rgba(0,0,0,0.28)] sm:min-w-[46%] lg:min-w-[31.6%] xl:min-w-[24%]`}
+                className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[10px] bg-white shadow-[0_12px_28px_rgba(0,0,0,0.18)] sm:min-w-[46%] lg:min-w-[31.6%] xl:min-w-[24%]`}
               >
                 <div className="aspect-[16/9] md:aspect-[120/63]">
                   {banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}
