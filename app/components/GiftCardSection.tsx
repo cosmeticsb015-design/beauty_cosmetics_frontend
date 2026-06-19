@@ -1,7 +1,14 @@
-import Link from "next/link";
 import { Gift } from "lucide-react";
 
-export default function GiftCardSection() {
+function buildWhatsappGiftCardUrl(whatsappNumber?: string | null) {
+  const cleanNumber = whatsappNumber?.replace(/\D/g, "");
+  if (!cleanNumber) return "/catalog?category=gift-cards";
+  return `https://wa.me/${cleanNumber}?text=${encodeURIComponent("quiero COMPRAR GIFT CARD")}`;
+}
+
+export default function GiftCardSection({ whatsappNumber }: { whatsappNumber?: string | null }) {
+  const giftCardHref = buildWhatsappGiftCardUrl(whatsappNumber);
+  const isWhatsappLink = giftCardHref.startsWith("https://wa.me/");
   return (
     <section
       id="gift-card-section"
@@ -19,13 +26,15 @@ export default function GiftCardSection() {
               El regalo perfecto para cualquier ocasión. Deja que elijan sus favoritos
               de nuestra colección de lujo.
             </p>
-            <Link
-              href="/catalog?category=gift-cards"
+            <a
+              href={giftCardHref}
               id="gift-card-cta"
+              target={isWhatsappLink ? "_blank" : undefined}
+              rel={isWhatsappLink ? "noopener noreferrer" : undefined}
               className="mt-2 inline-flex items-center justify-center bg-white text-[#C15074] border border-white px-10 py-4 text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-white/90 transition-colors duration-200 rounded-none min-w-[220px]"
             >
               COMPRAR GIFT CARD
-            </Link>
+            </a>
           </div>
 
           {/* Right: Gift Card Visual */}

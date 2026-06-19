@@ -29,7 +29,7 @@ export default async function Home() {
       <CategoriesSection categories={categories} />
       <FeaturedProduct products={featuredProducts} />
       <EssenceSection />
-      <GiftCardSection />
+      <GiftCardSection whatsappNumber={storeConfigResponse.data?.whatsapp_number} />
       <NewsletterSection />
     </>
   );

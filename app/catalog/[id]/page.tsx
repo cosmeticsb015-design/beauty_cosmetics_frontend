@@ -283,24 +283,9 @@ export default function ProductDetailPage() {
             ) : variantOptions.length > 0 ? (
               <div className="mt-10">
                 <p className="text-xs text-[#554246] mb-3">
-                  Elige tu Tono:{" "}
-                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label || "Producto principal"}</span>
+                  Elige tu tono{selectedVariant ? `: ${selectedVariant.label}` : ""}
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedVariant(null);
-                      setActiveThumb(0);
-                    }}
-                    title="Producto principal"
-                    className={`h-9 rounded-[10px] border-2 px-3 text-[11px] font-semibold transition-all duration-200 flex-shrink-0 ${!selectedVariant
-                      ? "border-[#2D1F23] bg-[#FAF6F6] text-[#2D1F23] shadow-sm"
-                      : "border-[#E8D9DF] bg-white text-[#8A7A7E] hover:border-[#C15074]/40 hover:text-[#C15074]"
-                      }`}
-                  >
-                    Principal
-                  </button>
                   {visibleVariantOptions.map((variant) => {
                     const isSelected = selectedVariant?.documentId === variant.documentId;
 
@@ -309,7 +294,7 @@ export default function ProductDetailPage() {
                         key={variant.documentId}
                         type="button"
                         onClick={() => {
-                          setSelectedVariant(variant);
+                          setSelectedVariant((current) => current?.documentId === variant.documentId ? null : variant);
                           setActiveThumb(0);
                         }}
                         title={variant.label}
