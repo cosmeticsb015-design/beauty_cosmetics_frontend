@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import WhatsappFloatingButton from "./components/WhatsappFloatingButton";
+import { getPublicStoreConfig } from "./services/storeConfig";
 import { CartProvider } from "./context/CartContext";
 import { Suspense } from "react";
 
@@ -19,11 +20,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const storeConfig = await getPublicStoreConfig();
+
   return (
     <html lang="es" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full flex flex-col">
@@ -33,7 +36,7 @@ export default function RootLayout({
           </Suspense>
           <main className="flex-1">{children}</main>
           <Footer />
-          <WhatsappFloatingButton />
+          <WhatsappFloatingButton whatsappNumber={storeConfig.data?.whatsapp_number} />
         </CartProvider>
       </body>
     </html>

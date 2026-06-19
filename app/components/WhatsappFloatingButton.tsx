@@ -3,17 +3,20 @@
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-const DEFAULT_MESSAGE = process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "Hola, quiero más información sobre Beauty Cosmetics.";
+const DEFAULT_MESSAGE = "Hola, quiero más información sobre Beauty Cosmetics.";
 
-function normalizeWhatsappNumber(number?: string) {
+function normalizeWhatsappNumber(number?: string | null) {
   if (!number) return "";
   return number.replace(/[^\d]/g, "");
 }
 
-export default function WhatsappFloatingButton() {
+type WhatsappFloatingButtonProps = {
+  whatsappNumber?: string | null;
+};
+
+export default function WhatsappFloatingButton({ whatsappNumber: configuredWhatsappNumber }: WhatsappFloatingButtonProps) {
   const pathname = usePathname();
-  const whatsappNumber = normalizeWhatsappNumber(WHATSAPP_NUMBER);
+  const whatsappNumber = normalizeWhatsappNumber(configuredWhatsappNumber);
 
   if (!whatsappNumber || pathname?.startsWith("/admin")) return null;
 
