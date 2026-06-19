@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { getVariantOptions, StrapiProduct, StrapiVariantOption } from "../services/producst";
 import { useCart } from "../context/CartContext";
+
+const CARD_VARIANTS_PER_PAGE = 5;
 
 export interface ProductCardProps {
   product: StrapiProduct;
@@ -15,6 +17,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
   const [selectedVariant, setSelectedVariant] = useState<StrapiVariantOption | null>(null);
   const [variantLoading, setVariantLoading] = useState(true);
   const [variantError, setVariantError] = useState<string | null>(null);
+  const [variantPage, setVariantPage] = useState(0);
 
   function getDescriptionText(description: unknown): string {
     const fallback = "Sin descripción disponible.";
@@ -85,6 +88,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       });
       setVariantOptions(options);
       setSelectedVariant(null);
+      setVariantPage(0);
     } catch (error) {
       console.error("Error loading variant options:", error);
       setVariantError("No se pudo cargar las tonalidades.");
@@ -111,6 +115,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         });
         setVariantOptions(options);
         setSelectedVariant(null);
+        setVariantPage(0);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -152,6 +157,11 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     : selectedVariant
     ? "Añadir tono seleccionado"
     : "Añadir producto base";
+
+  const variantTotalPages = variantOptions ? Math.ceil(variantOptions.length / CARD_VARIANTS_PER_PAGE) : 0;
+  const variantStart = variantPage * CARD_VARIANTS_PER_PAGE;
+  const visibleVariantOptions = variantOptions?.slice(variantStart, variantStart + CARD_VARIANTS_PER_PAGE) ?? [];
+  const hasVariantPagination = variantTotalPages > 1;
 
   return (
     <div className="group relative flex flex-col bg-white border border-[#F0E4E8] rounded-[8px] overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer">
@@ -217,7 +227,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
               >
                 Principal
               </button>
-              {variantOptions.map((variant) => {
+              {visibleVariantOptions.map((variant) => {
                 const isSelected = selectedVariant?.documentId === variant.documentId;
                 const isColor = variant.value?.startsWith("#");
                 return (
@@ -239,6 +249,29 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                 );
               })}
             </div>
+            {hasVariantPagination && (
+              <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-[#AC9CA0]">
+                <button
+                  type="button"
+                  onClick={() => setVariantPage((page) => Math.max(0, page - 1))}
+                  disabled={variantPage === 0}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#E8D9DF] text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Ver tonalidades anteriores"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span>{variantStart + 1}-{Math.min(variantStart + CARD_VARIANTS_PER_PAGE, variantOptions.length)} de {variantOptions.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setVariantPage((page) => Math.min(variantTotalPages - 1, page + 1))}
+                  disabled={variantPage >= variantTotalPages - 1}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#E8D9DF] text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Ver más tonalidades"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
         )}
 

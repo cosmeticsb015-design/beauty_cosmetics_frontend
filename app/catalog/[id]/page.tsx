@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Minus, Plus, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import {
   getProductById,
@@ -16,6 +16,7 @@ import {
 
 // ── Helpers ────────────────────────────────────────────────
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
+const DETAIL_VARIANTS_PER_PAGE = 12;
 
 const buildUrl = (url?: string | null) => (url ? `${API_BASE}${url}` : null);
 
@@ -35,6 +36,7 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [variantPage, setVariantPage] = useState(0);
 
   const addSelectedProductToCart = (quantityToAdd = quantity) => {
     if (!product) return false;
@@ -99,11 +101,13 @@ export default function ProductDetailPage() {
                 );
               });
               setVariantOptions(variants);
+              setVariantPage(0);
               setSelectedVariant(null);
             })
             .catch((err) => {
               console.warn("Could not load variant options:", err);
               setVariantOptions([]);
+              setVariantPage(0);
               setSelectedVariant(null);
             })
             .finally(() => setVariantsLoading(false));
@@ -152,6 +156,10 @@ export default function ProductDetailPage() {
 
   // Si hay variante con imágenes, usar las suyas; si no, usar las del producto
   const thumbsToShow = variantImageUrls.length > 0 ? variantImageUrls : productImageUrls;
+  const variantTotalPages = Math.ceil(variantOptions.length / DETAIL_VARIANTS_PER_PAGE);
+  const variantStart = variantPage * DETAIL_VARIANTS_PER_PAGE;
+  const visibleVariantOptions = variantOptions.slice(variantStart, variantStart + DETAIL_VARIANTS_PER_PAGE);
+  const hasVariantPagination = variantTotalPages > 1;
 
   // Imagen principal: la activa del conjunto actual
   const mainImageUrl = thumbsToShow[activeThumb] || null;
@@ -293,7 +301,7 @@ export default function ProductDetailPage() {
                   >
                     Principal
                   </button>
-                  {variantOptions.map((variant) => {
+                  {visibleVariantOptions.map((variant) => {
                     const isSelected = selectedVariant?.documentId === variant.documentId;
 
                     return (
@@ -319,6 +327,27 @@ export default function ProductDetailPage() {
                     );
                   })}
                 </div>
+                {hasVariantPagination && (
+                  <div className="mt-4 flex items-center justify-between rounded-[10px] border border-[#F0E4E8] bg-[#FDFCFD] px-3 py-2 text-xs font-semibold text-[#8A7A7E]">
+                    <button
+                      type="button"
+                      onClick={() => setVariantPage((page) => Math.max(0, page - 1))}
+                      disabled={variantPage === 0}
+                      className="inline-flex h-8 items-center gap-1 rounded-full border border-[#E8D9DF] px-3 text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft size={14} /> Anteriores
+                    </button>
+                    <span>{variantStart + 1}-{Math.min(variantStart + DETAIL_VARIANTS_PER_PAGE, variantOptions.length)} de {variantOptions.length}</span>
+                    <button
+                      type="button"
+                      onClick={() => setVariantPage((page) => Math.min(variantTotalPages - 1, page + 1))}
+                      disabled={variantPage >= variantTotalPages - 1}
+                      className="inline-flex h-8 items-center gap-1 rounded-full border border-[#E8D9DF] px-3 text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Más <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : null}
 
