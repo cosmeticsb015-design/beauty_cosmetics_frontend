@@ -455,17 +455,7 @@ export default function CheckoutPage() {
                         />
                       </div>
 
-                      <div className="flex flex-col gap-2">
-                        <label htmlFor="instrucciones" className="text-xs text-[#554246]">Instrucciones adicionales (opcional)</label>
-                        <textarea
-                          id="instrucciones"
-                          rows={3}
-                          placeholder="Ej. Dejar en portería"
-                          value={formData.instrucciones}
-                          onChange={(e) => setFormData({ ...formData, instrucciones: e.target.value })}
-                          className="w-full bg-[#F9F7F8] border border-transparent focus:border-[#C15074] rounded-[4px] px-4 py-3.5 text-sm text-[#2D1F23] placeholder:text-[#AC9CA0] outline-none transition-colors resize-none"
-                        />
-                      </div>
+                     
                     </form>
                   )}
 

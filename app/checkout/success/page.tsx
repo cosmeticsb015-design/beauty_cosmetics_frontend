@@ -188,9 +188,7 @@ function OrderSummary({ order, kind }: { order: PublicOrder; kind: "paid" | "pen
         <h1 className="text-3xl md:text-4xl font-medium text-[#C15074] mb-3">{headerByKind.title}</h1>
         <p className="text-[#8A7A7E] text-sm md:text-base mb-8">{headerByKind.subtitle}</p>
 
-        <p className="text-2xl md:text-3xl font-black text-[#2D1F23] uppercase tracking-wide mb-8">
-          Toma captura a este comprobante y guárdalo para cualquier consulta sobre tu pedido.
-        </p>
+      
 
         <div className="inline-flex items-center gap-2 bg-[#F0E4E8]/50 text-[#554246] px-5 py-2.5 rounded-full text-[10px] font-bold tracking-[0.15em] uppercase border border-[#F0E4E8]">
           <span>PEDIDO #{order.tracking_number}</span>
