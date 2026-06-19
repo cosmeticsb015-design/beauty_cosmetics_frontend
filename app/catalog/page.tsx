@@ -10,7 +10,6 @@ import {
   Droplets,
   ChevronDown,
   X,
-  Search,
   Brush,
   Eye,
   Hand,
@@ -75,8 +74,6 @@ function CatalogContent() {
   const [activeCategory, setActiveCategory] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("Relevance");
-  const [searchTerm, setSearchTerm] = useState("");
-
   const [dbCategories, setDbCategories] = useState<StrapiCategory[]>([]);
   const [dbBrands, setDbBrands] = useState<StrapiBrand[]>([]);
   const [dbProducts, setDbProducts] = useState<StrapiProduct[]>([]);
@@ -125,9 +122,7 @@ function CatalogContent() {
     setActiveCategory("all");
   }, [dbCategories, searchParams]);
 
-  const normalizedSearch = searchTerm.trim();
-
-  // Fetch productos cuando cambian filtros, búsqueda o página
+  // Fetch productos cuando cambian filtros o página
   useEffect(() => {
     if (!activeCategory) return;
 
@@ -138,7 +133,6 @@ function CatalogContent() {
       pageSize: PAGE_SIZE,
       categorySlug: activeCategory,
       brandNames: selectedBrands.length > 0 ? selectedBrands : undefined,
-      search: normalizedSearch || undefined,
       sort:
         sortBy === "Price: Low to High" ? "price:asc" :
           sortBy === "Price: High to Low" ? "price:desc" :
@@ -163,12 +157,12 @@ function CatalogContent() {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, selectedBrands, sortBy, normalizedSearch, currentPage]);
+  }, [activeCategory, selectedBrands, sortBy, currentPage]);
 
   // Reset página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, selectedBrands, sortBy, normalizedSearch]);
+  }, [activeCategory, selectedBrands, sortBy]);
 
   const toggleBrand = (brandName: string) => {
     setSelectedBrands((prev) =>
@@ -476,33 +470,6 @@ function CatalogContent() {
 
           {/* ── Product Grid ── */}
           <div className="w-full">
-            <div className="mb-5 rounded-[10px] border border-[#F0E4E8] bg-white px-4 py-3 shadow-sm">
-              <label htmlFor="catalog-search" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#AC9CA0]">
-                Buscar productos o marcas
-              </label>
-              <div className="flex items-center gap-3 rounded-[6px] bg-[#FDF7F9] px-3 py-2.5 ring-1 ring-transparent transition focus-within:bg-white focus-within:ring-[#C15074]">
-                <Search size={18} strokeWidth={1.8} className="shrink-0 text-[#C15074]" />
-                <input
-                  id="catalog-search"
-                  type="search"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Busca por producto o marca, ej. labial, AVON..."
-                  className="w-full bg-transparent text-sm text-[#2D1F23] outline-none placeholder:text-[#BFAEB4]"
-                />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm("")}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[#AC9CA0] transition hover:bg-[#FCEDF0] hover:text-[#C15074]"
-                    aria-label="Limpiar búsqueda"
-                  >
-                    <X size={14} strokeWidth={1.9} />
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-3">
@@ -542,7 +509,7 @@ function CatalogContent() {
             {/* Grid */}
             {dbProducts.length === 0 ? (
               <div className="py-20 text-center text-[#AC9CA0] text-sm">
-                {normalizedSearch ? `No encontramos productos o marcas para “${normalizedSearch}”.` : "No hay productos en esta categoría."}
+                No hay productos en esta categoría.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

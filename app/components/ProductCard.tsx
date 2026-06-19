@@ -152,11 +152,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     addToCart(buildCartItem(variant));
   };
 
-  const variantButtonLabel = variantOptions === null
-    ? "Añadir producto base"
-    : selectedVariant
-    ? "Añadir tono seleccionado"
-    : "Añadir producto base";
+  const variantButtonLabel = selectedVariant ? "Añadir tono seleccionado" : "Añadir al carrito";
 
   const variantTotalPages = variantOptions ? Math.ceil(variantOptions.length / CARD_VARIANTS_PER_PAGE) : 0;
   const variantStart = variantPage * CARD_VARIANTS_PER_PAGE;
@@ -211,7 +207,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         {variantOptions && variantOptions.length > 0 && (
           <div className="relative z-30 mt-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C15074] mb-2">
-              Tonalidades opcionales
+              Elige tonalidad
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -225,7 +221,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                   : "border-[#E8D9DF] bg-white text-[#554246] hover:border-[#C15074] hover:text-[#C15074]"
                 }`}
               >
-                Principal
+                Sin tono
               </button>
               {visibleVariantOptions.map((variant) => {
                 const isSelected = selectedVariant?.documentId === variant.documentId;
