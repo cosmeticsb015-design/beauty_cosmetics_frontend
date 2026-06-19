@@ -189,7 +189,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           ${selectedVariantPrice.toFixed(2)}
         </p>
 
-        <p className="text-[11px] text-[#AC9CA0] leading-relaxed mt-1.5 line-clamp-2">
+        <p className="mt-2 min-h-[2.6rem] text-[13px] leading-5 text-[#AFA1A6] line-clamp-2">
           {getDescriptionText(product.description)}
         </p>
 
