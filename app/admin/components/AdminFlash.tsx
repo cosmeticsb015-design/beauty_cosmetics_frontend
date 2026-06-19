@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminNotice } from "./AdminFlash.utils";
+export type { AdminNotice };
 
 export default function AdminFlash({ notice }: { notice?: AdminNotice }) {
   const [visible, setVisible] = useState(Boolean(notice));

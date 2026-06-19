@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, HandFist, ShieldCheck, Truck } from "lucide-react";
+import { Gift, HandFist, Mail, MessageCircle, ShieldCheck, Truck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -40,7 +40,12 @@ const soporteLinks = [
   { label: "Términos y Condiciones", href: "/terminos-y-condiciones" },
 ];
 
-export default function Footer() {
+function whatsappHref(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}` : `https://wa.me/${value}`;
+}
+
+export default function Footer({ whatsappNumber, notificationEmail }: { whatsappNumber?: string | null; notificationEmail?: string | null }) {
   const pathname = usePathname();
 
   if (pathname?.startsWith("/admin")) return null;
@@ -90,6 +95,21 @@ export default function Footer() {
               Maquillaje y skincare auténticos, seleccionados cuidadosamente para quienes buscan calidad, confianza y resultados reales.
             </p>
           </div>
+          {(whatsappNumber || notificationEmail) ? (
+            <div className="mt-2 flex flex-col gap-2 text-sm text-[#554246]">
+              {whatsappNumber ? (
+                <a href={whatsappHref(whatsappNumber)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-[#C15074]">
+                  <MessageCircle className="h-4 w-4 text-[#C15074]" /> {whatsappNumber}
+                </a>
+              ) : null}
+              {notificationEmail ? (
+                <a href={`mailto:${notificationEmail}`} className="inline-flex items-center gap-2 hover:text-[#C15074]">
+                  <Mail className="h-4 w-4 text-[#C15074]" /> {notificationEmail}
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Social Icons */}
           <div className="flex gap-3 mt-1">
             <a

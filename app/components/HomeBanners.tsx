@@ -15,12 +15,15 @@ function scopeClass(scope: HomeBanner["display_scope"]) {
 }
 
 export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }) {
-  const visibleBanners = banners.filter((banner) => banner.active !== false && banner.desktop_image?.url);
+  const visibleBanners = banners
+    .filter((banner) => banner.active !== false && banner.desktop_image?.url)
+    .sort((a, b) => (a.home_position ?? 0) - (b.home_position ?? 0));
   if (!visibleBanners.length) return null;
 
   return (
     <section className="bg-[#FFF7F9] py-6 sm:py-8" aria-label="Promociones destacadas">
-      <div className="section-container flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin] sm:gap-4">
+      <div className="section-container">
+        <div className="flex gap-4 overflow-x-auto scroll-smooth pb-3 snap-x snap-mandatory [scrollbar-width:thin]">
         {visibleBanners.map((banner) => {
           const desktopUrl = mediaUrl(banner.desktop_image?.url);
           const mobileUrl = mediaUrl(banner.mobile_image?.url) ?? desktopUrl;
@@ -32,11 +35,21 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
           );
 
           return (
-            <article key={`${banner.id ?? banner.name}-${banner.home_position}`} className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[10px] border border-[#F1CCD5] bg-white shadow-sm sm:min-w-[calc(85%-0.5rem)] lg:min-w-[calc(50%-0.5rem)]`}>
-              <div className="aspect-[4/5] min-[480px]:aspect-[16/9] lg:aspect-[21/8]">{banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}</div>
+            <article id={`home-banner-${banner.id ?? banner.home_position}`} key={`${banner.id ?? banner.name}-${banner.home_position}`} className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[14px] border border-[#F1CCD5] bg-white shadow-sm`}>
+              <div className="aspect-[4/5] min-[520px]:aspect-[16/7] lg:aspect-[16/5]">{banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}</div>
             </article>
           );
         })}
+        </div>
+        {visibleBanners.length > 1 ? (
+          <div className="mt-3 flex justify-center gap-2" aria-label="Indicadores del carrusel">
+            {visibleBanners.map((banner, index) => (
+              <a key={`dot-${banner.id ?? index}`} href={`#home-banner-${banner.id ?? banner.home_position}`} className="h-2.5 w-2.5 rounded-full bg-[#D4738F] opacity-60 transition hover:opacity-100">
+                <span className="sr-only">Ver banner {index + 1}</span>
+              </a>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

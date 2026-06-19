@@ -72,7 +72,7 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
   const pages = Array.from({ length: Math.min(pagination.pageCount, 5) }, (_, index) => index + 1);
 
   return (
-    <AdminShell active="products" searchPlaceholder="Buscar productos...">
+    <AdminShell active="products" searchPlaceholder="Buscar productos..." searchValue={currentFilters.search}>
           <main className={`mx-auto w-full max-w-[1080px] px-4 py-10 md:px-8 md:py-20 ${productToToggle ? "blur-[2px]" : ""}`}>
             <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Cambios guardados correctamente." } : null)} />
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">

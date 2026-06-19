@@ -35,7 +35,7 @@ export default async function RootLayout({
             <Navbar />
           </Suspense>
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Footer whatsappNumber={storeConfig.data?.whatsapp_number} notificationEmail={storeConfig.data?.notification_email} />
           <WhatsappFloatingButton whatsappNumber={storeConfig.data?.whatsapp_number} />
         </CartProvider>
       </body>

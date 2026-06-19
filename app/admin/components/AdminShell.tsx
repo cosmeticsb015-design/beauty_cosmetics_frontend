@@ -23,6 +23,8 @@ const navItems = [
 type AdminShellProps = {
   active: "products" | "catalog" | "orders" | "branches" | "logistics" | "content";
   searchPlaceholder?: string;
+  searchAction?: string;
+  searchValue?: string;
   children: React.ReactNode;
 };
 
@@ -35,7 +37,7 @@ const activeByKey = {
   content: "Contenido",
 };
 
-export default function AdminShell({ active, searchPlaceholder, children }: AdminShellProps) {
+export default function AdminShell({ active, searchPlaceholder, searchAction = "/admin", searchValue = "", children }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-[#2D1F23]">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
@@ -83,14 +85,17 @@ export default function AdminShell({ active, searchPlaceholder, children }: Admi
           <header className="sticky top-0 z-20 border-b border-[#EBC8D2] bg-white/95 px-4 py-4 backdrop-blur md:px-8">
             <div className="flex items-center gap-3">
               {searchPlaceholder ? (
-                <div className="flex h-11 w-full max-w-[1050px] items-center gap-3 rounded-[8px] bg-[#F6F6F6] px-4 text-[#6B6063]">
+                <form action={searchAction} className="flex h-11 w-full max-w-[1050px] items-center gap-3 rounded-[8px] bg-[#F6F6F6] px-4 text-[#6B6063]">
                   <Search size={20} strokeWidth={1.8} />
                   <input
+                    name="q"
+                    defaultValue={searchValue}
                     aria-label={searchPlaceholder}
                     placeholder={searchPlaceholder}
                     className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-[#7A7F8A]"
                   />
-                </div>
+                  <button className="rounded-[4px] bg-[#9E3659] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#84304C]">Buscar</button>
+                </form>
               ) : (
                 <div className="h-11" />
               )}

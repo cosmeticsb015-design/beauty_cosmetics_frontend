@@ -194,7 +194,7 @@ export default async function AdminProductsPage({
     );
   } catch (error) {
     return (
-      <AdminShell active="products" searchPlaceholder="Buscar productos...">
+      <AdminShell active="products" searchPlaceholder="Buscar productos..." searchValue={search ?? ""}>
         <AdminDataError
           title="No se pudieron cargar productos desde Strapi"
           error={error}
