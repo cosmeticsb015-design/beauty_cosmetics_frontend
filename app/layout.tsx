@@ -28,8 +28,8 @@ export default async function RootLayout({
   const storeConfig = await getPublicStoreConfig();
 
   return (
-    <html lang="es" className="h-full antialiased" data-scroll-behavior="smooth">
-      <body className="min-h-full flex flex-col">
+    <html lang="es" className="h-full antialiased" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <CartProvider>
           <Suspense fallback={<div className="h-[68px] bg-white border-b border-[#F0E4E8]" />}>
             <Navbar />

@@ -19,8 +19,8 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
   if (!visibleBanners.length) return null;
 
   return (
-    <section className="bg-[#FFF7F9] px-4 py-8 md:px-8" aria-label="Promociones destacadas">
-      <div className="mx-auto flex max-w-[1180px] gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin]">
+    <section className="bg-[#FFF7F9] py-6 sm:py-8" aria-label="Promociones destacadas">
+      <div className="section-container flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-width:thin] sm:gap-4">
         {visibleBanners.map((banner) => {
           const desktopUrl = mediaUrl(banner.desktop_image?.url);
           const mobileUrl = mediaUrl(banner.mobile_image?.url) ?? desktopUrl;
@@ -32,8 +32,8 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
           );
 
           return (
-            <article key={`${banner.id ?? banner.name}-${banner.home_position}`} className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[10px] border border-[#F1CCD5] bg-white shadow-sm md:min-w-[calc(50%-0.5rem)]`}>
-              <div className="aspect-[16/9] md:aspect-[21/8]">{banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}</div>
+            <article key={`${banner.id ?? banner.name}-${banner.home_position}`} className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[10px] border border-[#F1CCD5] bg-white shadow-sm sm:min-w-[calc(85%-0.5rem)] lg:min-w-[calc(50%-0.5rem)]`}>
+              <div className="aspect-[4/5] min-[480px]:aspect-[16/9] lg:aspect-[21/8]">{banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}</div>
             </article>
           );
         })}
