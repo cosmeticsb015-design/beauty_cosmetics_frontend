@@ -37,7 +37,7 @@ const explorarLinks = [
 
 const soporteLinks = [
   { label: "Preguntas Frecuentes", href: "/faq" },
-  { label: "Seguimiento", href: "/tracking" },
+  { label: "Términos y Condiciones", href: "/terminos-y-condiciones" },
 ];
 
 export default function Footer() {
