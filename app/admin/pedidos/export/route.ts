@@ -16,12 +16,10 @@ function statusLabel(status: string) {
   return "Pendiente de pago";
 }
 
-function escapeCell(value: unknown) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function escapeCsvCell(value: unknown) {
+  const text = String(value ?? "");
+  const safeText = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
 }
 
 async function fetchAllOrders(params: { status?: string; search?: string; dateFrom?: string; dateTo?: string }) {
@@ -78,13 +76,15 @@ export async function GET(request: NextRequest) {
     "Pedido", "Fecha", "Estado de pago", "Cliente", "Email", "Telefono", "Tipo de entrega", "Sucursal", "Tarifa", "Direccion", "Subtotal", "Costo envio", "Total", "Transaccion Wompi", "Producto", "Variante", "Cantidad", "Precio unitario", "Subtotal item", "Stock/Sucursal",
   ];
 
-  const html = `<!doctype html><html><head><meta charset="utf-8" /></head><body><table border="1"><thead><tr>${headers.map((header) => `<th>${escapeCell(header)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell: unknown) => `<td>${escapeCell(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`;
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(";"))
+    .join("\r\n");
   const suffix = orderId ? `pedido-${orders[0]?.tracking_number ?? orderId}` : dateFrom || dateTo ? `${dateFrom ?? "inicio"}_${dateTo ?? "hoy"}` : "todos";
 
-  return new Response(html, {
+  return new Response(`\uFEFF${csv}`, {
     headers: {
-      "Content-Type": "application/vnd.ms-excel; charset=utf-8",
-      "Content-Disposition": `attachment; filename="pedidos-${suffix}.xls"`,
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="pedidos-${suffix}.csv"`,
       "Cache-Control": "no-store",
     },
   });
