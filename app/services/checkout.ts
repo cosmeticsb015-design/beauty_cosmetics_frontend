@@ -35,6 +35,7 @@ export interface CreateCheckoutOrderItem {
 }
 
 export interface CreateCheckoutOrderPayload {
+  checkout_attempt_id?: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -145,11 +146,18 @@ export const getCheckoutBranchStocks = async (items: CreateCheckoutOrderItem[], 
   return response.data || [];
 };
 
-export const createCheckoutPayment = async (order: CreateCheckoutOrderPayload): Promise<CheckoutPaymentResponse> => {
+export const createCheckoutPayment = async (order: CreateCheckoutOrderPayload, idempotencyKey?: string): Promise<CheckoutPaymentResponse> => {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  const checkoutAttemptId = idempotencyKey || order.checkout_attempt_id;
+
+  if (checkoutAttemptId) {
+    headers.set("Idempotency-Key", checkoutAttemptId);
+  }
+
   const response = await fetch("/api/checkout/wompi", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ order }),
+    headers,
+    body: JSON.stringify({ order: { ...order, ...(checkoutAttemptId ? { checkout_attempt_id: checkoutAttemptId } : {}) } }),
   });
 
   if (!response.ok) {
@@ -157,7 +165,7 @@ export const createCheckoutPayment = async (order: CreateCheckoutOrderPayload): 
 
     try {
       const error = await response.json();
-      message = error?.error ?? error?.message ?? message;
+      message = error?.error?.message ?? error?.error ?? error?.message ?? message;
     } catch { }
 
     throw new Error(message);

@@ -1,10 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutPayment, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "../services/checkout";
+
+const CHECKOUT_ATTEMPT_STORAGE_KEY = "beauty_checkout_attempt_id";
+
+function createCheckoutAttemptId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getCheckoutAttemptId() {
+  if (typeof window === "undefined") return createCheckoutAttemptId();
+  const existing = window.sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+  if (existing) return existing;
+  const id = createCheckoutAttemptId();
+  window.sessionStorage.setItem(CHECKOUT_ATTEMPT_STORAGE_KEY, id);
+  return id;
+}
+
+function clearCheckoutAttemptId() {
+  if (typeof window !== "undefined") window.sessionStorage.removeItem(CHECKOUT_ATTEMPT_STORAGE_KEY);
+}
 
 const steps = [
   { id: 1, label: "Datos" },
@@ -38,6 +58,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const checkoutInFlightRef = useRef(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
     return () => window.clearTimeout(timer);
@@ -128,6 +149,7 @@ export default function CheckoutPage() {
   };
 
   const handleWompiCheckout = async () => {
+    if (checkoutInFlightRef.current) return;
     setTermsTouched(true);
     setCheckoutError(null);
 
@@ -153,9 +175,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    checkoutInFlightRef.current = true;
     setCheckoutLoading(true);
 
     try {
+      const checkoutAttemptId = getCheckoutAttemptId();
       const stocks = await getCheckoutBranchStocks(
         items.map((item) => ({ productDocumentId: item.product_id, variantDocumentId: item.variant_id, quantity: item.quantity })),
         deliveryMethod === "sucursal" ? formData.branchDocumentId : undefined
@@ -171,6 +195,7 @@ export default function CheckoutPage() {
       });
 
       const checkoutPayment = await createCheckoutPayment({
+        checkout_attempt_id: checkoutAttemptId,
         customer_name: formData.nombre.trim(),
         customer_email: formData.correo.trim(),
         customer_phone: formData.telefono.trim(),
@@ -182,16 +207,19 @@ export default function CheckoutPage() {
         shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
         shipping_cost: shippingCost,
         items: orderItems,
-      });
+      }, checkoutAttemptId);
 
       const paymentUrl = checkoutPayment.payment.payment_url;
       if (!paymentUrl) throw new Error("Wompi no devolvió una URL de pago válida.");
 
+      clearCheckoutAttemptId();
       window.location.assign(paymentUrl);
     } catch (error) {
       console.error("Error creating Wompi checkout:", error);
-      setCheckoutError(error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.");
+      const message = error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.";
+      setCheckoutError(message.includes("409") || message.toLowerCase().includes("procesando") ? "Tu pago ya se está procesando. Por favor espera unos segundos." : message);
     } finally {
+      checkoutInFlightRef.current = false;
       setCheckoutLoading(false);
     }
   };
@@ -795,12 +823,12 @@ export default function CheckoutPage() {
                   }}
                   aria-disabled={!acceptedTerms || checkoutLoading}
                   disabled={!acceptedTerms || checkoutLoading}
-                  className={`w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4 ${acceptedTerms
+                  className={`w-full flex items-center justify-center gap-2 text-white text-[13px] font-bold tracking-wide py-4 rounded-[4px] transition-all duration-200 mb-4 ${acceptedTerms && !checkoutLoading
                       ? "bg-[#D4738F] hover:bg-[#C15074] active:scale-[0.98]"
                       : "bg-[#D4738F]/40 cursor-not-allowed"
                     }`}
                 >
-                  <Lock size={16} strokeWidth={2.5} /> {checkoutLoading ? "Creando orden..." : "Proceder al Pago Seguro con Wompi"}
+                  <Lock size={16} strokeWidth={2.5} /> {checkoutLoading ? "Procesando pago..." : "Proceder al Pago Seguro con Wompi"}
                 </button>
 
                 <div className="flex items-center justify-center gap-1.5 text-[9px] text-[#AC9CA0]">

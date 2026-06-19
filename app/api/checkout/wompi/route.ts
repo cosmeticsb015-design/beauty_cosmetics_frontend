@@ -9,12 +9,26 @@ type CheckoutPaymentRequest = {
   order: CreateCheckoutOrderPayload;
 };
 
+class StrapiRequestError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "StrapiRequestError";
+    this.status = status;
+  }
+}
+
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-async function strapiPost<T>(endpoint: string, data?: unknown): Promise<T> {
+async function strapiPost<T>(endpoint: string, data?: unknown, idempotencyKey?: string): Promise<T> {
   const headers = new Headers({ "Content-Type": "application/json" });
+
+  if (idempotencyKey) {
+    headers.set("Idempotency-Key", idempotencyKey);
+  }
 
   if (STRAPI_TOKEN) {
     headers.set("Authorization", `Bearer ${STRAPI_TOKEN}`);
@@ -36,10 +50,10 @@ async function strapiPost<T>(endpoint: string, data?: unknown): Promise<T> {
     } catch { }
 
     if (response.status === 403 && !STRAPI_TOKEN) {
-      throw new Error(`Strapi POST ${endpoint}: ${message}. Habilita los permisos públicos del endpoint de checkout/órdenes en Strapi o configura STRAPI_API_TOKEN en el frontend.`);
+      throw new StrapiRequestError(`Strapi POST ${endpoint}: ${message}. Habilita los permisos públicos del endpoint de checkout/órdenes en Strapi o configura STRAPI_API_TOKEN en el frontend.`, response.status);
     }
 
-    throw new Error(`Strapi POST ${endpoint}: ${message}`);
+    throw new StrapiRequestError(message, response.status);
   }
 
   return response.json();
@@ -54,7 +68,9 @@ export async function POST(request: Request) {
     return jsonError("El payload del checkout no es válido.");
   }
 
+  const requestIdempotencyKey = request.headers.get("Idempotency-Key") ?? request.headers.get("X-Idempotency-Key");
   const orderPayload = payload.order;
+  const checkoutAttemptId = requestIdempotencyKey ?? orderPayload?.checkout_attempt_id;
 
   if (!orderPayload?.customer_name || !orderPayload.customer_email || !orderPayload.customer_phone) {
     return jsonError("Completa los datos del cliente antes de pagar.");
@@ -65,12 +81,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const orderResponse = await strapiPost<StrapiResponse<CheckoutOrder>>("orders", { data: orderPayload });
-    const paymentLink = await strapiPost<WompiPaymentLinkResponse>(`orders/${orderResponse.data.documentId}/wompi-payment-link`);
+    const orderResponse = await strapiPost<StrapiResponse<CheckoutOrder>>("orders", { data: { ...orderPayload, ...(checkoutAttemptId ? { checkout_attempt_id: checkoutAttemptId } : {}) } }, checkoutAttemptId);
+    const paymentLink = await strapiPost<WompiPaymentLinkResponse>(`orders/${orderResponse.data.documentId}/wompi-payment-link`, undefined, checkoutAttemptId);
 
     return NextResponse.json({ order: orderResponse.data, payment: paymentLink.data });
   } catch (error) {
     console.error("Error creating Wompi checkout from API route:", error);
-    return jsonError(error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.", 502);
+    const status = error instanceof StrapiRequestError ? error.status : 502;
+    return jsonError(error instanceof Error ? error.message : "No se pudo iniciar el pago con Wompi.", status);
   }
 }
