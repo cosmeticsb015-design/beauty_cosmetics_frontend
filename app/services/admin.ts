@@ -66,37 +66,6 @@ async function adminRequest<T>(endpoint: string, init: RequestInit = {}) {
 }
 
 const withPagination = ({ page = 1, pageSize = 10 }: AdminListParams) => ({ pagination: { page, pageSize } });
-const orderScalarFields = [
-  "tracking_number",
-  "customer_name",
-  "customer_email",
-  "customer_phone",
-  "delivery_type",
-  "address",
-  "instructions",
-  "delivery_instructions",
-  "notes",
-  "subtotal",
-  "shipping_cost",
-  "total",
-  "payment_status",
-  "internal_payment_status",
-  "wompi_payment_status",
-  "order_status",
-  "fulfillment_status",
-  "wompi_transaction_id",
-  "wompi_transaction_status",
-  "wompi_payment_method",
-  "wompi_authorization_code",
-  "wompi_transaction_message",
-  "wompi_payment_link_id",
-  "wompi_payment_link_url",
-  "wompi_payment_link_long_url",
-  "wompi_payment_link_qr_url",
-  "expires_at",
-  "createdAt",
-  "updatedAt",
-];
 const productPopulate = {
   brand: { fields: ["name", "slug", "active"] },
   category: { fields: ["name", "slug", "active"] },
@@ -178,7 +147,6 @@ export async function getAdminOrders(params: AdminListParams = {}) {
     ...withPagination(params),
     sort: ["createdAt:desc"],
     filters: Object.keys(filters).length ? filters : undefined,
-    fields: orderScalarFields,
     populate: {
       branch: { fields: ["name", "address", "active"] },
       shipping_rate: { fields: ["name", "description", "cost", "active"] },
@@ -189,7 +157,7 @@ export async function getAdminOrders(params: AdminListParams = {}) {
 }
 
 export async function getAdminOrder(id: string) {
-  const query = qs.stringify({ fields: orderScalarFields, populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
+  const query = qs.stringify({ populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
   return adminRequest<StrapiResponse<StrapiOrder>>(`orders/${id}?${query}`);
 }
 
