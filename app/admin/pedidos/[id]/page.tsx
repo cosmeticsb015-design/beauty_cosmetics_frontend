@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CreditCard, MessageSquareText, ReceiptText, Truck, UserRound, Zap } from "lucide-react";
+import { CreditCard, MapPin, MessageSquareText, ReceiptText, Store, Truck, UserRound, Zap } from "lucide-react";
 import AdminShell from "../../components/AdminShell";
 import AdminFlash from "../../components/AdminFlash";
 import { noticeFromQuery } from "../../components/AdminFlash.utils";
@@ -48,6 +48,29 @@ function firstItemImage(item: StrapiOrderItem) {
   const formats = image?.formats as { thumbnail?: { url?: string }; small?: { url?: string } } | undefined;
   return getStrapiMediaUrl(formats?.thumbnail?.url ?? formats?.small?.url ?? image?.url);
 }
+
+function deliverySummary(order: StrapiOrder) {
+  if (order.delivery_type === "pickup") {
+    return {
+      title: "Recoger en sucursal",
+      primaryLabel: "Sucursal seleccionada",
+      primaryValue: order.branch?.name ?? "Sucursal no definida",
+      secondaryLabel: "Dirección de sucursal",
+      secondaryValue: order.branch?.address ?? "Dirección no registrada",
+      meta: "Retiro en tienda",
+    };
+  }
+
+  return {
+    title: "Envío a domicilio",
+    primaryLabel: "Dirección de envío",
+    primaryValue: order.address ?? "Dirección no definida",
+    secondaryLabel: "Zona y tarifa seleccionada",
+    secondaryValue: order.shipping_rate?.name ?? "Zona/Tarifa no definida",
+    meta: order.shipping_rate?.description ?? "Entrega configurada por zona",
+  };
+}
+
 function ItemThumb({ src }: { src: string | null }) {
   if (src) return <Image src={src} alt="Producto del pedido" width={56} height={72} className="h-18 w-14 rounded-[3px] object-cover" />;
   return (
@@ -85,6 +108,7 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
     const authorizationCode = orderValue(order, "wompi_authorization_code");
     const transactionMessage = orderValue(order, "wompi_transaction_message");
     const paymentStatus = orderValue(order, "wompi_payment_status") ?? orderValue(order, "payment_status");
+    const delivery = deliverySummary(order);
 
     return (
       <AdminShell active="orders">
@@ -104,7 +128,25 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
 
           <div className="mt-7 grid gap-6 lg:grid-cols-3">
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p></div><h3 className="text-[24px] font-bold text-[#1F1F22]">{order.customer_name}</h3><p className="mt-2 text-[16px] text-[#6B6063]">{order.customer_email}</p><p className="mt-1 text-[16px] text-[#6B6063]">{order.customer_phone}</p></article>
-            <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><Truck size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Envio</p></div><h3 className="text-[18px] font-bold text-[#1F1F22]">{order.delivery_type === "pickup" ? order.branch?.name ?? "Retiro en sucursal" : order.address ?? "Direccion no definida"}</h3><p className="mt-8 flex items-center gap-2 text-[18px] text-[#6B6063]"><Zap size={18} strokeWidth={1.8} />{order.shipping_rate?.name ?? order.delivery_type} · {money(order.shipping_cost)}</p></article>
+            <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
+              <div className="mb-5 flex items-center gap-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]">{order.delivery_type === "pickup" ? <Store size={22} strokeWidth={1.8} /> : <Truck size={22} strokeWidth={1.8} />}</span>
+                <p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Envio</p>
+              </div>
+              <h3 className="text-[18px] font-bold text-[#1F1F22]">{delivery.title}</h3>
+              <div className="mt-5 space-y-4 text-[15px] text-[#6B6063]">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9E3659]">{delivery.primaryLabel}</p>
+                  <p className="mt-1 flex items-start gap-2 text-[16px] font-semibold text-[#1F1F22]"><MapPin size={17} strokeWidth={1.8} className="mt-0.5 shrink-0 text-[#9E3659]" />{delivery.primaryValue}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9E3659]">{delivery.secondaryLabel}</p>
+                  <p className="mt-1 text-[16px] font-semibold text-[#1F1F22]">{delivery.secondaryValue}</p>
+                  <p className="mt-1 text-[14px] text-[#6B6063]">{delivery.meta}</p>
+                </div>
+                <p className="flex items-center gap-2 text-[17px] text-[#6B6063]"><Zap size={18} strokeWidth={1.8} />Costo: {money(order.shipping_cost)}</p>
+              </div>
+            </article>
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
               <div className="mb-5 flex items-center gap-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><ReceiptText size={22} strokeWidth={1.8} /></span>

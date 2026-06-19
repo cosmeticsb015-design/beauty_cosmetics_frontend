@@ -13,6 +13,13 @@ function formatDate(value?: string) {
 function fulfillmentStatus(order: { order_status?: string | null; fulfillment_status?: string | null }) {
   return order.fulfillment_status ?? order.order_status ?? "pending_shipping";
 }
+function deliveryLabel(order: { delivery_type: string; branch?: { name?: string | null } | null; address?: string | null; shipping_rate?: { name?: string | null } | null }) {
+  if (order.delivery_type === "pickup") return `Recoger: ${order.branch?.name ?? "Sucursal no definida"}`;
+  const address = order.address ?? "Dirección no definida";
+  const rate = order.shipping_rate?.name ?? "Zona/Tarifa no definida";
+  return `Envío: ${address} · ${rate}`;
+}
+
 function statusMeta(status: string) {
   if (status === "shipped") return { label: "ENVIADO", className: "border-blue-200 bg-blue-50 text-blue-700" };
   if (status === "delivered") return { label: "ENTREGADO", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
@@ -58,7 +65,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams?:
         status: meta.label,
         orderStatus,
         statusClass: meta.className,
-        delivery: order.delivery_type === "pickup" ? `Retiro: ${order.branch?.name ?? "Sucursal"}` : order.shipping_rate?.name ?? "Delivery",
+        delivery: deliveryLabel(order),
         itemCount: `${itemCount} ${itemCount === 1 ? "producto" : "productos"}`,
       };
     });
