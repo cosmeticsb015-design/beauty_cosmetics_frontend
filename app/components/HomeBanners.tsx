@@ -35,14 +35,14 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
   };
 
   return (
-    <section className="bg-[#1D2540] py-6 sm:py-7" aria-label="Promociones destacadas">
+    <section className="bg-[#FFF7F9] py-6 sm:py-7" aria-label="Promociones destacadas">
       <div className="section-container relative">
         {visibleBanners.length > 1 ? (
           <button
             type="button"
             onClick={() => scrollSlider("prev")}
             aria-label="Ver banners anteriores"
-            className="absolute left-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#0C142B]/65 text-[#168BFF] shadow-lg ring-1 ring-white/10 transition hover:bg-[#0C142B] md:flex"
+            className="absolute left-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:flex"
           >
             <ChevronLeft size={38} strokeWidth={2.2} />
           </button>
@@ -82,7 +82,7 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
             type="button"
             onClick={() => scrollSlider("next")}
             aria-label="Ver más banners"
-            className="absolute right-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-[#0C142B]/65 text-[#168BFF] shadow-lg ring-1 ring-white/10 transition hover:bg-[#0C142B] md:flex"
+            className="absolute right-1 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-lg ring-1 ring-[#E7BFC9] transition hover:bg-white md:flex"
           >
             <ChevronRight size={38} strokeWidth={2.2} />
           </button>
