@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, HeartHandshake, ShieldCheck, Sparkles, Store } from "lucide-react";
 
-const stats = ["+6 años", "2 sucursales", "Miles de clientes satisfechos"];
+const stats = ["+13 mil seguidores", "Sucursales en oriente", "Envíos a todo El Salvador"];
 
 const pillars = [
   {
     title: "Productos originales",
-    description: "Seleccionamos maquillaje y skincare auténticos de marcas reconocidas para que compres con confianza.",
+    description: "Seleccionamos maquillaje, skincare, cosmética y cuidado personal auténticos de marcas reconocidas para que compres con confianza.",
     icon: ShieldCheck,
   },
   {
@@ -22,8 +22,10 @@ const pillars = [
 ];
 
 export const metadata = {
-  title: "About | Beauty Cosmetics",
-  description: "Conoce a Beauty Cosmetics: más de 6 años, 2 sucursales y miles de clientes satisfechos.",
+  title: "Sobre Beauty Cosmetics | Maquillaje Original en El Salvador",
+  description:
+    "Conoce Beauty Cosmetics: ecommerce salvadoreño de maquillaje original, skincare, cosmética y cuidado personal con entregas en San Salvador, San Miguel y envíos a todo El Salvador.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
@@ -43,8 +45,7 @@ export default function AboutPage() {
               Beauty Cosmetics
             </h1>
             <p className="mt-6 max-w-2xl text-sm leading-7 text-[#554246] md:text-base">
-              Beauty Cosmetics continúa creciendo para acercarte productos originales, marcas reconocidas y una
-              experiencia de compra en la que puedes confiar.
+              Beauty Cosmetics es un ecommerce salvadoreño de belleza, cosmética y cuidado personal especializado en maquillaje original, skincare, accesorios y productos auténticos. Atendemos en línea con entregas en San Salvador y San Miguel, envíos a todo El Salvador y presencia en nuestras sucursales de San Miguel y Usulután Plaza Mundo.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link

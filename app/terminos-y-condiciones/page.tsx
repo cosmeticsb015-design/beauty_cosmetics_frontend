@@ -128,9 +128,10 @@ const highlights = [
 ];
 
 export const metadata = {
-  title: "Términos y Condiciones | Beauty Cosmetics",
+  title: "Términos y Condiciones | Beauty Cosmetics El Salvador",
   description:
-    "Consulta los términos de compra, envíos, disponibilidad, pagos, retiros en sucursal y condiciones de uso de Beauty Cosmetics.",
+    "Consulta términos de compra, envíos a todo El Salvador, disponibilidad, pagos, retiros en sucursales de San Miguel y Usulután, y condiciones de uso de Beauty Cosmetics SV.",
+  alternates: { canonical: "/terminos-y-condiciones" },
 };
 
 export default function TermsAndConditionsPage() {
