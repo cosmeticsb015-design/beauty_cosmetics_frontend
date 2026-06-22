@@ -66,3 +66,104 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: clip;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: clip;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.section-container {
+  width: min(100% - clamp(2rem, 6vw, 5rem), 1180px);
+  margin-inline: auto;
+}
+
+.safe-section {
+  padding-block: clamp(3.5rem, 7vw, 6rem);
+}
+
+.responsive-heading {
+  font-size: clamp(2.25rem, 7vw, 4.25rem);
+  line-height: 1.08;
+}
+
+@media (max-width: 480px) {
+  body {
+    line-height: 1.55;
+  }
+}
+
+@media (min-width: 1536px) {
+  .section-container {
+    width: min(100% - 8rem, 1320px);
+  }
+}
+
+@media (max-width: 640px) {
+  #categories-section,
+  #featured-product-section,
+  #essence-section,
+  #gift-card-section,
+  #horario-section {
+    padding-block: 3.25rem;
+  }
+
+  #categories-section > div,
+  #featured-product-section > div,
+  #essence-section > div,
+  #gift-card-section > div,
+  #horario-section > div {
+    width: min(100% - 2rem, 100%);
+    padding-inline: 0;
+  }
+
+  #categories-section [class*="justify-between"],
+  #featured-product-section [class*="justify-between"] {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  #categories-section h2,
+  #featured-product-section h2,
+  #essence-section h2,
+  #gift-card-section h2,
+  #horario-section h2 {
+    font-size: clamp(1.75rem, 9vw, 2.5rem);
+    line-height: 1.12;
+  }
+}
+
+@media (min-width: 1280px) {
+  #categories-section > div,
+  #featured-product-section > div,
+  #gift-card-section > div,
+  footer > div > .max-w-7xl,
+  footer .max-w-7xl {
+    max-width: 1180px;
+  }
+}

@@ -20,6 +20,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+
+## Store configuration
+
+The floating WhatsApp contact button reads its phone number from **Admin → Contenido y Configuracion → WhatsApp**. Configure the number there instead of using an environment variable.
+
+The button is hidden automatically in `/admin` routes and normalizes the configured number before opening `wa.me`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

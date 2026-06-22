@@ -157,13 +157,32 @@ const policyCards = [
 ];
 
 export const metadata = {
-  title: "Preguntas Frecuentes | Beauty Cosmetics",
-  description: "Resuelve tus dudas sobre productos originales, envíos, retiros en sucursal, cambios, regalos y asesoría personalizada.",
+  title: "FAQ Beauty Cosmetics SV | Envíos, Sucursales y Maquillaje Original",
+  description:
+    "Preguntas frecuentes de Beauty Cosmetics El Salvador sobre maquillaje original, skincare, envíos nacionales, entregas en San Salvador y San Miguel, retiro en sucursales y asesoría personalizada.",
+  alternates: { canonical: "/faq" },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.slice(0, 10).map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: [...item.answer, ...(item.bullets || []), item.footer || ""].filter(Boolean).join(" "),
+    },
+  })),
 };
 
 export default function FaqPage() {
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <section className="relative overflow-hidden bg-[#FCEDF0] px-4 py-16 md:px-8 md:py-24">
         <div className="absolute -right-20 top-10 h-64 w-64 rounded-full bg-[#F5C6D0]/60 blur-3xl" />
         <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-[#FBD5E0]/80 blur-3xl" />

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ShoppingCart, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
-import { useCart } from "../../context/CartContext";
+import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useCart } from "@/src/shared/context/CartContext";
 import {
   getProductById,
   StrapiProduct,
@@ -12,56 +12,18 @@ import {
   ProductImageRelation,
   getVariantOptions,
   StrapiVariantOption,
-} from "../../services/producst";
+} from "@/src/shared/services/producst";
 
 // ── Helpers ────────────────────────────────────────────────
-interface Ingredient {
-  name: string;
-  description: string;
-}
-
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
+const DETAIL_VARIANTS_PER_PAGE = 12;
 
 const buildUrl = (url?: string | null) => (url ? `${API_BASE}${url}` : null);
-
-const getMockIngredients = (): Ingredient[] => [
-  {
-    name: "Extracto de Semillas Naturales",
-    description: "Aporta nutrientes esenciales y antioxidantes para revitalizar la barrera cutánea.",
-  },
-  {
-    name: "Ácido Hialurónico de Triple Peso",
-    description: "Penetra en múltiples niveles para retener la humedad de manera prolongada.",
-  },
-  {
-    name: "Vitamina E y Cistina",
-    description: "Protegen la superficie de los factores ambientales y previenen la resequedad.",
-  },
-];
-
-const getMockUsage = (): string =>
-  "Aplicar una pequeña cantidad de producto sobre la zona limpia con movimientos suaves y ascendentes. Dejar absorber completamente antes de aplicar maquillaje u otros tratamientos. Usar diariamente en la mañana y noche.";
-
-// ── Accordion ─────────────────────────────────────────────
-function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-t border-[#F0E4E8]">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between py-4 text-sm font-semibold text-[#2D1F23] hover:text-[#C15074] transition-colors"
-      >
-        {title}
-        {open ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
-      </button>
-      {open && <div className="pb-5">{children}</div>}
-    </div>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string; // documentId
 
   const { addToCart } = useCart();
@@ -73,9 +35,11 @@ export default function ProductDetailPage() {
   const [variantsLoading, setVariantsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeThumb, setActiveThumb] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [variantPage, setVariantPage] = useState(0);
 
-  const handleAddToCart = () => {
-    if (!product) return;
+  const addSelectedProductToCart = (quantityToAdd = quantity) => {
+    if (!product) return false;
 
     const imageUrl = selectedVariant?.images?.[0]?.image?.url
       ? buildUrl(selectedVariant.images[0].image.url)
@@ -83,39 +47,68 @@ export default function ProductDetailPage() {
       ? buildUrl(product.images[0].image.url)
       : null;
 
+    const unitPrice = selectedVariant?.price_override ?? product.price;
+
     addToCart({
       product_id: product.documentId,
       variant_id: selectedVariant?.documentId || null,
       product_name: product.name,
       variant_label: selectedVariant?.label || null,
-      unit_price: product.price,
+      unit_price: unitPrice,
       image_url: imageUrl,
       category: product.category?.name || "Catálogo",
       bg: "#FAF6F6",
-    }, 1);
+    }, quantityToAdd);
+
+    return true;
+  };
+
+  const handleAddToCart = () => {
+    addSelectedProductToCart();
+  };
+
+  const handleCheckoutNow = () => {
+    if (addSelectedProductToCart()) {
+      router.push("/checkout");
+    }
   };
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-
     getProductById(id)
       .then((res: StrapiResponse<StrapiProduct>) => {
         if (res.data) {
+          if (res.data.active === false) {
+            setError("Producto no encontrado.");
+            setProduct(null);
+            setLoading(false);
+            return;
+          }
+
           setProduct(res.data);
 
-          // Fetch variant options (tonalidades) for this product
+          // Fetch variant options (tonalidades) para este producto
           setVariantsLoading(true);
           getVariantOptions(id)
             .then((variantRes) => {
-              const variants = variantRes.data || [];
+              const variants = (variantRes.data || []).filter((variant) => {
+                const label = variant.label?.toLowerCase().trim();
+                const value = variant.value?.toLowerCase().trim();
+                return (
+                  variant.active !== false &&
+                  label !== "default" &&
+                  value !== "general"
+                );
+              });
               setVariantOptions(variants);
-              if (variants.length > 0) {
-                setSelectedVariant(variants[0]);
-              }
+              setVariantPage(0);
+              setSelectedVariant(null);
             })
             .catch((err) => {
               console.warn("Could not load variant options:", err);
+              setVariantOptions([]);
+              setVariantPage(0);
+              setSelectedVariant(null);
             })
             .finally(() => setVariantsLoading(false));
         } else {
@@ -123,7 +116,7 @@ export default function ProductDetailPage() {
         }
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error(err);
         setError("Ocurrió un error al buscar los detalles del producto.");
         setLoading(false);
@@ -163,36 +156,48 @@ export default function ProductDetailPage() {
 
   // Si hay variante con imágenes, usar las suyas; si no, usar las del producto
   const thumbsToShow = variantImageUrls.length > 0 ? variantImageUrls : productImageUrls;
+  const variantTotalPages = Math.ceil(variantOptions.length / DETAIL_VARIANTS_PER_PAGE);
+  const variantStart = variantPage * DETAIL_VARIANTS_PER_PAGE;
+  const visibleVariantOptions = variantOptions.slice(variantStart, variantStart + DETAIL_VARIANTS_PER_PAGE);
+  const hasVariantPagination = variantTotalPages > 1;
 
   // Imagen principal: la activa del conjunto actual
   const mainImageUrl = thumbsToShow[activeThumb] || null;
 
   const categoryLabel = product.category?.name || "Catálogo";
-  const ingredients = getMockIngredients();
-  const usage = getMockUsage();
   function getDescriptionText(description: unknown): string {
-    if (!description) {
-      return "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
-    }
+    const fallback = "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
+
+    if (!description) return fallback;
     if (typeof description === "string") return description;
-    if (Array.isArray(description)) {
-      const text = description
-        .map((block: any) =>
-          block.children?.map((child: any) => child.text).join("") || ""
-        )
-        .join(" ")
-        .trim();
-      return text || "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
-    }
-    return "Este exquisito producto ha sido seleccionado cuidadosamente para garantizar la máxima calidad y un rendimiento inigualable en tu rutina de belleza.";
+    if (!Array.isArray(description)) return fallback;
+
+    const text = description
+      .map((block) => {
+        if (typeof block !== "object" || block === null || !("children" in block)) return "";
+        const children = (block as { children?: unknown }).children;
+        if (!Array.isArray(children)) return "";
+
+        return children
+          .map((child) => {
+            if (typeof child !== "object" || child === null || !("text" in child)) return "";
+            const childText = (child as { text?: unknown }).text;
+            return typeof childText === "string" ? childText : "";
+          })
+          .join("");
+      })
+      .join(" ")
+      .trim();
+
+    return text || fallback;
   }
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-8 md:py-10">
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-[#AC9CA0] mb-8">
+        <nav className="flex items-center gap-2 text-[11px] text-[#8A7A7E] mb-14">
           <Link href="/" className="hover:text-[#C15074] transition-colors">Inicio</Link>
           <span>/</span>
           <Link
@@ -206,17 +211,17 @@ export default function ProductDetailPage() {
         </nav>
 
         {/* Main grid */}
-        <div className="grid md:grid-cols-2 gap-10 items-start">
+        <div className="grid lg:grid-cols-[1.25fr_0.9fr] gap-8 lg:gap-12 xl:gap-16 items-start">
 
           {/* ── Left: Images ── */}
           <div className="flex flex-col gap-4">
             {/* Main image */}
-            <div className="relative w-full aspect-square rounded-[10px] flex items-center justify-center overflow-hidden bg-[#FAF6F6]">
+            <div className="relative w-full aspect-square flex items-center justify-center overflow-hidden bg-[#F7F7F5]">
               {mainImageUrl ? (
                 <img
                   src={mainImageUrl}
                   alt={selectedVariant?.label || product.name}
-                  className="w-full h-full object-cover transition-opacity duration-300"
+                  className="w-full h-full object-contain transition-opacity duration-300"
                 />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-[#C15074]/30">
@@ -226,27 +231,24 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Variant name badge overlay */}
-              {selectedVariant && (
-                <span className="absolute bottom-3 left-3 text-[10px] font-bold tracking-widest uppercase bg-white/90 text-[#2D1F23] px-2.5 py-1 rounded-[3px] shadow-sm">
-                  {selectedVariant.label}
-                </span>
-              )}
+              <span className="absolute left-6 top-6 text-[11px] font-medium text-[#2D1F23]">
+                Cruelty-free
+              </span>
             </div>
 
             {/* Thumbnails: variante (si tiene imágenes) o producto */}
             {thumbsToShow.length > 1 && (
-              <div className="flex gap-3 flex-wrap">
+              <div className="grid grid-cols-3 gap-3 max-w-[430px]">
                 {thumbsToShow.map((url, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveThumb(i)}
-                    className={`w-20 h-20 rounded-[6px] overflow-hidden transition-all duration-200 ${activeThumb === i
+                    className={`aspect-[1.45] overflow-hidden bg-white transition-all duration-200 ${activeThumb === i
                       ? "ring-2 ring-[#C15074] ring-offset-1"
                       : "ring-1 ring-[#F0E4E8] hover:ring-[#D4738F]"
                       }`}
                   >
-                    <img src={url} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={url} alt={`Imagen ${i + 1}`} className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
@@ -254,8 +256,8 @@ export default function ProductDetailPage() {
           </div>
 
           {/* ── Right: Info ── */}
-          <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-medium text-[#2D1F23] leading-tight">
+          <div className="flex flex-col pt-1 lg:pt-2">
+            <h1 className="text-3xl md:text-[34px] font-medium text-[#171316] leading-tight">
               {product.name}
             </h1>
 
@@ -265,9 +267,12 @@ export default function ProductDetailPage() {
               </p>
             )}
 
-            <p className="text-2xl font-bold text-[#2D1F23] mt-2">
-              ${product.price.toFixed(2)}
-            </p>
+            <div className="mt-2 flex items-baseline gap-3">
+              <p className="text-2xl font-normal text-[#2D1F23]">
+                ${Number(selectedVariant?.price_override ?? product.price).toFixed(2)}
+              </p>
+              
+            </div>
 
             {/* ── Tonalidades / Color Picker ── */}
             {variantsLoading ? (
@@ -276,25 +281,25 @@ export default function ProductDetailPage() {
                 <span className="text-xs">Cargando tonalidades...</span>
               </div>
             ) : variantOptions.length > 0 ? (
-              <div className="mt-6">
+              <div className="mt-10">
                 <p className="text-xs text-[#554246] mb-3">
-                  Elige tu Tono:{" "}
-                  <span className="font-semibold text-[#2D1F23]">{selectedVariant?.label}</span>
+                  Elige tu tono{selectedVariant ? `: ${selectedVariant.label}` : ""}
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {variantOptions.map((variant) => {
+                  {visibleVariantOptions.map((variant) => {
                     const isSelected = selectedVariant?.documentId === variant.documentId;
 
                     return (
                       <button
                         key={variant.documentId}
+                        type="button"
                         onClick={() => {
-                          setSelectedVariant(variant);
+                          setSelectedVariant((current) => current?.documentId === variant.documentId ? null : variant);
                           setActiveThumb(0);
                         }}
                         title={variant.label}
-                        className={`w-9 h-9 rounded-full border-2 transition-all duration-200 overflow-hidden flex-shrink-0 ${isSelected
-                          ? "border-primary scale-110 shadow-md"
+                        className={`w-9 h-9 rounded-[10px] border-2 transition-all duration-200 overflow-hidden flex-shrink-0 ${isSelected
+                          ? "border-[#2D1F23] scale-105 shadow-sm"
                           : "border-transparent hover:scale-105 hover:border-[#C15074]/40"
                           }`}
                       >
@@ -307,49 +312,82 @@ export default function ProductDetailPage() {
                     );
                   })}
                 </div>
+                {hasVariantPagination && (
+                  <div className="mt-4 flex items-center justify-between rounded-[10px] border border-[#F0E4E8] bg-[#FDFCFD] px-3 py-2 text-xs font-semibold text-[#8A7A7E]">
+                    <button
+                      type="button"
+                      onClick={() => setVariantPage((page) => Math.max(0, page - 1))}
+                      disabled={variantPage === 0}
+                      className="inline-flex h-8 items-center gap-1 rounded-full border border-[#E8D9DF] px-3 text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft size={14} /> Anteriores
+                    </button>
+                    <span>{variantStart + 1}-{Math.min(variantStart + DETAIL_VARIANTS_PER_PAGE, variantOptions.length)} de {variantOptions.length}</span>
+                    <button
+                      type="button"
+                      onClick={() => setVariantPage((page) => Math.min(variantTotalPages - 1, page + 1))}
+                      disabled={variantPage >= variantTotalPages - 1}
+                      className="inline-flex h-8 items-center gap-1 rounded-full border border-[#E8D9DF] px-3 text-[#C15074] transition-colors hover:border-[#C15074] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Más <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : null}
 
             {/* Add to Cart */}
-            <button
-              id="product-detail-add-to-cart"
-              onClick={handleAddToCart}
-              className="mt-8 flex items-center justify-center gap-3 w-full bg-[#C15074] hover:bg-[#9E3659] active:scale-[0.98] text-white font-semibold text-sm tracking-widest uppercase py-4 rounded-[4px] transition-all duration-200"
-            >
-              <ShoppingCart size={18} strokeWidth={2} />
-              Añadir al Carrito
-            </button>
+            <div className="mt-10 space-y-3">
+              <div className="flex items-center justify-between rounded-[10px] border border-[#F0E4E8] bg-[#FDFCFD] px-4 py-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A7A7E]">Cantidad</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                    aria-label="Reducir cantidad"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#F0E4E8] text-[#554246] transition-colors hover:border-[#C15074] hover:text-[#C15074]"
+                  >
+                    <Minus size={14} strokeWidth={2.2} />
+                  </button>
+                  <span className="min-w-8 text-center text-base font-bold text-[#2D1F23]">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => current + 1)}
+                    aria-label="Aumentar cantidad"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[#F0E4E8] text-[#554246] transition-colors hover:border-[#C15074] hover:text-[#C15074]"
+                  >
+                    <Plus size={14} strokeWidth={2.2} />
+                  </button>
+                </div>
+              </div>
 
-            {/* Description */}
-            <p className="mt-8 text-sm text-[#554246] leading-relaxed border-t border-[#F0E4E8] pt-6">
+              <button
+                id="product-detail-add-to-cart"
+                onClick={handleAddToCart}
+                className="flex w-full items-center justify-center gap-3 bg-[#C9577F] py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#9E3659] active:scale-[0.98]"
+              >
+                <ShoppingBag size={18} strokeWidth={2} />
+                Añadir al Carrito
+              </button>
 
-              {getDescriptionText(product.description)}</p>
-
-
-            {/* Accordions */}
-            <div className="mt-4">
-              <Accordion title="Ingredientes Principales">
-                <ul className="flex flex-col gap-4">
-                  {ingredients.map((ing) => (
-                    <li key={ing.name}>
-                      <p className="text-sm font-semibold text-[#2D1F23]">• {ing.name}</p>
-                      <p className="text-xs text-[#AC9CA0] mt-0.5 ml-3">{ing.description}</p>
-                    </li>
-                  ))}
-                </ul>
-              </Accordion>
-              <Accordion title="Modo de Uso">
-                <p className="text-sm text-[#554246] leading-relaxed">{usage}</p>
-              </Accordion>
+              <button
+                type="button"
+                onClick={handleCheckoutNow}
+                className="flex w-full items-center justify-center gap-3 border border-[#2D1F23] bg-white py-4 text-sm font-bold uppercase tracking-[0.16em] text-[#2D1F23] transition-colors hover:bg-[#2D1F23] hover:text-white"
+              >
+                Finalizar compra
+              </button>
             </div>
 
-            {/* Back link */}
-            <Link
-              href="/catalog"
-              className="mt-8 inline-flex items-center gap-1.5 text-xs text-[#AC9CA0] hover:text-[#C15074] transition-colors self-start"
-            >
-              <ArrowLeft size={13} /> Volver al catálogo
-            </Link>
+            {/* Description */}
+            <section className="mt-16 border-t border-[#EFE5E8] pt-7">
+              <h2 className="text-[13px] font-semibold text-[#2D1F23] mb-3">Descripción</h2>
+              <p className="text-sm text-[#554246] leading-7">
+                {getDescriptionText(product.description)}
+              </p>
+            </section>
+
+
           </div>
 
         </div>
