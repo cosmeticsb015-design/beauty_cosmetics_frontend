@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logoutAdmin } from "../actions";
+import { logoutAdmin } from "@/src/features/admin/actions";
 import {
   FolderKanban,
   LogOut,

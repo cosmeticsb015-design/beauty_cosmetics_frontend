@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StrapiCategory } from "../services/producst";
+import { StrapiCategory } from "@/src/shared/services/producst";
 
 interface CategoriesSectionProps {
   categories: StrapiCategory[];

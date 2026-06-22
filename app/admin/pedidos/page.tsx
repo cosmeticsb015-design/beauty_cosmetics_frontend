@@ -1,8 +1,8 @@
-import AdminShell from "../components/AdminShell";
-import AdminDataError from "../components/AdminDataError";
-import { noticeFromQuery } from "../components/AdminFlash.utils";
-import AdminOrdersClient from "./AdminOrdersClient";
-import { buildOrdersViewModel } from "./orders-view-model";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import AdminOrdersClient from "@/src/features/admin/pedidos/AdminOrdersClient";
+import { buildOrdersViewModel } from "@/src/features/admin/pedidos/orders-view-model";
 
 const validStatuses = ["all", "pending_shipping", "shipped", "delivered"] as const;
 

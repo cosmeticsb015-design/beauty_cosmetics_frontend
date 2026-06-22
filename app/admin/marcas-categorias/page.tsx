@@ -1,7 +1,7 @@
-import AdminShell from "../components/AdminShell";
-import AdminDataError from "../components/AdminDataError";
-import AdminCatalogClient, { type BrandRow, type CategoryRow } from "./AdminCatalogClient";
-import { getAdminBrands, getAdminCategories } from "../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import AdminCatalogClient, { type BrandRow, type CategoryRow } from "@/src/features/admin/marcas-categorias/AdminCatalogClient";
+import { getAdminBrands, getAdminCategories } from "@/src/shared/services/admin";
 
 export default async function AdminBrandsCategoriesPage() {
   try {

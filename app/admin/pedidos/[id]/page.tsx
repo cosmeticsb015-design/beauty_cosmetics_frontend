@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CreditCard, MapPin, MessageSquareText, ReceiptText, Store, Truck, UserRound, Zap } from "lucide-react";
-import AdminShell from "../../components/AdminShell";
-import AdminFlash from "../../components/AdminFlash";
-import { noticeFromQuery } from "../../components/AdminFlash.utils";
-import { updateOrderStatusForm } from "../../actions";
-import { getStrapiMediaUrl, type OrderFulfillmentStatus, type StrapiOrder, type StrapiOrderItem } from "../../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import { updateOrderStatusForm } from "@/src/features/admin/actions";
+import { getStrapiMediaUrl, type OrderFulfillmentStatus, type StrapiOrder, type StrapiOrderItem } from "@/src/shared/services/admin";
 
 function money(value?: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
@@ -88,8 +88,8 @@ function ItemThumb({ src }: { src: string | null }) {
 export default async function AdminOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};
-  const { getAdminOrder } = await import("../../../services/admin");
-  const { default: AdminDataError } = await import("../../components/AdminDataError");
+  const { getAdminOrder } = await import("@/src/shared/services/admin");
+  const { default: AdminDataError } = await import("@/src/features/admin/components/AdminDataError");
   try {
     const response = await getAdminOrder(id);
     const order = response.data;

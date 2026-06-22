@@ -12,13 +12,13 @@ import {
   History,
   ShoppingBag,
 } from "lucide-react";
-import AdminShell from "../../components/AdminShell";
-import AdminFlash from "../../components/AdminFlash";
-import { noticeFromQuery } from "../../components/AdminFlash.utils";
-import { saveProductForm } from "../../actions";
-import { getAdminBranches, getAdminBrands, getAdminCategories } from "../../../services/admin";
-import ProductImagePicker from "../components/ProductImagePicker";
-import ProductDraftPersistence from "../components/ProductDraftPersistence";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import { saveProductForm } from "@/src/features/admin/actions";
+import { getAdminBranches, getAdminBrands, getAdminCategories } from "@/src/shared/services/admin";
+import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import ProductDraftPersistence from "@/src/features/admin/productos/components/ProductDraftPersistence";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;

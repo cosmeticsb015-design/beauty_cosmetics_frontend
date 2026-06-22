@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, MapPin, Save } from "lucide-react";
-import AdminShell from "../../../../components/AdminShell";
-import AdminDataError from "../../../../components/AdminDataError";
-import AdminFlash from "../../../../components/AdminFlash";
-import { noticeFromQuery } from "../../../../components/AdminFlash.utils";
-import { saveBranchInventoryForm } from "../../../../actions";
-import { getAdminBranch, getAdminProduct, type StrapiStock } from "../../../../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import { saveBranchInventoryForm } from "@/src/features/admin/actions";
+import { getAdminBranch, getAdminProduct, type StrapiStock } from "@/src/shared/services/admin";
 
 function stockStatus(quantity: number) {
   if (quantity <= 0) return { label: "SIN STOCK", className: "bg-red-100 text-red-700", unitTone: "text-red-700" };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { CheckoutOrder, CreateCheckoutOrderPayload, WompiPaymentLinkResponse } from "../../../services/checkout";
-import type { StrapiResponse } from "../../../services/producst";
+import type { CheckoutOrder, CreateCheckoutOrderPayload, WompiPaymentLinkResponse } from "@/src/shared/services/checkout";
+import type { StrapiResponse } from "@/src/shared/services/producst";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN ?? process.env.STRAPI_API_KEY ?? process.env.STRAPI_TOKEN;

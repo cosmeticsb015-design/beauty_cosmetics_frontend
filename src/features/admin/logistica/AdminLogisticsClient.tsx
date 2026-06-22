@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { DollarSign, Info, MapPin, Pencil, Plus, Save, Truck, X } from "lucide-react";
-import AdminShell from "../components/AdminShell";
-import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
-import { saveShippingRateForm } from "../actions";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash, { type AdminNotice } from "@/src/features/admin/components/AdminFlash";
+import { saveShippingRateForm } from "@/src/features/admin/actions";
 
 export type ShippingZoneIcon = "map-pin" | "truck";
 export type ShippingZoneRow = { id: string; title: string; description: string; price: number; icon: ShippingZoneIcon; highlighted: boolean };

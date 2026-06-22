@@ -12,9 +12,9 @@ import {
   Edit3,
   Plus,
 } from "lucide-react";
-import AdminShell from "./components/AdminShell";
-import AdminFlash, { type AdminNotice } from "./components/AdminFlash";
-import { setProductActiveForm } from "./actions";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash, { type AdminNotice } from "@/src/features/admin/components/AdminFlash";
+import { setProductActiveForm } from "@/src/features/admin/actions";
 
 export type ProductRow = {
   id: string;

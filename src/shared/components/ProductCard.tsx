@@ -2,8 +2,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
-import { getVariantOptions, StrapiProduct, StrapiVariantOption } from "../services/producst";
-import { useCart } from "../context/CartContext";
+import { getVariantOptions, StrapiProduct, StrapiVariantOption } from "@/src/shared/services/producst";
+import { useCart } from "@/src/shared/context/CartContext";
 
 const CARD_VARIANTS_PER_PAGE = 5;
 

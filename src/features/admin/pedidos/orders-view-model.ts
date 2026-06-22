@@ -1,5 +1,5 @@
-import { getAdminOrders } from "../../services/admin";
-import type { OrderRow, OrderStat } from "./AdminOrdersClient";
+import { getAdminOrders } from "@/src/shared/services/admin";
+import type { OrderRow, OrderStat } from "@/src/features/admin/pedidos/AdminOrdersClient";
 
 function money(value?: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));

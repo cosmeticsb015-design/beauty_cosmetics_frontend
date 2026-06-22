@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useActionState, useEffect, useState } from "react";
 import { ArrowLeft, LockKeyhole, MailCheck, ShieldCheck } from "lucide-react";
-import { startAdminLogin, verifyAdminLogin } from "../actions";
-import PasswordField from "../components/PasswordField";
+import { startAdminLogin, verifyAdminLogin } from "@/src/features/admin/actions";
+import PasswordField from "@/src/features/admin/components/PasswordField";
 
 const initialCredState = { ok: false, message: "", step: "credentials" as const };
 const initialOtpState = { ok: false, message: "", step: "otp" as const };

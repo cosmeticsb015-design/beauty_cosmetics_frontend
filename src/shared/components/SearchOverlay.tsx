@@ -10,7 +10,7 @@ import {
   StrapiBrand,
   StrapiCategory,
   StrapiProduct,
-} from "../services/producst";
+} from "@/src/shared/services/producst";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
 

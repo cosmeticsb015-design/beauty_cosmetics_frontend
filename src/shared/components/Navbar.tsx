@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { HandFist, Search, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import SearchOverlay from "./SearchOverlay";
-import { useCart } from "../context/CartContext";
+import { useCart } from "@/src/shared/context/CartContext";
 
 const navLinks = [
   { label: "INICIO", href: "/" },

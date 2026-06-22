@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Minus, Plus, ShieldCheck, Trash2 } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { useCart } from "@/src/shared/context/CartContext";
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, subtotal } = useCart();

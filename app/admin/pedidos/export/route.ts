@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getAdminOrder, getAdminOrders, type StrapiOrder } from "../../../services/admin";
+import { getAdminOrder, getAdminOrders, type StrapiOrder } from "@/src/shared/services/admin";
 
 function money(value?: number) {
   return Number(value || 0).toFixed(2);

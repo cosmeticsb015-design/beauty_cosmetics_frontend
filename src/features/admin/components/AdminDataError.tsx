@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { getAdminLoginPath } from "../../lib/admin-auth";
+import { getAdminLoginPath } from "@/src/shared/lib/admin-auth";
 
 type AdminDataErrorProps = {
   title?: string;

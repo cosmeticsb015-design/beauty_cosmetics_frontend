@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildOrdersViewModel } from "../orders-view-model";
+import { buildOrdersViewModel } from "@/src/features/admin/pedidos/orders-view-model";
 
 const validStatuses = ["all", "pending_shipping", "shipped", "delivered"];
 

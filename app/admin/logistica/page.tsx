@@ -1,8 +1,8 @@
-import AdminShell from "../components/AdminShell";
-import AdminDataError from "../components/AdminDataError";
-import { noticeFromQuery } from "../components/AdminFlash.utils";
-import AdminLogisticsClient, { type ShippingZoneRow } from "./AdminLogisticsClient";
-import { getAdminShippingRates } from "../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import AdminLogisticsClient, { type ShippingZoneRow } from "@/src/features/admin/logistica/AdminLogisticsClient";
+import { getAdminShippingRates } from "@/src/shared/services/admin";
 
 export default async function AdminLogisticsPage({ searchParams }: { searchParams?: Promise<{ saved?: string }> }) {
   const query = searchParams ? await searchParams : {};

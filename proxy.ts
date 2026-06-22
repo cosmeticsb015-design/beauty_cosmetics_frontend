@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_DEFAULT_LOGIN_PATH, ADMIN_SESSION_COOKIE, getAdminLoginPath } from "./app/lib/admin-auth";
+import { ADMIN_DEFAULT_LOGIN_PATH, ADMIN_SESSION_COOKIE, getAdminLoginPath } from "./src/shared/lib/admin-auth";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

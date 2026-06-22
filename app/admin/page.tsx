@@ -1,18 +1,18 @@
-import AdminShell from "./components/AdminShell";
-import AdminDataError from "./components/AdminDataError";
-import { noticeFromQuery } from "./components/AdminFlash.utils";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
 import AdminProductsClient, {
   type ProductFilterOption,
   type ProductPagination,
   type ProductRow,
   type ProductStat,
-} from "./AdminProductsClient";
+} from "@/src/features/admin/AdminProductsClient";
 import {
   getAdminCategories,
   getAdminProducts,
   getStrapiMediaUrl,
   type StrapiStock,
-} from "../services/admin";
+} from "@/src/shared/services/admin";
 
 const fallbackThumbs = [
   "bg-[linear-gradient(135deg,#f8d7dc,#fff7f5_55%,#c68b8d)]",

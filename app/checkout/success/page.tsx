@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle, Clock, XCircle, MapPin, Truck } from "lucide-react";
-import { strapi } from "../../lib/api";
-import { useCart } from "../../context/CartContext";
+import { strapi } from "@/src/shared/lib/api";
+import { useCart } from "@/src/shared/context/CartContext";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");
 

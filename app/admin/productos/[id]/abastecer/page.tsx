@@ -6,7 +6,7 @@ import {
   TrendingUp,
   Truck,
 } from "lucide-react";
-import AdminShell from "../../../components/AdminShell";
+import AdminShell from "@/src/features/admin/components/AdminShell";
 
 const variants = [
   {

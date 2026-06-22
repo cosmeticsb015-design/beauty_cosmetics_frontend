@@ -1,8 +1,8 @@
-import AdminShell from "../components/AdminShell";
-import AdminDataError from "../components/AdminDataError";
-import { noticeFromQuery } from "../components/AdminFlash.utils";
-import AdminBranchesClient, { type BranchRow } from "./AdminBranchesClient";
-import { getAdminBranches } from "../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import AdminBranchesClient, { type BranchRow } from "@/src/features/admin/sucursales/AdminBranchesClient";
+import { getAdminBranches } from "@/src/shared/services/admin";
 
 export default async function BranchesPage({ searchParams }: { searchParams: Promise<{ status?: string; page?: string; saved?: string; error?: string; message?: string }> }) {
   const query = await searchParams;

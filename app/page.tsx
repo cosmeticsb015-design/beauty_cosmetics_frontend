@@ -1,12 +1,12 @@
-import HeroSection from "./components/HeroSection";
-import CategoriesSection from "./components/CategoriesSection";
-import FeaturedProduct from "./components/FeaturedProduct";
-import EssenceSection from "./components/EssenceSection";
-import GiftCardSection from "./components/GiftCardSection";
-import NewsletterSection from "./components/NewsletterSection";
-import HomeBanners from "./components/HomeBanners";
-import { getCategories, getProducts, StrapiCategory, StrapiProduct } from "./services/producst";
-import { getPublicStoreConfig } from "./services/storeConfig";
+import HeroSection from "@/src/shared/components/HeroSection";
+import CategoriesSection from "@/src/shared/components/CategoriesSection";
+import FeaturedProduct from "@/src/shared/components/FeaturedProduct";
+import EssenceSection from "@/src/shared/components/EssenceSection";
+import GiftCardSection from "@/src/shared/components/GiftCardSection";
+import NewsletterSection from "@/src/shared/components/NewsletterSection";
+import HomeBanners from "@/src/shared/components/HomeBanners";
+import { getCategories, getProducts, StrapiCategory, StrapiProduct } from "@/src/shared/services/producst";
+import { getPublicStoreConfig } from "@/src/shared/services/storeConfig";
 
 export default async function Home() {
   const [featuredResponse, categoriesResponse, storeConfigResponse] = await Promise.all([

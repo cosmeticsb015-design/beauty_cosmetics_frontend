@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import WhatsappFloatingButton from "./components/WhatsappFloatingButton";
-import { getPublicStoreConfig } from "./services/storeConfig";
-import { CartProvider } from "./context/CartContext";
+import Navbar from "@/src/shared/components/Navbar";
+import Footer from "@/src/shared/components/Footer";
+import WhatsappFloatingButton from "@/src/shared/components/WhatsappFloatingButton";
+import { getPublicStoreConfig } from "@/src/shared/services/storeConfig";
+import { CartProvider } from "@/src/shared/context/CartContext";
 import { Suspense } from "react";
 
 

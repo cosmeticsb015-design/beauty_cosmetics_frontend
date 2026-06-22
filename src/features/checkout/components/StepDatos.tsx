@@ -1,4 +1,4 @@
-import { CheckoutFormData } from "../types";
+import { CheckoutFormData } from "@/src/features/checkout/types";
 
 interface Props {
   formData: CheckoutFormData;
