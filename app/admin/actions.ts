@@ -1,12 +1,16 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, updateEntity, uploadAdminFile, type AdminMutationState } from "../services/admin";
+import { getAdminLoginPath } from "../lib/admin-auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
+const AUTH_2FA_BASE = `${API_URL}/api/auth/local/2fa`;
 const isProduction = process.env.NODE_ENV === "production";
+const ADMIN_SESSION_COOKIE_PATH = "/";
 const adminRoleNames = (process.env.ADMIN_ROLE_NAMES ?? "")
   .split(",")
   .map((role) => role.trim().toLowerCase())
@@ -52,8 +56,15 @@ function hasAllowedAdminRole(user: { role?: { name?: string; type?: string } }) 
   const roleType = user.role?.type?.toLowerCase();
   return Boolean((roleName && adminRoleNames.includes(roleName)) || (roleType && adminRoleNames.includes(roleType)));
 }
+
 async function setSession(jwt: string) {
-  (await cookies()).set(ADMIN_SESSION_COOKIE, jwt, { httpOnly: true, secure: isProduction, sameSite: "strict", path: "/admin", maxAge: 60 * 60 * 8 });
+  (await cookies()).set(ADMIN_SESSION_COOKIE, jwt, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+    path: ADMIN_SESSION_COOKIE_PATH,
+    maxAge: 60 * 60 * 8,
+  });
 }
 
 function redirectWithNotice(path: string, result: AdminMutationState, fallbackSuccess = "Cambios guardados correctamente.") {
@@ -178,29 +189,116 @@ async function syncVariantStocks(variantDocumentId: string, formData: FormData) 
   }
 }
 
-export async function loginAdmin(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
-  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida." };
-  const identifier = sanitizeText(formData.get("identifier")).toLowerCase();
+export type AdminLoginState = {
+  ok: boolean;
+  message: string;
+  step?: "credentials" | "otp";
+  challengeId?: string;
+  maskedEmail?: string;
+  expiresInSeconds?: number;
+};
+
+export type AdminOtpState = {
+  ok: boolean;
+  message: string;
+  step?: "otp";
+};
+
+function statusFallbackMessage(status: number) {
+  if (status === 400) return "Usuario o contraseña incorrectos.";
+  if (status === 403) return "Esta cuenta no tiene permitido el acceso.";
+  if (status === 429) return "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+  return "No se pudo completar la solicitud.";
+}
+
+async function auth2fa<T>(path: "start" | "verify", body: Record<string, unknown>) {
+  let response: Response;
+  try {
+    response = await fetch(`${AUTH_2FA_BASE}/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    return { ok: false as const, message: "No se pudo conectar con el servidor." };
+  }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message =
+      (typeof payload?.error?.message === "string" && payload.error.message) ||
+      (typeof payload?.message === "string" && payload.message) ||
+      statusFallbackMessage(response.status);
+    return { ok: false as const, message };
+  }
+
+  return { ok: true as const, data: payload as T };
+}
+
+export async function startAdminLogin(_prev: AdminLoginState, formData: FormData): Promise<AdminLoginState> {
+  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "credentials" };
+  const identifier = sanitizeText(formData.get("identifier"));
   const password = String(formData.get("password") ?? "");
-  if (!identifier || !password || password.length > 256) return { ok: false, message: "Credenciales inválidas." };
+  if (!identifier || !password || password.length > 256) {
+    return { ok: false, message: "Credenciales inválidas.", step: "credentials" };
+  }
 
-  const response = await fetch(`${API_URL}/api/auth/local`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier, password }),
-    cache: "no-store",
+  const result = await auth2fa<{ challengeId: string; email?: string; expiresInSeconds?: number }>("start", {
+    identifier,
+    password,
   });
-  if (!response.ok) return { ok: false, message: "Usuario o contraseña incorrectos." };
 
-  const payload = await response.json();
-  if (!payload?.jwt || payload?.user?.blocked || !hasAllowedAdminRole(payload.user)) return { ok: false, message: "La cuenta no puede acceder al panel." };
-  await setSession(payload.jwt);
+  if (!result.ok) {
+    return { ok: false, message: result.message, step: "credentials" };
+  }
+
+  return {
+    ok: true,
+    message: "Hemos enviado un código de verificación a tu correo.",
+    step: "otp",
+    challengeId: result.data.challengeId,
+    maskedEmail: result.data.email,
+    expiresInSeconds: result.data.expiresInSeconds,
+  };
+}
+
+export async function verifyAdminLogin(_prev: AdminOtpState, formData: FormData): Promise<AdminOtpState> {
+  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "otp" };
+  const challengeId = sanitizeText(formData.get("challengeId"));
+  const code = sanitizeText(formData.get("code")).replace(/\D/g, "");
+
+  if (!challengeId || !code) return { ok: false, message: "Código inválido.", step: "otp" };
+
+  const result = await auth2fa<{ jwt?: string; user?: { blocked?: boolean; role?: { name?: string; type?: string } } }>("verify", {
+    challengeId,
+    code,
+    deviceId: randomUUID(),
+  });
+
+  if (!result.ok) {
+    return { ok: false, message: result.message, step: "otp" };
+  }
+
+  const { jwt, user } = result.data;
+  if (!jwt || !user || user.blocked || !hasAllowedAdminRole(user)) {
+    return { ok: false, message: "La cuenta no puede acceder al panel.", step: "otp" };
+  }
+
+  await setSession(jwt);
   redirect("/admin");
 }
 
 export async function logoutAdmin() {
-  (await cookies()).delete(ADMIN_SESSION_COOKIE);
-  redirect("/admin/login");
+  (await cookies()).set(ADMIN_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+    path: ADMIN_SESSION_COOKIE_PATH,
+    maxAge: 0,
+  });
+  redirect(getAdminLoginPath());
 }
 
 export async function saveProduct(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {

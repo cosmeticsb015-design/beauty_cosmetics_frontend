@@ -156,6 +156,16 @@ export async function getAdminOrders(params: AdminListParams = {}) {
   return adminRequest<StrapiResponse<StrapiOrder[]>>(`orders?${query}`);
 }
 
+export async function getAdminOrdersWatermark() {
+  const query = qs.stringify({
+    filters: { payment_status: { $eq: "paid" } },
+    sort: ["updatedAt:desc"],
+    pagination: { page: 1, pageSize: 1 },
+    fields: ["updatedAt"],
+  }, { encodeValuesOnly: true });
+  return adminRequest<StrapiResponse<StrapiOrder[]>>(`orders?${query}`);
+}
+
 export async function getAdminOrder(id: string) {
   const query = qs.stringify({ populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
   return adminRequest<StrapiResponse<StrapiOrder>>(`orders/${id}?${query}`);

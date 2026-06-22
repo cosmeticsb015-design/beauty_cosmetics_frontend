@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+import { getAdminLoginPath } from "../../lib/admin-auth";
 
 type AdminDataErrorProps = {
   title?: string;
@@ -39,7 +40,7 @@ export default function AdminDataError({
                 </ul>
               </div>
             ) : null}
-            <Link href="/admin/login" className="mt-6 inline-flex rounded-[6px] bg-[#9E3659] px-5 py-3 text-[14px] font-bold text-white">
+            <Link href={getAdminLoginPath()} className="mt-6 inline-flex rounded-[6px] bg-[#9E3659] px-5 py-3 text-[14px] font-bold text-white">
               Volver al login
             </Link>
           </div>

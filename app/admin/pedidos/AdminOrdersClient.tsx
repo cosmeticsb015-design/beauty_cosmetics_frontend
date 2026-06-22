@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -21,6 +21,7 @@ import AdminShell from "../components/AdminShell";
 import AdminFlash from "../components/AdminFlash";
 import type { AdminNotice } from "../components/AdminFlash.utils";
 import { updateOrderStatusForm } from "../actions";
+import AdminOrdersAutoRefresh from "./AdminOrdersAutoRefresh";
 
 export type OrderStatIcon = "shopping-cart" | "clipboard-clock" | "truck";
 export type OrderStat = { label: string; value: string; icon: OrderStatIcon; note: string; noteTone: string };
@@ -49,6 +50,13 @@ type AdminOrdersClientProps = {
   notice?: AdminNotice;
 };
 
+type OrdersListResponse = {
+  stats: OrderStat[];
+  orders: OrderRow[];
+  totalLabel: string;
+  pagination: { page: number; pageCount: number; total: number };
+};
+
 const tabs = [
   { label: "Todos", value: "all" },
   { label: "Pendientes de envio", value: "pending_shipping" },
@@ -67,11 +75,33 @@ const exportStatusOptions = [
   ...fulfillmentStatusOptions,
 ];
 
-export default function AdminOrdersClient({ stats, orders, totalLabel, pagination, filters, saved = false, notice }: AdminOrdersClientProps) {
+export default function AdminOrdersClient({
+  stats: initialStats,
+  orders: initialOrders,
+  totalLabel: initialTotalLabel,
+  pagination: initialPagination,
+  filters,
+  saved = false,
+  notice,
+}: AdminOrdersClientProps) {
+  const [stats, setStats] = useState(initialStats);
+  const [orders, setOrders] = useState(initialOrders);
+  const [totalLabel, setTotalLabel] = useState(initialTotalLabel);
+  const [pagination, setPagination] = useState(initialPagination);
+  const [tableUpdating, setTableUpdating] = useState(false);
+
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Guardamos siempre los filtros/página actuales en refs para que el
+  // callback de refresco (memoizado una sola vez) lea el valor más
+  // reciente sin necesidad de recrearse en cada render.
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const currentPageRef = useRef(pagination.page);
+  currentPageRef.current = pagination.page;
 
   const hrefFor = (next: { page?: number; status?: string; search?: string; dateFrom?: string; dateTo?: string }) => {
     const params = new URLSearchParams();
@@ -89,6 +119,31 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
     return query ? `${pathname}?${query}` : pathname;
   };
 
+  const refreshOrdersTable = useCallback(async () => {
+    const currentFilters = filtersRef.current;
+    const params = new URLSearchParams();
+    if (currentFilters.status) params.set("status", currentFilters.status);
+    if (currentFilters.search) params.set("search", currentFilters.search);
+    if (currentFilters.dateFrom) params.set("date_from", currentFilters.dateFrom);
+    if (currentFilters.dateTo) params.set("date_to", currentFilters.dateTo);
+    params.set("page", String(currentPageRef.current));
+
+    setTableUpdating(true);
+    try {
+      const response = await fetch(`/admin/pedidos/list?${params.toString()}`, { cache: "no-store" });
+      if (!response.ok) return;
+      const data: OrdersListResponse = await response.json();
+      setOrders(data.orders);
+      setStats(data.stats);
+      setTotalLabel(data.totalLabel);
+      setPagination(data.pagination);
+    } catch {
+      // Si falla la actualización silenciosa, se mantiene lo que ya había en pantalla.
+    } finally {
+      setTableUpdating(false);
+    }
+  }, []);
+
   const pageNumbers = useMemo(() => {
     const start = Math.max(1, pagination.page - 1);
     const end = Math.min(pagination.pageCount, pagination.page + 1);
@@ -97,6 +152,7 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
 
   return (
     <AdminShell active="orders" searchPlaceholder="Buscar pedidos, clientes, IDs...">
+      <AdminOrdersAutoRefresh paused={Boolean(selectedOrder || exportOpen)} onNewPayment={refreshOrdersTable} />
       <main className={`mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8 ${selectedOrder ? "blur-[3px]" : ""}`}>
         <AdminFlash notice={notice ?? (saved ? { type: "success", message: "Pedido actualizado correctamente." } : null)} />
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
@@ -181,7 +237,10 @@ export default function AdminOrdersClient({ stats, orders, totalLabel, paginatio
           </div>
 
           <div className="flex flex-col gap-5 px-7 py-7 text-[16px] text-[#6B6063] md:flex-row md:items-center md:justify-between">
-            <p>{totalLabel}</p>
+            <p className="flex items-center gap-2">
+              {totalLabel}
+              {tableUpdating ? <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-[#9E3659]" aria-hidden="true" /> : null}
+            </p>
             <div className="flex items-center gap-3 text-[#554246]">
               <Link href={hrefFor({ page: Math.max(1, pagination.page - 1) })} className={`flex h-9 w-9 items-center justify-center rounded-[3px] border border-[#E7BFC9] ${pagination.page <= 1 ? "pointer-events-none text-[#D0B8BF]" : "transition-colors hover:text-[#9E3659]"}`}><ChevronLeft size={18} strokeWidth={1.8} /></Link>
               {pageNumbers.map((number) => <Link key={number} href={hrefFor({ page: number })} className={`flex h-9 w-9 items-center justify-center rounded-[3px] ${number === pagination.page ? "bg-[#9E3659] text-white" : "border border-[#E7BFC9]"}`}>{number}</Link>)}
