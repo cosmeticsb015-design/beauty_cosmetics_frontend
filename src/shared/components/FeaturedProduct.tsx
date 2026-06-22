@@ -1,7 +1,7 @@
 "use client";
 
 import ProductCard from "./ProductCard";
-import { StrapiProduct } from "../services/producst";
+import { StrapiProduct } from "@/src/shared/services/producst";
 
 interface FeaturedProductProps {
   products: StrapiProduct[];

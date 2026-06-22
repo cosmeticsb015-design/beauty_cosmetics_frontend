@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminOrdersWatermark } from "../../../services/admin";
+import { getAdminOrdersWatermark } from "@/src/shared/services/admin";
 
 export async function GET() {
   try {

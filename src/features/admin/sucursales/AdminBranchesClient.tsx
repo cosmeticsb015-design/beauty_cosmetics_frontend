@@ -10,8 +10,8 @@ import {
   Truck,
   WifiOff,
 } from "lucide-react";
-import AdminShell from "../components/AdminShell";
-import AdminFlash, { type AdminNotice } from "../components/AdminFlash";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash, { type AdminNotice } from "@/src/features/admin/components/AdminFlash";
 
 export type BranchIcon = "map-pin" | "truck" | "wifi-off";
 export type BranchRow = { name: string; address: string; status: string; statusTone: string; schedule: string; notes: string; icon: BranchIcon; iconTone: string; href: string };

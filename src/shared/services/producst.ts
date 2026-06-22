@@ -1,4 +1,4 @@
-import { strapi } from "../lib/api";
+import { strapi } from "@/src/shared/lib/api";
 import qs from "qs";
 
 // Define TypeScript interfaces for our Strapi entities to ensure type safety

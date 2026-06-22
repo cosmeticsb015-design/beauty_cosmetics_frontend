@@ -1,11 +1,11 @@
 import { ImageIcon, Link2, Mail, MessageCircle, Save, UploadCloud } from "lucide-react";
 import Link from "next/link";
-import AdminShell from "../components/AdminShell";
-import AdminDataError from "../components/AdminDataError";
-import AdminFlash from "../components/AdminFlash";
-import { noticeFromQuery } from "../components/AdminFlash.utils";
-import { saveStoreConfigForm } from "../actions";
-import { getAdminStoreConfig, getStrapiMediaUrl, type StrapiHomeBanner } from "../../services/admin";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import { saveStoreConfigForm } from "@/src/features/admin/actions";
+import { getAdminStoreConfig, getStrapiMediaUrl, type StrapiHomeBanner } from "@/src/shared/services/admin";
 
 const PAGE_SIZE = 6;
 const scopeLabel: Record<StrapiHomeBanner["display_scope"], string> = {

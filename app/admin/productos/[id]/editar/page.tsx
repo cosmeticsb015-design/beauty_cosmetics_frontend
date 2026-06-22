@@ -17,13 +17,13 @@ import {
   ShoppingBag,
   Layers3,
 } from "lucide-react";
-import AdminShell from "../../../components/AdminShell";
-import AdminDataError from "../../../components/AdminDataError";
-import AdminFlash from "../../../components/AdminFlash";
-import { noticeFromQuery } from "../../../components/AdminFlash.utils";
-import { saveProductForm, saveVariantForm } from "../../../actions";
-import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "../../../../services/admin";
-import ProductImagePicker from "../../components/ProductImagePicker";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
+import { saveProductForm, saveVariantForm } from "@/src/features/admin/actions";
+import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "@/src/shared/services/admin";
+import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;

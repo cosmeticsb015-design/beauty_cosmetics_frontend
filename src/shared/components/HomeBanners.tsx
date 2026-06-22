@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { HomeBanner } from "../services/storeConfig";
+import type { HomeBanner } from "@/src/shared/services/storeConfig";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
 const AUTO_SLIDE_MS = 5000;

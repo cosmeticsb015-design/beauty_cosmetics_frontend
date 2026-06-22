@@ -22,8 +22,8 @@ import {
   Sun,
   Waves,
 } from "lucide-react";
-import ProductCard from "../components/ProductCard";
-import { getBrands, getCategories, getProducts, StrapiBrand, StrapiCategory, StrapiProduct } from "../services/producst";
+import ProductCard from "@/src/shared/components/ProductCard";
+import { getBrands, getCategories, getProducts, StrapiBrand, StrapiCategory, StrapiProduct } from "@/src/shared/services/producst";
 
 
 // ── Icons Mapper ─────────────────────────────────────────

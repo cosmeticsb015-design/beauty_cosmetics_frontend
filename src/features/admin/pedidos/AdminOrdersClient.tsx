@@ -17,11 +17,11 @@ import {
   Truck,
   X,
 } from "lucide-react";
-import AdminShell from "../components/AdminShell";
-import AdminFlash from "../components/AdminFlash";
-import type { AdminNotice } from "../components/AdminFlash.utils";
-import { updateOrderStatusForm } from "../actions";
-import AdminOrdersAutoRefresh from "./AdminOrdersAutoRefresh";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminFlash from "@/src/features/admin/components/AdminFlash";
+import type { AdminNotice } from "@/src/features/admin/components/AdminFlash.utils";
+import { updateOrderStatusForm } from "@/src/features/admin/actions";
+import AdminOrdersAutoRefresh from "@/src/features/admin/pedidos/AdminOrdersAutoRefresh";
 
 export type OrderStatIcon = "shopping-cart" | "clipboard-clock" | "truck";
 export type OrderStat = { label: string; value: string; icon: OrderStatIcon; note: string; noteTone: string };

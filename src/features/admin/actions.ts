@@ -4,8 +4,8 @@ import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, updateEntity, uploadAdminFile, type AdminMutationState } from "../services/admin";
-import { getAdminLoginPath } from "../lib/admin-auth";
+import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, updateEntity, uploadAdminFile, type AdminMutationState } from "@/src/shared/services/admin";
+import { getAdminLoginPath } from "@/src/shared/lib/admin-auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
 const AUTH_2FA_BASE = `${API_URL}/api/auth/local/2fa`;

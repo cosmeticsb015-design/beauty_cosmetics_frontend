@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag } from "lucide-react";
-import { useCart } from "../../context/CartContext";
+import { useCart } from "@/src/shared/context/CartContext";
 import {
   getProductById,
   StrapiProduct,
@@ -12,7 +12,7 @@ import {
   ProductImageRelation,
   getVariantOptions,
   StrapiVariantOption,
-} from "../../services/producst";
+} from "@/src/shared/services/producst";
 
 // ── Helpers ────────────────────────────────────────────────
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337").replace(/\/$/, "");

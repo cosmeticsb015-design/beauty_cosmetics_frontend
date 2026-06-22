@@ -1,5 +1,5 @@
 import qs from "qs";
-import { strapi } from "../lib/api";
+import { strapi } from "@/src/shared/lib/api";
 import type { StrapiResponse } from "./producst";
 
 export interface CheckoutBranch {

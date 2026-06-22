@@ -1,5 +1,5 @@
 import { Truck, Store } from "lucide-react";
-import { CheckoutFormData, DeliveryMethod } from "../types";
+import { CheckoutFormData, DeliveryMethod } from "@/src/features/checkout/types";
 
 interface Props {
   formData: CheckoutFormData;

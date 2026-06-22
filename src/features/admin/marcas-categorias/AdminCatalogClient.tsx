@@ -19,8 +19,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import AdminShell from "../components/AdminShell";
-import { removeEntityForm, saveBrand, saveCategory } from "../actions";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import { removeEntityForm, saveBrand, saveCategory } from "@/src/features/admin/actions";
 
 export type BrandRow = { id: string; name: string; slug: string; active: boolean; products: number };
 export type CategoryChildRow = { id: string; name: string; slug: string; items: number; active: boolean };

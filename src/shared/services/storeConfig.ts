@@ -1,4 +1,4 @@
-import { strapi } from "../lib/api";
+import { strapi } from "@/src/shared/lib/api";
 import type { StrapiImage, StrapiResponse } from "./producst";
 
 export type HomeBanner = {

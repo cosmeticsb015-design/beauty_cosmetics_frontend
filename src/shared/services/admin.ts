@@ -3,7 +3,7 @@ import qs from "qs";
 import { cookies } from "next/headers";
 import type { ProductImageRelation, StrapiBrand, StrapiCategory, StrapiImage, StrapiProduct, StrapiResponse, StrapiVariantOption } from "./producst";
 
-import { ADMIN_SESSION_COOKIE } from "../lib/admin-auth";
+import { ADMIN_SESSION_COOKIE } from "@/src/shared/lib/admin-auth";
 export { ADMIN_SESSION_COOKIE };
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337";
 const baseUrl = API_URL.replace(/\/$/, "");

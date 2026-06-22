@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft, CircleDollarSign, Info, Save, SlidersHorizontal } from "lucide-react";
-import AdminShell from "../../../components/AdminShell";
-import AdminDataError from "../../../components/AdminDataError";
-import { saveVariantForm } from "../../../actions";
-import { getAdminBranches, getAdminProduct } from "../../../../services/admin";
-import ProductImagePicker from "../../components/ProductImagePicker";
+import AdminShell from "@/src/features/admin/components/AdminShell";
+import AdminDataError from "@/src/features/admin/components/AdminDataError";
+import { saveVariantForm } from "@/src/features/admin/actions";
+import { getAdminBranches, getAdminProduct } from "@/src/shared/services/admin";
+import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
 
 export default async function NewVariantPage({ searchParams }: { searchParams: Promise<{ product?: string }> }) {
   const { product: productId } = await searchParams;

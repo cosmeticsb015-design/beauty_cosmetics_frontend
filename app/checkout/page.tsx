@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
-import { useCart } from "../context/CartContext";
-import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutPayment, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "../services/checkout";
+import { useCart } from "@/src/shared/context/CartContext";
+import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutPayment, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "@/src/shared/services/checkout";
 
 const CHECKOUT_ATTEMPT_STORAGE_KEY = "beauty_checkout_attempt_id";
 
