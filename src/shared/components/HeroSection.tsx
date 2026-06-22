@@ -9,12 +9,12 @@ export default function HeroSection() {
       <div className="section-container relative z-10 flex flex-col items-start text-left">
         <div className="max-w-[640px]">
           <h1 className="responsive-heading font-normal font-serif text-white tracking-wide uppercase">
-            Revela tu Belleza
+            Beauty Cosmetics El Salvador
             <br />
-            Natural
+            Maquillaje Original
           </h1>
           <p className="mt-5 max-w-[34rem] text-sm leading-relaxed text-white/90 sm:text-base md:mt-6">
-            Descubrí nuestras fórmulas desarrolladas con activos naturales y de alta calidad.
+            Comprá maquillaje original, skincare, cosmética y cuidado personal con entregas en San Salvador y San Miguel, envíos a todo El Salvador y sucursales en San Miguel y Usulután Plaza Mundo.
           </p>
           <div className="mt-7 flex w-full flex-col gap-3 min-[420px]:w-auto min-[420px]:flex-row sm:gap-4">
             <Link
