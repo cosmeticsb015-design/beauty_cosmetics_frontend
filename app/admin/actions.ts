@@ -8,8 +8,9 @@ import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, upda
 import { getAdminLoginPath } from "../lib/admin-auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
-const ADMIN_2FA_BASE = `${API_URL}/api/admin-2fa`;
+const AUTH_2FA_BASE = `${API_URL}/api/auth/local/2fa`;
 const isProduction = process.env.NODE_ENV === "production";
+const ADMIN_SESSION_COOKIE_PATH = "/";
 const adminRoleNames = (process.env.ADMIN_ROLE_NAMES ?? "")
   .split(",")
   .map((role) => role.trim().toLowerCase())
@@ -55,8 +56,15 @@ function hasAllowedAdminRole(user: { role?: { name?: string; type?: string } }) 
   const roleType = user.role?.type?.toLowerCase();
   return Boolean((roleName && adminRoleNames.includes(roleName)) || (roleType && adminRoleNames.includes(roleType)));
 }
+
 async function setSession(jwt: string) {
-  (await cookies()).set(ADMIN_SESSION_COOKIE, jwt, { httpOnly: true, secure: isProduction, sameSite: "strict", path: "/admin", maxAge: 60 * 60 * 8 });
+  (await cookies()).set(ADMIN_SESSION_COOKIE, jwt, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+    path: ADMIN_SESSION_COOKIE_PATH,
+    maxAge: 60 * 60 * 8,
+  });
 }
 
 function redirectWithNotice(path: string, result: AdminMutationState, fallbackSuccess = "Cambios guardados correctamente.") {
@@ -187,6 +195,7 @@ export type AdminLoginState = {
   step?: "credentials" | "otp";
   challengeId?: string;
   maskedEmail?: string;
+  expiresInSeconds?: number;
 };
 
 export type AdminOtpState = {
@@ -195,41 +204,54 @@ export type AdminOtpState = {
   step?: "otp";
 };
 
-async function strapi2fa<T>(path: "login" | "verify" | "resend", body: Record<string, unknown>) {
+function statusFallbackMessage(status: number) {
+  if (status === 400) return "Usuario o contraseña incorrectos.";
+  if (status === 403) return "Esta cuenta no tiene permitido el acceso.";
+  if (status === 429) return "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+  return "No se pudo completar la solicitud.";
+}
+
+async function auth2fa<T>(path: "start" | "verify", body: Record<string, unknown>) {
+  let response: Response;
   try {
-    const response = await fetch(`${ADMIN_2FA_BASE}/${path}`, {
+    response = await fetch(`${AUTH_2FA_BASE}/${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
     });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      return { ok: false as const, message: payload?.error?.message ?? "No se pudo completar la solicitud." };
-    }
-    return { ok: true as const, data: (payload?.data ?? payload) as T };
   } catch {
     return { ok: false as const, message: "No se pudo conectar con el servidor." };
   }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message =
+      (typeof payload?.error?.message === "string" && payload.error.message) ||
+      (typeof payload?.message === "string" && payload.message) ||
+      statusFallbackMessage(response.status);
+    return { ok: false as const, message };
+  }
+
+  return { ok: true as const, data: payload as T };
 }
 
 export async function startAdminLogin(_prev: AdminLoginState, formData: FormData): Promise<AdminLoginState> {
   if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "credentials" };
-  const identifier = sanitizeText(formData.get("identifier")).toLowerCase();
+  const identifier = sanitizeText(formData.get("identifier"));
   const password = String(formData.get("password") ?? "");
   if (!identifier || !password || password.length > 256) {
     return { ok: false, message: "Credenciales inválidas.", step: "credentials" };
   }
 
-  const result = await strapi2fa<{ challengeId: string; maskedEmail?: string }>("login", {
-    email: identifier,
+  const result = await auth2fa<{ challengeId: string; email?: string; expiresInSeconds?: number }>("start", {
+    identifier,
     password,
-    rememberMe: true,
-    deviceId: randomUUID(),
   });
 
   if (!result.ok) {
-    return { ok: false, message: result.message || "Usuario o contraseña incorrectos.", step: "credentials" };
+    return { ok: false, message: result.message, step: "credentials" };
   }
 
   return {
@@ -237,7 +259,8 @@ export async function startAdminLogin(_prev: AdminLoginState, formData: FormData
     message: "Hemos enviado un código de verificación a tu correo.",
     step: "otp",
     challengeId: result.data.challengeId,
-    maskedEmail: result.data.maskedEmail,
+    maskedEmail: result.data.email,
+    expiresInSeconds: result.data.expiresInSeconds,
   };
 }
 
@@ -245,55 +268,36 @@ export async function verifyAdminLogin(_prev: AdminOtpState, formData: FormData)
   if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "otp" };
   const challengeId = sanitizeText(formData.get("challengeId"));
   const code = sanitizeText(formData.get("code")).replace(/\D/g, "");
-  const identifier = sanitizeText(formData.get("identifier")).toLowerCase();
-  const password = String(formData.get("password") ?? "");
 
   if (!challengeId || !code) return { ok: false, message: "Código inválido.", step: "otp" };
 
-  const verifyResult = await strapi2fa<{ user?: { id: number } }>("verify", { challengeId, code });
-  if (!verifyResult.ok) {
-    return { ok: false, message: verifyResult.message || "Código incorrecto o expirado.", step: "otp" };
+  const result = await auth2fa<{ jwt?: string; user?: { blocked?: boolean; role?: { name?: string; type?: string } } }>("verify", {
+    challengeId,
+    code,
+    deviceId: randomUUID(),
+  });
+
+  if (!result.ok) {
+    return { ok: false, message: result.message, step: "otp" };
   }
 
-  // El OTP confirma identidad contra los usuarios admin de Strapi. El panel
-  // sigue usando la sesión de la Content API, así que completamos el login
-  // real con las mismas credenciales para obtener ese JWT.
-  if (!identifier || !password) {
-    return { ok: false, message: "La sesión expiró, inicia sesión de nuevo.", step: "otp" };
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}/api/auth/local`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
-      cache: "no-store",
-    });
-  } catch {
-    return { ok: false, message: "No se pudo conectar con el servidor.", step: "otp" };
-  }
-  if (!response.ok) return { ok: false, message: "Usuario o contraseña incorrectos.", step: "otp" };
-
-  const payload = await response.json();
-  if (!payload?.jwt || payload?.user?.blocked || !hasAllowedAdminRole(payload.user)) {
+  const { jwt, user } = result.data;
+  if (!jwt || !user || user.blocked || !hasAllowedAdminRole(user)) {
     return { ok: false, message: "La cuenta no puede acceder al panel.", step: "otp" };
   }
 
-  await setSession(payload.jwt);
+  await setSession(jwt);
   redirect("/admin");
 }
 
-export async function resendAdminOtp(_prev: AdminOtpState, formData: FormData): Promise<AdminOtpState> {
-  const challengeId = sanitizeText(formData.get("challengeId"));
-  if (!challengeId) return { ok: false, message: "Solicitud inválida.", step: "otp" };
-  const result = await strapi2fa("resend", { challengeId });
-  if (!result.ok) return { ok: false, message: result.message || "No se pudo reenviar el código.", step: "otp" };
-  return { ok: true, message: "Código reenviado. Revisa tu correo.", step: "otp" };
-}
-
 export async function logoutAdmin() {
-  (await cookies()).delete(ADMIN_SESSION_COOKIE);
+  (await cookies()).set(ADMIN_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+    path: ADMIN_SESSION_COOKIE_PATH,
+    maxAge: 0,
+  });
   redirect(getAdminLoginPath());
 }
 

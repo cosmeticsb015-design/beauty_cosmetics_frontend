@@ -7,13 +7,13 @@ export function proxy(request: NextRequest) {
   const usesCustomLoginPath = loginPath !== ADMIN_DEFAULT_LOGIN_PATH;
 
   // Si ya configuraste una ruta secreta, la ruta hardcodeada /admin/login
-  // queda bloqueada para que nadie pueda enumerarla ni acceder por ahí.
+  // queda bloqueada por completo: nadie debe poder llegar ahí adivinando.
   if (usesCustomLoginPath && pathname === ADMIN_DEFAULT_LOGIN_PATH) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  // La ruta pública configurada se sirve internamente desde /admin/login,
-  // sin que la URL visible la delate.
+  // La ruta secreta configurada en ADMIN_LOGIN_PATH se sirve internamente
+  // desde /admin/login, sin que la URL visible lo delate.
   if (pathname === loginPath) {
     if (loginPath === ADMIN_DEFAULT_LOGIN_PATH) return NextResponse.next();
     const url = request.nextUrl.clone();
@@ -26,10 +26,10 @@ export function proxy(request: NextRequest) {
 
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) {
-    const url = request.nextUrl.clone();
-    url.pathname = loginPath;
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    // CLAVE: nunca redirigimos a la ruta de login. Si no hay sesión,
+    // /admin y todas sus subrutas deben comportarse como si no existieran,
+    // sin dejar ningún rastro de hacia dónde está el login real.
+    return new NextResponse("Not Found", { status: 404 });
   }
 
   return NextResponse.next();

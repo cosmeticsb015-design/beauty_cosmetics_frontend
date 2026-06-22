@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useActionState, useEffect, useState } from "react";
 import { ArrowLeft, LockKeyhole, MailCheck, ShieldCheck } from "lucide-react";
-import { resendAdminOtp, startAdminLogin, verifyAdminLogin } from "../actions";
+import { startAdminLogin, verifyAdminLogin } from "../actions";
 import PasswordField from "../components/PasswordField";
 
 const initialCredState = { ok: false, message: "", step: "credentials" as const };
@@ -12,34 +12,18 @@ const initialOtpState = { ok: false, message: "", step: "otp" as const };
 export default function AdminLoginPage() {
   const [credState, credAction, credPending] = useActionState(startAdminLogin, initialCredState);
   const [otpState, otpAction, otpPending] = useActionState(verifyAdminLogin, initialOtpState);
-  const [resendState, resendAction, resendPending] = useActionState(resendAdminOtp, initialOtpState);
 
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [challengeId, setChallengeId] = useState("");
-  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
     if (credState.ok && credState.step === "otp" && credState.challengeId) {
       setChallengeId(credState.challengeId);
       setStep("otp");
-      setCooldown(30);
     }
   }, [credState]);
-
-  useEffect(() => {
-    if (resendState.ok) setCooldown(30);
-  }, [resendState]);
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = window.setInterval(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [cooldown]);
-
-  const otpMessage = otpState.message || resendState.message;
-  const otpOk = resendState.ok && !otpState.message;
 
   return (
     <main className="min-h-screen bg-[#FAFAFA] px-4 py-12 text-[#2D1F23]">
@@ -106,14 +90,12 @@ export default function AdminLoginPage() {
           ) : (
             <form action={otpAction}>
               <input type="hidden" name="challengeId" value={challengeId} />
-              <input type="hidden" name="identifier" value={identifier} />
-              <input type="hidden" name="password" value={password} />
 
               <div className="mb-5 flex items-center gap-3 rounded-[6px] bg-[#FCEDF0] px-4 py-3 text-[13px] text-[#7D123B]">
                 <MailCheck size={18} strokeWidth={1.8} />
                 {credState.maskedEmail
-                  ? `Ingresa el código de 6 dígitos enviado a ${credState.maskedEmail}.`
-                  : "Ingresa el código de 6 dígitos que enviamos a tu correo."}
+                  ? `Ingresa el código de verificación enviado a ${credState.maskedEmail}.`
+                  : "Ingresa el código de verificación que enviamos a tu correo."}
               </div>
 
               <label className="block text-[14px] font-bold text-[#4B4E5A]">Código de verificación</label>
@@ -129,9 +111,13 @@ export default function AdminLoginPage() {
                 className="mt-2 h-12 w-full rounded-[6px] border border-[#C8CEDB] px-4 text-center text-[20px] font-bold tracking-[0.3em] outline-none focus:border-[#9E3659]"
               />
 
-              {otpMessage ? (
-                <p className={`mt-4 rounded-[6px] px-4 py-3 text-[14px] ${otpOk ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
-                  {otpMessage}
+              {otpState.message ? (
+                <p
+                  className={`mt-4 rounded-[6px] px-4 py-3 text-[14px] ${
+                    otpState.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {otpState.message}
                 </p>
               ) : null}
 
@@ -143,7 +129,7 @@ export default function AdminLoginPage() {
                 {otpPending ? "Verificando..." : "Verificar código"}
               </button>
 
-              <div className="mt-5 flex items-center justify-between text-[13px]">
+              <div className="mt-5 flex justify-start text-[13px]">
                 <button
                   type="button"
                   onClick={() => {
@@ -152,16 +138,7 @@ export default function AdminLoginPage() {
                   }}
                   className="inline-flex items-center gap-1.5 font-semibold text-[#5F5F61] transition-colors hover:text-[#9E3659]"
                 >
-                  <ArrowLeft size={14} /> Volver
-                </button>
-
-                <button
-                  type="submit"
-                  formAction={resendAction}
-                  disabled={resendPending || cooldown > 0}
-                  className="font-semibold text-[#9E3659] transition-colors hover:text-[#84304C] disabled:cursor-not-allowed disabled:text-[#C8AAB3]"
-                >
-                  {cooldown > 0 ? `Reenviar (${cooldown}s)` : resendPending ? "Reenviando..." : "Reenviar código"}
+                  <ArrowLeft size={14} /> Volver e intentar de nuevo
                 </button>
               </div>
             </form>
