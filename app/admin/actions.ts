@@ -1,11 +1,14 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, updateEntity, uploadAdminFile, type AdminMutationState } from "../services/admin";
+import { getAdminLoginPath } from "../lib/admin-auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
+const ADMIN_2FA_BASE = `${API_URL}/api/admin-2fa`;
 const isProduction = process.env.NODE_ENV === "production";
 const adminRoleNames = (process.env.ADMIN_ROLE_NAMES ?? "")
   .split(",")
@@ -178,29 +181,120 @@ async function syncVariantStocks(variantDocumentId: string, formData: FormData) 
   }
 }
 
-export async function loginAdmin(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
-  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida." };
+export type AdminLoginState = {
+  ok: boolean;
+  message: string;
+  step?: "credentials" | "otp";
+  challengeId?: string;
+  maskedEmail?: string;
+};
+
+export type AdminOtpState = {
+  ok: boolean;
+  message: string;
+  step?: "otp";
+};
+
+async function strapi2fa<T>(path: "login" | "verify" | "resend", body: Record<string, unknown>) {
+  try {
+    const response = await fetch(`${ADMIN_2FA_BASE}/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      return { ok: false as const, message: payload?.error?.message ?? "No se pudo completar la solicitud." };
+    }
+    return { ok: true as const, data: (payload?.data ?? payload) as T };
+  } catch {
+    return { ok: false as const, message: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function startAdminLogin(_prev: AdminLoginState, formData: FormData): Promise<AdminLoginState> {
+  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "credentials" };
   const identifier = sanitizeText(formData.get("identifier")).toLowerCase();
   const password = String(formData.get("password") ?? "");
-  if (!identifier || !password || password.length > 256) return { ok: false, message: "Credenciales inválidas." };
+  if (!identifier || !password || password.length > 256) {
+    return { ok: false, message: "Credenciales inválidas.", step: "credentials" };
+  }
 
-  const response = await fetch(`${API_URL}/api/auth/local`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier, password }),
-    cache: "no-store",
+  const result = await strapi2fa<{ challengeId: string; maskedEmail?: string }>("login", {
+    email: identifier,
+    password,
+    rememberMe: true,
+    deviceId: randomUUID(),
   });
-  if (!response.ok) return { ok: false, message: "Usuario o contraseña incorrectos." };
+
+  if (!result.ok) {
+    return { ok: false, message: result.message || "Usuario o contraseña incorrectos.", step: "credentials" };
+  }
+
+  return {
+    ok: true,
+    message: "Hemos enviado un código de verificación a tu correo.",
+    step: "otp",
+    challengeId: result.data.challengeId,
+    maskedEmail: result.data.maskedEmail,
+  };
+}
+
+export async function verifyAdminLogin(_prev: AdminOtpState, formData: FormData): Promise<AdminOtpState> {
+  if (!(await validateSameOrigin())) return { ok: false, message: "Solicitud inválida.", step: "otp" };
+  const challengeId = sanitizeText(formData.get("challengeId"));
+  const code = sanitizeText(formData.get("code")).replace(/\D/g, "");
+  const identifier = sanitizeText(formData.get("identifier")).toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!challengeId || !code) return { ok: false, message: "Código inválido.", step: "otp" };
+
+  const verifyResult = await strapi2fa<{ user?: { id: number } }>("verify", { challengeId, code });
+  if (!verifyResult.ok) {
+    return { ok: false, message: verifyResult.message || "Código incorrecto o expirado.", step: "otp" };
+  }
+
+  // El OTP confirma identidad contra los usuarios admin de Strapi. El panel
+  // sigue usando la sesión de la Content API, así que completamos el login
+  // real con las mismas credenciales para obtener ese JWT.
+  if (!identifier || !password) {
+    return { ok: false, message: "La sesión expiró, inicia sesión de nuevo.", step: "otp" };
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/auth/local`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier, password }),
+      cache: "no-store",
+    });
+  } catch {
+    return { ok: false, message: "No se pudo conectar con el servidor.", step: "otp" };
+  }
+  if (!response.ok) return { ok: false, message: "Usuario o contraseña incorrectos.", step: "otp" };
 
   const payload = await response.json();
-  if (!payload?.jwt || payload?.user?.blocked || !hasAllowedAdminRole(payload.user)) return { ok: false, message: "La cuenta no puede acceder al panel." };
+  if (!payload?.jwt || payload?.user?.blocked || !hasAllowedAdminRole(payload.user)) {
+    return { ok: false, message: "La cuenta no puede acceder al panel.", step: "otp" };
+  }
+
   await setSession(payload.jwt);
   redirect("/admin");
 }
 
+export async function resendAdminOtp(_prev: AdminOtpState, formData: FormData): Promise<AdminOtpState> {
+  const challengeId = sanitizeText(formData.get("challengeId"));
+  if (!challengeId) return { ok: false, message: "Solicitud inválida.", step: "otp" };
+  const result = await strapi2fa("resend", { challengeId });
+  if (!result.ok) return { ok: false, message: result.message || "No se pudo reenviar el código.", step: "otp" };
+  return { ok: true, message: "Código reenviado. Revisa tu correo.", step: "otp" };
+}
+
 export async function logoutAdmin() {
   (await cookies()).delete(ADMIN_SESSION_COOKIE);
-  redirect("/admin/login");
+  redirect(getAdminLoginPath());
 }
 
 export async function saveProduct(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {

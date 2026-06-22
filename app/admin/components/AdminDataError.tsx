@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+import { getAdminLoginPath } from "../../lib/admin-auth";
 
 type AdminDataErrorProps = {
   title?: string;
@@ -13,7 +14,9 @@ export default function AdminDataError({
   permissions = [],
 }: AdminDataErrorProps) {
   const message = error instanceof Error ? error.message : "Error desconocido";
-
+<Link href={getAdminLoginPath()} className="mt-6 inline-flex rounded-[6px] bg-[#9E3659] px-5 py-3 text-[14px] font-bold text-white">
+  Volver al login
+</Link>
   return (
     <section className="mx-auto w-full max-w-[900px] px-4 py-12 md:px-8">
       <div className="rounded-[12px] border border-red-200 bg-white p-7 shadow-sm">
