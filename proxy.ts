@@ -68,13 +68,12 @@ export function proxy(request: NextRequest) {
     return adminNotFoundResponse();
   }
 
-  // La ruta secreta configurada en ADMIN_LOGIN_PATH se sirve internamente
-  // desde /admin/login, sin que la URL visible lo delate.
+  // La ruta secreta configurada en ADMIN_LOGIN_PATH se sirve sin necesidad
+  // de reescritura aquí: next.config.ts ya mapea esa ruta hacia /admin/login
+  // a nivel de ruteo (sin red, sin TLS), evitando el bug EPROTO que produce
+  // NextResponse.rewrite() en producción detrás de un reverse proxy.
   if (pathname === loginPath) {
-    if (loginPath === ADMIN_DEFAULT_LOGIN_PATH) return NextResponse.next();
-    const url = request.nextUrl.clone();
-    url.pathname = ADMIN_DEFAULT_LOGIN_PATH;
-    return NextResponse.rewrite(url);
+    return NextResponse.next();
   }
 
   if (!pathname.startsWith("/admin")) return NextResponse.next();
