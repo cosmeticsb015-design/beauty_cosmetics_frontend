@@ -8,12 +8,13 @@ import {
   Save,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
-import { saveVariantForm } from "@/src/features/admin/actions";
+import { removeEntityForm, saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminVariant, getStrapiMediaUrl } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
 
@@ -187,8 +188,27 @@ export default async function EditVariantPage({ params, searchParams }: { params
                   Esta variante queda sincronizada con Strapi al guardar: datos básicos, precio, estado e imágenes.
                 </p>
               </section>
+
+              <section className="rounded-[10px] border border-red-200 bg-white p-7">
+                <div className="flex items-center gap-3 text-red-700">
+                  <Trash2 size={24} strokeWidth={2} />
+                  <h3 className="text-[20px] font-bold">Eliminar Variante</h3>
+                </div>
+                <p className="mt-3 text-[14px] leading-relaxed text-[#6B6063]">
+                  Esta acción elimina permanentemente la variante del catálogo. Úsala solo cuando ya no quieras conservar el registro.
+                </p>
+                <button form="delete-variant-form" className="mt-5 inline-flex w-full h-11 items-center justify-center gap-2 rounded-[6px] border border-red-200 px-5 text-[14px] font-bold text-red-700 transition-colors hover:bg-red-50">
+                  <Trash2 size={16} />
+                  Eliminar variante
+                </button>
+              </section>
             </aside>
           </div>
+        </form>
+        
+        <form id="delete-variant-form" action={removeEntityForm} className="hidden">
+          <input type="hidden" name="collection" value="variant-options" />
+          <input type="hidden" name="id" value={variant.documentId} />
         </form>
       </AdminShell>
     );
