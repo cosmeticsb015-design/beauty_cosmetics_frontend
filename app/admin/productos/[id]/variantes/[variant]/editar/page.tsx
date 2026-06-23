@@ -209,6 +209,7 @@ export default async function EditVariantPage({ params, searchParams }: { params
         <form id="delete-variant-form" action={removeEntityForm} className="hidden">
           <input type="hidden" name="collection" value="variant-options" />
           <input type="hidden" name="id" value={variant.documentId} />
+          <input type="hidden" name="redirect_url" value={`/admin/productos/${product?.documentId ?? id}/editar`} />
         </form>
       </AdminShell>
     );

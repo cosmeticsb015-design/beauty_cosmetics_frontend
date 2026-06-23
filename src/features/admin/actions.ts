@@ -94,7 +94,6 @@ async function adminRefererPath(fallback: string) {
   }
 }
 
-
 const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_PRODUCT_IMAGES_PER_SAVE = 8;
 const MAX_BANNER_IMAGE_SIZE = 8 * 1024 * 1024;
@@ -149,7 +148,6 @@ async function uploadProductImages(productDocumentId: string, formData: FormData
     });
   }
 }
-
 
 async function uploadVariantImages(variantDocumentId: string, formData: FormData) {
   const files = getImageFiles(formData);
@@ -355,7 +353,6 @@ export async function saveCategory(_prev: AdminMutationState, formData: FormData
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar la categoría." }; }
 }
 
-
 export async function saveVariant(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
   const id = sanitizeText(formData.get("id"));
   const product = sanitizeText(formData.get("product"));
@@ -461,7 +458,7 @@ export async function saveStoreConfig(_prev: AdminMutationState, formData: FormD
 export async function removeEntityAction(_prev: AdminMutationState, formData: FormData): Promise<AdminMutationState> {
   const collection = sanitizeText(formData.get("collection"));
   const id = sanitizeText(formData.get("id"));
-  if (!collection || !id || !["products", "brands", "categories", "branches", "shipping-rates"].includes(collection)) return { ok: false, message: "Solicitud inválida." };
+  if (!collection || !id || !["products", "brands", "categories", "branches", "shipping-rates", "variant-options"].includes(collection)) return { ok: false, message: "Solicitud inválida." };
   try { await deleteEntity(collection, id); revalidatePath("/admin"); return { ok: true, message: deleteSuccessMessage(collection) }; }
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo eliminar." }; }
 }
@@ -472,6 +469,7 @@ function deleteSuccessMessage(collection: string) {
   if (collection === "categories") return "Categoría eliminada correctamente.";
   if (collection === "branches") return "Sucursal eliminada correctamente.";
   if (collection === "shipping-rates") return "Tarifa eliminada correctamente.";
+  if (collection === "variant-options") return "Variante eliminada correctamente.";
   return "Registro eliminado correctamente.";
 }
 
@@ -495,7 +493,8 @@ export async function deactivateProductForm(formData: FormData) {
 
 export async function removeEntityForm(formData: FormData) {
   const result = await removeEntityAction({ ok: false, message: "" }, formData);
-  redirectWithNotice("/admin", result);
+  const redirectUrl = sanitizeText(formData.get("redirect_url")) || "/admin";
+  redirectWithNotice(redirectUrl, result);
 }
 export async function saveProductForm(formData: FormData) {
   const result = await saveProduct({ ok: false, message: "" }, formData);
