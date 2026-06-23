@@ -1,8 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   BadgeDollarSign,
-  Camera,
   ChevronDown,
   CirclePlus,
   CloudUpload,
@@ -16,32 +14,18 @@ import {
   Settings,
   ShoppingBag,
   Layers3,
+  Trash2,
 } from "lucide-react";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
-import { saveProductForm, saveVariantForm } from "@/src/features/admin/actions";
+import { removeEntityForm, saveProductForm, saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
-}
-
-function ProductImage({ className, principal, url }: { className: string; principal?: boolean; url?: string | null }) {
-  return (
-    <div className={`relative h-[120px] overflow-hidden rounded-[4px] ${url ? "bg-[#F8F8F9]" : className}`}>
-      {url ? <Image src={url} alt="Imagen del producto" fill sizes="165px" className="object-cover" /> : null}
-      {principal && (
-        <span className="absolute left-3 top-3 rounded-[3px] bg-[#9E3659] px-3 py-1 text-[11px] font-bold text-white">
-          PRINCIPAL
-        </span>
-      )}
-      {!url ? <div className="absolute bottom-4 left-1/2 h-14 w-5 -translate-x-1/2 rounded-t-[3px] bg-white/85 shadow" /> : null}
-      {!url ? <div className="absolute bottom-[70px] left-1/2 h-3 w-3 -translate-x-1/2 rounded-full bg-[#7A2608]/70" /> : null}
-    </div>
-  );
 }
 
 function blocksToText(value: unknown) {
@@ -75,7 +59,9 @@ export default async function EditProductPage({ params, searchParams }: { params
         href: branch.documentId,
       };
     });
-    const existingImages = (product.images ?? []).map((item) => getStrapiMediaUrl(item.image?.url)).filter(Boolean) as string[];
+    const existingImages = (product.images ?? [])
+      .map((item) => ({ id: item.documentId, url: getStrapiMediaUrl(item.image?.url) }))
+      .filter((item): item is { id: string; url: string } => Boolean(item.id && item.url));
     const variants = ((product as typeof product & { variants?: { label?: string; value?: string; price_override?: number | null; active?: boolean; documentId?: string }[] }).variants ?? []).map((variant, index) => ({
       name: variant.label || variant.value || `Variante ${index + 1}`,
       value: variant.value || "General",
@@ -118,7 +104,7 @@ export default async function EditProductPage({ params, searchParams }: { params
           </div>
         </div>
 
-        <div className="mt-9 grid gap-6 xl:grid-cols-[1fr_330px]">
+        <div className="mt-9 grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]">
           <div className="space-y-8">
             <section className="rounded-[8px] border border-[#C8CEDB] bg-white p-7">
               <div className="mb-7 flex items-center gap-3">
@@ -272,6 +258,7 @@ export default async function EditProductPage({ params, searchParams }: { params
                 <h3 className="text-[20px] font-bold text-[#1F1F22]">Galería de Imágenes</h3>
               </div>
               <ProductImagePicker existingImages={existingImages} compact />
+              <p className="mt-3 text-[12px] font-semibold text-red-700">Marca las imágenes que quieras eliminar y luego guarda los cambios.</p>
             </section>
 
             <section className="rounded-[8px] border border-[#C8CEDB] bg-white p-7">
@@ -325,8 +312,24 @@ export default async function EditProductPage({ params, searchParams }: { params
                 Sin registros de actividad
               </p>
             </section>
+
+            <section className="rounded-[8px] border border-red-200 bg-white p-7">
+              <div className="mb-4 flex items-center gap-3 text-red-700">
+                <Trash2 size={22} strokeWidth={2} />
+                <h3 className="text-[20px] font-bold">Eliminar Producto</h3>
+              </div>
+              <p className="text-[14px] leading-relaxed text-[#6B6063]">Esta acción elimina el producto del catálogo. Úsala solo cuando ya no quieras conservar el registro.</p>
+              <button form="delete-product-form" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[6px] border border-red-200 px-5 text-[14px] font-bold text-red-700 transition-colors hover:bg-red-50">
+                <Trash2 size={16} />
+                Eliminar producto
+              </button>
+            </section>
           </aside>
         </div>
+      </form>
+      <form id="delete-product-form" action={removeEntityForm} className="hidden">
+        <input type="hidden" name="collection" value="products" />
+        <input type="hidden" name="id" value={product.documentId} />
       </form>
       <form id="new-variant-form" action={saveVariantForm} className="hidden">
         <input type="hidden" name="product" value={product.documentId} />

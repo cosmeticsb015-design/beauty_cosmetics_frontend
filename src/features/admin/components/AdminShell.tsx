@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { logoutAdmin } from "@/src/features/admin/actions";
 import {
   FolderKanban,
@@ -73,10 +73,14 @@ function NavLinks({ active, onNavigate }: { active: AdminShellProps["active"]; o
 export default function AdminShell({ active, searchPlaceholder, searchAction = "/admin", searchValue = "", children }: AdminShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const previousPathnameRef = useRef(pathname);
 
   // Cierra el drawer móvil si la ruta cambia mientras estaba abierto.
   useEffect(() => {
-    setMobileMenuOpen(false);
+    if (previousPathnameRef.current === pathname) return;
+    previousPathnameRef.current = pathname;
+    const timeout = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(timeout);
   }, [pathname]);
 
   // Evita que el fondo haga scroll mientras el menú móvil está abierto.
@@ -115,7 +119,7 @@ export default function AdminShell({ active, searchPlaceholder, searchAction = "
 
         <section className="min-w-0">
           <header className="sticky top-0 z-30 border-b border-[#EBC8D2] bg-white/95 px-4 py-4 backdrop-blur md:px-8">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
@@ -127,14 +131,14 @@ export default function AdminShell({ active, searchPlaceholder, searchAction = "
               </button>
 
               {searchPlaceholder ? (
-                <form action={searchAction} className="flex h-11 w-full max-w-[1050px] items-center gap-3 rounded-[8px] bg-[#F6F6F6] px-4 text-[#6B6063]">
+                <form action={searchAction} className="flex min-h-11 w-full max-w-[1050px] flex-col gap-2 rounded-[8px] bg-[#F6F6F6] px-4 py-2 text-[#6B6063] sm:h-11 sm:flex-row sm:items-center sm:py-0">
                   <Search size={20} strokeWidth={1.8} />
                   <input
                     name="q"
                     defaultValue={searchValue}
                     aria-label={searchPlaceholder}
                     placeholder={searchPlaceholder}
-                    className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-[#7A7F8A]"
+                    className="h-10 w-full bg-transparent text-[15px] outline-none placeholder:text-[#7A7F8A] sm:h-full"
                   />
                   <button className="rounded-[4px] bg-[#9E3659] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#84304C]">Buscar</button>
                 </form>

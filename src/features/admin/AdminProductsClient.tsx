@@ -88,7 +88,7 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
 
               <Link
                 href="/admin/productos/nuevo"
-                className="inline-flex h-12 items-center justify-center gap-3 rounded-[4px] bg-[#9E3659] px-6 text-[15px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C]"
+                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-[4px] bg-[#9E3659] px-6 text-[15px] font-semibold tracking-wide text-white transition-colors hover:bg-[#84304C] sm:w-auto"
               >
                 <Plus size={20} strokeWidth={1.8} />
                 Nuevo Producto
@@ -106,23 +106,23 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
 
             <section className="mt-12 overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white">
               <div className="flex flex-col gap-4 border-b border-[#E7BFC9] px-6 py-7 lg:flex-row lg:items-center lg:justify-between">
-                <form className="flex flex-wrap gap-3" action="/admin">
-                  <select name="category" defaultValue={currentFilters.category} className="h-10 rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none">
+                <form className="grid w-full gap-3 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap" action="/admin">
+                  <select name="category" defaultValue={currentFilters.category} className="h-10 w-full rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none lg:w-auto">
                     {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
                   </select>
-                  <select name="availability" defaultValue={currentFilters.availability} className="h-10 rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none">
+                  <select name="availability" defaultValue={currentFilters.availability} className="h-10 w-full rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none lg:w-auto">
                     <option value="all">Disponibilidad</option>
                     <option value="in_stock">En stock</option>
                     <option value="low_stock">Stock bajo</option>
                     <option value="out_of_stock">Sin stock</option>
                   </select>
-                  <select name="status" defaultValue={currentFilters.status} className="h-10 rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none">
+                  <select name="status" defaultValue={currentFilters.status} className="h-10 w-full rounded-[4px] bg-[#FCEDF0] px-5 text-[15px] font-semibold tracking-wide text-[#9E3659] outline-none lg:w-auto">
                     <option value="all">Estado</option>
                     <option value="active">Activos</option>
                     <option value="inactive">Desactivados</option>
                   </select>
                   {currentFilters.search ? <input type="hidden" name="q" value={currentFilters.search} /> : null}
-                  <button className="inline-flex h-10 items-center gap-2 rounded-[4px] bg-[#9E3659] px-5 text-[15px] font-semibold tracking-wide text-white">
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-[4px] bg-[#9E3659] px-5 text-[15px] font-semibold tracking-wide text-white">
                     Filtrar
                     <ChevronDown size={16} strokeWidth={1.8} />
                   </button>
@@ -202,7 +202,7 @@ export default function AdminProductsClient({ stats, products, totalLabel, categ
                 </table>
               </div>
 
-              <div className="flex items-center justify-between bg-[#F4F4F4] px-7 py-7 text-[15px] font-semibold text-[#554246]">
+              <div className="flex flex-col gap-4 bg-[#F4F4F4] px-4 py-6 text-[15px] font-semibold text-[#554246] sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-7">
                 <Link href={pageHref(Math.max(1, pagination.page - 1))} className={`inline-flex items-center gap-1 transition-colors hover:text-[#9E3659] ${pagination.page <= 1 ? "pointer-events-none opacity-40" : ""}`}>
                   <ChevronLeft size={18} strokeWidth={1.8} />
                   Anterior

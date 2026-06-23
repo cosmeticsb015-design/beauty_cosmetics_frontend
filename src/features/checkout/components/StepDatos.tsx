@@ -1,5 +1,6 @@
 import { CheckoutFormData } from "@/src/features/checkout/types";
 
+import { formatSalvadoranPhone } from "@/src/features/checkout/phone";
 interface Props {
   formData: CheckoutFormData;
   setFormData: (data: CheckoutFormData) => void;
@@ -45,9 +46,9 @@ export default function StepDatos({ formData, setFormData }: Props) {
           <input
             id="telefono"
             type="tel"
-            placeholder="Ej. +52 55 1234 5678"
+            placeholder="503 0000 0000"
             value={formData.telefono}
-            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, telefono: formatSalvadoranPhone(e.target.value) })}
             className="w-full bg-[#F9F7F8] border border-transparent focus:border-[#C15074] rounded-[4px] px-4 py-3.5 text-sm text-[#2D1F23] placeholder:text-[#AC9CA0] outline-none transition-colors"
           />
         </div>

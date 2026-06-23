@@ -5,7 +5,7 @@ import { Camera, ImageIcon, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type ProductImagePickerProps = {
-  existingImages?: string[];
+  existingImages?: Array<{ id: string; url: string } | string>;
   compact?: boolean;
   inputForm?: string;
 };
@@ -16,18 +16,31 @@ export default function ProductImagePicker({ existingImages = [], compact = fals
 
   useEffect(() => () => previews.forEach((preview) => URL.revokeObjectURL(preview.url)), [previews]);
 
+  const normalizedExistingImages = existingImages.map((image, index) => ({
+    id: typeof image === "string" ? "" : image.id,
+    url: typeof image === "string" ? image : image.url,
+    label: index === 0 ? "Actual principal" : "Actual",
+    existing: true,
+  }));
+
   const images = [
-    ...existingImages.map((url, index) => ({ key: `existing-${url}-${index}`, url, label: index === 0 ? "Actual principal" : "Actual" })),
-    ...previews.map((preview, index) => ({ key: `${preview.file.name}-${preview.file.lastModified}-${index}`, url: preview.url, label: index === 0 && existingImages.length === 0 ? "Nueva principal" : "Nueva" })),
+    ...normalizedExistingImages.map((image, index) => ({ key: `existing-${image.url}-${index}`, ...image })),
+    ...previews.map((preview, index) => ({ key: `${preview.file.name}-${preview.file.lastModified}-${index}`, id: "", url: preview.url, label: index === 0 && existingImages.length === 0 ? "Nueva principal" : "Nueva", existing: false })),
   ];
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {images.slice(0, compact ? 3 : 6).map((image) => (
           <div key={image.key} className="relative h-[150px] overflow-hidden rounded-[4px] border border-[#E5E7EB] bg-[#FAFAFA]">
             <Image src={image.url} alt="Vista previa del producto" fill sizes="180px" className="object-cover" />
             <span className="absolute left-3 top-3 rounded-[3px] bg-[#9E3659] px-3 py-1 text-[11px] font-bold text-white shadow-sm">{image.label}</span>
+            {image.existing && image.id ? (
+              <label className="absolute bottom-3 left-3 right-3 flex cursor-pointer items-center justify-center gap-2 rounded-[4px] bg-white/95 px-3 py-2 text-[12px] font-bold text-red-700 shadow-sm ring-1 ring-red-100 transition-colors hover:bg-red-50">
+                <input name="delete_image_ids" form={inputForm} type="checkbox" value={image.id} className="h-4 w-4 accent-red-700" />
+                Eliminar imagen
+              </label>
+            ) : null}
           </div>
         ))}
         <label className="flex h-[150px] cursor-pointer flex-col items-center justify-center rounded-[4px] border-2 border-dashed border-[#DFE3EA] text-[#9AA3B2] transition-colors hover:border-[#9E3659] hover:text-[#9E3659]">

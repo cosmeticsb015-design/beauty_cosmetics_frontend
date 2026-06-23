@@ -231,9 +231,6 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <span className="absolute left-6 top-6 text-[11px] font-medium text-[#2D1F23]">
-                Cruelty-free
-              </span>
             </div>
 
             {/* Thumbnails: variante (si tiene imágenes) o producto */}

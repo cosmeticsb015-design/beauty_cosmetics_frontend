@@ -130,6 +130,11 @@ function validateImageFile(file: File) {
   if (file.size > MAX_PRODUCT_IMAGE_SIZE) throw new Error("Cada imagen debe pesar máximo 5MB.");
 }
 
+async function deleteSelectedProductImages(formData: FormData) {
+  const imageIds = Array.from(new Set(formData.getAll("delete_image_ids").map((value) => sanitizeText(value)).filter(Boolean)));
+  for (const imageId of imageIds) await deleteEntity("product-images", imageId);
+}
+
 async function uploadProductImages(productDocumentId: string, formData: FormData) {
   const files = getImageFiles(formData);
   for (const [index, file] of files.entries()) {
@@ -320,6 +325,7 @@ export async function saveProduct(_prev: AdminMutationState, formData: FormData)
   try {
     const response = id ? await updateEntity<{ documentId: string }>("products", id, data) : await createEntity<{ documentId: string }>("products", data);
     const productDocumentId = id || response.data.documentId;
+    await deleteSelectedProductImages(formData);
     const defaultVariantDocumentId = await ensureDefaultVariant(productDocumentId);
     await syncVariantStocks(defaultVariantDocumentId, formData);
     await uploadProductImages(productDocumentId, formData);
@@ -456,8 +462,17 @@ export async function removeEntityAction(_prev: AdminMutationState, formData: Fo
   const collection = sanitizeText(formData.get("collection"));
   const id = sanitizeText(formData.get("id"));
   if (!collection || !id || !["products", "brands", "categories", "branches", "shipping-rates"].includes(collection)) return { ok: false, message: "Solicitud inválida." };
-  try { await deleteEntity(collection, id); revalidatePath("/admin"); return { ok: true, message: "Registro eliminado." }; }
+  try { await deleteEntity(collection, id); revalidatePath("/admin"); return { ok: true, message: deleteSuccessMessage(collection) }; }
   catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo eliminar." }; }
+}
+
+function deleteSuccessMessage(collection: string) {
+  if (collection === "products") return "Producto eliminado correctamente.";
+  if (collection === "brands") return "Marca eliminada correctamente.";
+  if (collection === "categories") return "Categoría eliminada correctamente.";
+  if (collection === "branches") return "Sucursal eliminada correctamente.";
+  if (collection === "shipping-rates") return "Tarifa eliminada correctamente.";
+  return "Registro eliminado correctamente.";
 }
 
 export async function setProductActiveForm(formData: FormData) {
