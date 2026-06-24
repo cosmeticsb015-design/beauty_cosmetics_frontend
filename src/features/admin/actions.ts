@@ -1,4 +1,5 @@
 "use server";
+// RUTA: src/features/admin/actions.ts
 
 import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
@@ -499,7 +500,13 @@ export async function removeEntityForm(formData: FormData) {
 export async function saveProductForm(formData: FormData) {
   const result = await saveProduct({ ok: false, message: "" }, formData);
   revalidatePath("/admin");
-  redirectWithNotice(result.ok ? "/admin" : await adminRefererPath("/admin/productos/nuevo"), result);
+  // Al crear o actualizar un producto, nos quedamos en su pantalla de edición
+  // (donde ya existen galería de imágenes con eliminación y alta de variantes
+  // en línea) en lugar de mandar al listado. Esto evita el ciclo de
+  // guardar -> salir -> volver a entrar a editar para seguir agregando
+  // imágenes o variantes.
+  const successPath = result.id ? `/admin/productos/${result.id}/editar` : "/admin";
+  redirectWithNotice(result.ok ? successPath : await adminRefererPath("/admin/productos/nuevo"), result);
 }
 export async function saveBrandForm(formData: FormData) {
   const result = await saveBrand({ ok: false, message: "" }, formData);
@@ -515,7 +522,12 @@ export async function saveBranchForm(formData: FormData) {
 }
 export async function saveVariantForm(formData: FormData) {
   const result = await saveVariant({ ok: false, message: "" }, formData);
-  redirectWithNotice(result.ok ? "/admin" : await adminRefererPath("/admin"), result);
+  const productId = sanitizeText(formData.get("product"));
+  // Igual que con el producto: nos quedamos en la pantalla de edición del
+  // producto dueño de la variante para permitir agregar varias variantes
+  // (y sus imágenes) en una sola sesión, sin ser expulsados al listado.
+  const fallback = productId ? `/admin/productos/${productId}/editar` : "/admin";
+  redirectWithNotice(result.ok ? fallback : await adminRefererPath(fallback), result);
 }
 
 export async function saveBranchInventoryForm(formData: FormData) {

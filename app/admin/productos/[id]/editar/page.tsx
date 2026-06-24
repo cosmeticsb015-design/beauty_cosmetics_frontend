@@ -1,3 +1,4 @@
+// RUTA: app/admin/productos/[id]/editar/page.tsx
 import Link from "next/link";
 import {
   BadgeDollarSign,
@@ -23,6 +24,7 @@ import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.util
 import { removeEntityForm, saveProductForm, saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import VariantColorPicker from "@/src/features/admin/productos/components/VariantColorPicker";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[13px] sm:text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
@@ -247,10 +249,12 @@ export default async function EditProductPage({ params, searchParams }: { params
                 ))}
                 <div className="rounded-[6px] border-2 border-dashed border-[#C8CEDB] p-4 sm:p-5 hover:border-[#9E3659] hover:bg-[#F9F9FB] transition-colors">
                   <p className="mb-4 flex items-center gap-2 text-[13px] sm:text-[15px] font-bold text-[#4B4E5A]"><CirclePlus size={18} strokeWidth={2} className="flex-shrink-0 sm:size-[20px]" />Añadir Nueva Combinación</p>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                     <input form="new-variant-form" name="label" placeholder="Etiqueta: Tono / Tamaño" className="h-10 sm:h-11 rounded-[4px] border border-[#C8CEDB] px-3 text-[13px] sm:text-[14px] outline-none focus:border-[#9E3659] focus:ring-1 focus:ring-[#9E3659]" />
-                    <label className="flex h-10 sm:h-11 items-center gap-3 rounded-[4px] border border-[#C8CEDB] px-3 text-[12px] sm:text-[13px] font-semibold text-[#5F6370] hover:border-[#9E3659] transition-colors">Color <input form="new-variant-form" name="value" type="color" defaultValue="#9E3659" className="h-7 sm:h-8 w-10 sm:w-12 cursor-pointer bg-transparent" /></label>
                     <input form="new-variant-form" name="price_override" placeholder="Precio opcional" className="h-10 sm:h-11 rounded-[4px] border border-[#C8CEDB] px-3 text-[13px] sm:text-[14px] outline-none focus:border-[#9E3659] focus:ring-1 focus:ring-[#9E3659]" />
+                  </div>
+                  <div className="mt-4">
+                    <VariantColorPicker name="value" formId="new-variant-form" />
                   </div>
                   <div className="mt-4">
                     <ProductImagePicker compact inputForm="new-variant-form" />

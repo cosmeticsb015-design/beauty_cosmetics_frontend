@@ -1,15 +1,18 @@
 "use client";
+// RUTA: src/features/admin/productos/components/VariantColorPicker.tsx
 
 import { useId, useState } from "react";
 import { Palette } from "lucide-react";
 
 type VariantColorPickerProps = {
   initialColor?: string;
+  name?: string;
+  formId?: string;
 };
 
 const hexPattern = /^#[0-9A-Fa-f]{6}$/;
 
-export default function VariantColorPicker({ initialColor = "#9E3659" }: VariantColorPickerProps) {
+export default function VariantColorPicker({ initialColor = "#9E3659", name = "value", formId }: VariantColorPickerProps) {
   const inputId = useId();
   const [color, setColor] = useState(initialColor);
   const [draftColor, setDraftColor] = useState(initialColor.toUpperCase());
@@ -32,7 +35,8 @@ export default function VariantColorPicker({ initialColor = "#9E3659" }: Variant
         >
           <input
             id={inputId}
-            name="variant-color"
+            name={name}
+            form={formId}
             type="color"
             value={color}
             onChange={(event) => updateColor(event.target.value)}

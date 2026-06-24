@@ -1,3 +1,4 @@
+// RUTA: src/features/checkout/components/StepPago.tsx
 import { useEffect, useState } from "react";
 import { Pencil, ShieldCheck, Truck } from "lucide-react";
 import { CheckoutFormData } from "@/src/features/checkout/types";
@@ -25,9 +26,7 @@ export default function StepPago({ formData, onEditStep }: Props) {
   }, []);
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-  const TAX_RATE = 0.08;
-  const taxes = parseFloat((subtotal * TAX_RATE).toFixed(2));
-  const total = parseFloat((subtotal + taxes).toFixed(2));
+  const total = parseFloat(subtotal.toFixed(2));
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-6">

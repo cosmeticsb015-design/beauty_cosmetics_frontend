@@ -1,3 +1,4 @@
+// RUTA: app/admin/productos/nuevo/page.tsx
 import Link from "next/link";
 import {
   BadgeDollarSign,
@@ -146,13 +147,13 @@ export default async function NewProductPage({ searchParams }: { searchParams?: 
 
               <div className="flex min-h-[145px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[#C8CEDB] px-5 py-8 text-center">
                 <p className="text-[16px] text-[#4B4E5A]">No se han definido variantes para este producto.</p>
-                <p className="mt-2 text-[14px] text-[#5F6370]">El producto se guardará con una variante Default / General para manejar stock por sucursal.</p>
+                <p className="mt-2 text-[14px] text-[#5F6370]">Al guardar, Strapi genera el ID del producto y esta misma pantalla se convierte en su edición: ahí podrás agregar variantes (color, precio, imágenes) una tras otra sin perder lo ya guardado.</p>
                 <Link
                   href="/admin/productos/nuevo/variante"
                   className="mt-5 inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#CFE1FA] px-7 text-[15px] font-bold tracking-wide text-[#5F6D82] transition-colors hover:bg-[#BCD4F4]"
                 >
                   <CirclePlus size={22} strokeWidth={2} />
-                  Añadir Nueva Variante después de guardar
+                  Ya tengo el producto guardado, ir a variante
                 </Link>
               </div>
             </section>

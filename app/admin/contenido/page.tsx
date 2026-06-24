@@ -1,4 +1,5 @@
-import { ImageIcon, Link2, Mail, MessageCircle, Save, UploadCloud, Edit2, Trash2 } from "lucide-react";
+// RUTA: app/admin/contenido/page.tsx
+import { ImageIcon, Link2, Mail, MessageCircle, Save, Edit2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
@@ -6,6 +7,7 @@ import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
 import { saveStoreConfigForm, deleteBannerForm } from "@/src/features/admin/actions";
 import { getAdminStoreConfig, getStrapiMediaUrl, type StrapiHomeBanner } from "@/src/shared/services/admin";
+import BannerImageField from "./components/BannerImageField";
 
 const PAGE_SIZE = 6;
 const scopeLabel: Record<StrapiHomeBanner["display_scope"], string> = {
@@ -58,14 +60,16 @@ function BannerEditor({ banner, index }: { banner: Partial<StrapiHomeBanner>; in
       <input type="hidden" name={`banner_desktop_existing_${index}`} value={desktopImage?.id ?? ""} />
       <input type="hidden" name={`banner_mobile_existing_${index}`} value={mobileImage?.id ?? ""} />
 
-      <div className="mb-6 flex min-h-[210px] flex-col items-center justify-center rounded-[8px] border-2 border-dashed border-[#C9CEDD] bg-[#F6F7F9] p-5 text-center text-[#4B5262]">
-        {desktopImage?.url ? <img src={getStrapiMediaUrl(desktopImage.url) ?? ""} alt={banner.name ?? "Banner"} className="mb-4 max-h-[210px] w-full rounded-[6px] object-cover" /> : <ImageIcon size={36} strokeWidth={1.8} />}
-        <p className="mt-3 font-medium">Recomendado: 1200×630px (Desktop)</p>
-        <p className="text-sm text-[#6B6063]">Opcional móvil: 1080×608px. Peso máximo: 8MB.</p>
-        <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#8E94A3] bg-white px-5 py-2 text-sm font-bold text-[#1F1F22]">
-          <UploadCloud size={17} /> Subir imagen desktop
-          <input name={`banner_desktop_image_${index}`} type="file" accept="image/*" className="sr-only" />
-        </label>
+      <div className="mb-6">
+        <BannerImageField
+          name={`banner_desktop_image_${index}`}
+          existingUrl={getStrapiMediaUrl(desktopImage?.url)}
+          frameLabel="Desktop"
+          recommendedWidth={1200}
+          recommendedHeight={630}
+          liveAspectRatio={120 / 63}
+          helperText="Esta es la misma proporción (120:63) que usa el carrusel del home en desktop. Peso máximo: 8MB."
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -89,11 +93,17 @@ function BannerEditor({ banner, index }: { banner: Partial<StrapiHomeBanner>; in
             <option value="mobile_only">Solo móvil</option>
           </select>
         </label>
-        <label className="block">
-          <span className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.08em] text-[#3F4450]"><ImageIcon size={16} /> Imagen móvil opcional</span>
-          {mobileImage?.url ? <img src={getStrapiMediaUrl(mobileImage.url) ?? ""} alt="" className="mb-2 h-20 w-full rounded object-cover" /> : null}
-          <input name={`banner_mobile_image_${index}`} type="file" accept="image/*" className="w-full rounded-[4px] border border-dashed border-[#C8CEDB] bg-white p-3 text-sm" />
-        </label>
+        <div className="block lg:col-span-2">
+          <BannerImageField
+            name={`banner_mobile_image_${index}`}
+            existingUrl={getStrapiMediaUrl(mobileImage?.url)}
+            frameLabel="Móvil"
+            recommendedWidth={1080}
+            recommendedHeight={608}
+            liveAspectRatio={16 / 9}
+            helperText="Opcional: si no subes una, el home usa la imagen desktop también en móvil. Proporción real del carrusel en móvil: 16:9."
+          />
+        </div>
         <label className="flex items-center gap-3 text-sm font-bold text-[#3F4450] lg:col-span-2">
           <input name={`banner_active_${index}`} type="checkbox" defaultChecked={banner.active !== false} className="h-5 w-5 accent-[#7B2505]" /> Estado de publicación activo
         </label>

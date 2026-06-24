@@ -1,4 +1,5 @@
 "use client";
+// RUTA: app/checkout/page.tsx
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -37,8 +38,6 @@ export default function CheckoutPage() {
   const { items, subtotal } = useCart();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsTouched, setTermsTouched] = useState(false);
-  const TAX_RATE = 0.08;
-  const taxes = parseFloat((subtotal * TAX_RATE).toFixed(2));
 
   const [currentStep, setCurrentStep] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("domicilio");
@@ -100,7 +99,7 @@ export default function CheckoutPage() {
   const selectedBranch = branches.find((branch) => branch.documentId === formData.branchDocumentId) || null;
   const selectedShippingRate = shippingRates.find((rate) => rate.documentId === formData.shippingRateDocumentId) || null;
   const shippingCost = deliveryMethod === "domicilio" ? Number(selectedShippingRate?.cost || 0) : 0;
-  const total = parseFloat((subtotal + taxes + shippingCost).toFixed(2));
+  const total = parseFloat((subtotal + shippingCost).toFixed(2));
   const canContinueToPayment = deliveryMethod === "domicilio" ? Boolean(selectedShippingRate) : Boolean(selectedBranch);
   const orderPayloadPreview = {
     customer_name: formData.nombre,
@@ -113,7 +112,6 @@ export default function CheckoutPage() {
     shipping_rate: deliveryMethod === "domicilio" ? formData.shippingRateDocumentId : null,
     subtotal,
     shipping_cost: shippingCost,
-    taxes,
     total,
     items: items.map((item) => ({
       product: item.product_id,
@@ -814,10 +812,6 @@ export default function CheckoutPage() {
                       <span className="text-[#C15074] font-medium">${shippingCost.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center text-[#554246]">
-                    <span>Impuestos estimados</span>
-                    <span>${taxes.toFixed(2)}</span>
-                  </div>
                 </div>
 
                 <div className="h-px bg-[#F0E4E8] mb-6" />
