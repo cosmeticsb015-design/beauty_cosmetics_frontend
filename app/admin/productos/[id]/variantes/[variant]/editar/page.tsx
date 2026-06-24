@@ -18,6 +18,7 @@ import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.util
 import { removeEntityForm, saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminVariant, getStrapiMediaUrl } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import VariantValuePicker from "../../../../components/VariantValuePicker";
 
 function stockState(quantity: number) {
   if (quantity <= 0) return { label: "Sin Stock", classes: "bg-red-100 text-red-700" };
@@ -94,10 +95,7 @@ export default async function EditVariantPage({ params, searchParams }: { params
                     <span className="text-[15px] font-bold text-[#4B4E5A]">Nombre de Variante</span>
                     <input name="label" defaultValue={variant.label} className="mt-3 h-13 w-full rounded-[6px] border border-[#C8CEDB] bg-[#F8F9FB] px-5 text-[17px] outline-none focus:border-[#9E3659]" />
                   </label>
-                  <label className="block">
-                    <span className="text-[15px] font-bold text-[#4B4E5A]">Valor / Etiqueta Pública</span>
-                    <input name="value" defaultValue={variant.value} className="mt-3 h-13 w-full rounded-[6px] border border-[#C8CEDB] bg-[#F8F9FB] px-5 text-[17px] outline-none focus:border-[#9E3659]" />
-                  </label>
+                  <VariantValuePicker defaultValue={variant.value} />
                 </div>
 
                 <p className="mt-5 rounded-[8px] bg-[#FFFCFC] p-4 text-[14px] leading-relaxed text-[#6B6063]">

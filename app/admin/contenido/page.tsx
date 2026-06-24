@@ -1,5 +1,5 @@
 // RUTA: app/admin/contenido/page.tsx
-import { ImageIcon, Link2, Mail, MessageCircle, Save, Edit2, Trash2 } from "lucide-react";
+import { ImageIcon, Link2, Mail, MessageCircle, Save, Edit2, Trash2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
@@ -39,7 +39,7 @@ function BannerEditor({ banner, index }: { banner: Partial<StrapiHomeBanner>; in
   const desktopImage = banner.desktop_image;
   const mobileImage = banner.mobile_image;
   return (
-    <fieldset id={`banner-${index}`} className="rounded-[10px] border border-[#E7BFC9] bg-white p-5 shadow-sm scroll-mt-20">
+    <fieldset className="p-5">
       <div className="flex items-center justify-between mb-4">
         <legend className="px-2 text-sm font-bold uppercase tracking-[0.12em] text-[#7B2505]">
           {banner.id ? `Editar banner ${index + 1}` : "Añadir nuevo banner"}
@@ -214,8 +214,26 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
               </a>
             </div>
 
-            <div className="mt-10 grid gap-6">
-              {visibleEditors.map((banner, offset) => <BannerEditor key={`editor-${start + offset}`} banner={banner} index={start + offset} />)}
+            <div className="mt-10 grid gap-4">
+              {visibleEditors.map((banner, offset) => {
+                const editorIndex = start + offset;
+                return (
+                  <details key={`editor-${editorIndex}`} className="group overflow-hidden rounded-[10px] border border-[#E7BFC9] bg-white shadow-sm">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold uppercase tracking-[0.1em] text-[#7B2505] [&::-webkit-details-marker]:hidden">
+                      <span>{banner.id ? `Banner ${editorIndex + 1}: ${banner.name || "(sin nombre)"}` : "Añadir nuevo banner"}</span>
+                      <ChevronDown size={18} className="shrink-0 text-[#7B2505] transition-transform group-open:rotate-180" />
+                    </summary>
+                    {/* El id va aquí (no en <details>) a propósito: cuando un enlace
+                        #banner-N apunta a un elemento escondido dentro de un
+                        <details> cerrado, el navegador lo abre automáticamente
+                        solo. Así, el botón "Editar" de las tarjetas de arriba
+                        expande justo ese editor sin necesitar JavaScript. */}
+                    <div id={`banner-${editorIndex}`} className="scroll-mt-20 border-t border-[#E7BFC9]">
+                      <BannerEditor banner={banner} index={editorIndex} />
+                    </div>
+                  </details>
+                );
+              })}
             </div>
 
             <div className="mt-8 flex items-center justify-between text-sm font-semibold text-[#554246]">
