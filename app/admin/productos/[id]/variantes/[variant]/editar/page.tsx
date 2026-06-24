@@ -1,3 +1,4 @@
+// RUTA: app/admin/productos/[id]/variantes/[variant]/editar/page.tsx
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -23,6 +24,10 @@ function stockState(quantity: number) {
   if (quantity <= 10) return { label: "Bajo Stock", classes: "bg-orange-100 text-orange-700" };
   return { label: "Disponible", classes: "bg-emerald-100 text-emerald-700" };
 }
+
+// Ver nota en app/admin/page.tsx: evita que la Router Cache de Next muestre
+// una versión vieja justo después del redirect() del Server Action.
+export const dynamic = "force-dynamic";
 
 export default async function EditVariantPage({ params, searchParams }: { params: Promise<{ id: string; variant: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id, variant: variantId } = await params;

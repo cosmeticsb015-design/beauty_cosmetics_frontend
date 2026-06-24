@@ -25,6 +25,10 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
 }
 
+// Ver nota en app/admin/page.tsx: evita que la Router Cache de Next muestre
+// una versión vieja justo después del redirect() del Server Action.
+export const dynamic = "force-dynamic";
+
 export default async function NewProductPage({ searchParams }: { searchParams?: Promise<{ error?: string; message?: string; saved?: string }> }) {
   const query = searchParams ? await searchParams : {};
   const [brandsResponse, categoriesResponse, branchesResponse] = await Promise.all([getAdminBrands(), getAdminCategories(), getAdminBranches()]);

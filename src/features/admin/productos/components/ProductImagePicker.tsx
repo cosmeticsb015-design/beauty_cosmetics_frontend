@@ -69,13 +69,10 @@ export default function ProductImagePicker({ existingImages = [], compact = fals
     ...previews.map((preview, index) => ({ key: fileKey(preview.file), id: "", url: preview.url, label: index === 0 && existingImages.length === 0 ? "Nueva principal" : "Nueva", existing: false, file: preview.file })),
   ];
 
-  const visibleLimit = compact ? 3 : 6;
-  const hiddenCount = Math.max(0, images.length - visibleLimit);
-
   return (
     <div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {images.slice(0, visibleLimit).map((image) => (
+        {images.map((image) => (
           <div key={image.key} className="relative h-[150px] overflow-hidden rounded-[4px] border border-[#E5E7EB] bg-[#FAFAFA]">
             <Image src={image.url} alt="Vista previa del producto" fill sizes="180px" className="object-cover" />
             <span className="absolute left-3 top-3 rounded-[3px] bg-[#9E3659] px-3 py-1 text-[11px] font-bold text-white shadow-sm">{image.label}</span>
@@ -125,7 +122,6 @@ export default function ProductImagePicker({ existingImages = [], compact = fals
       </div>
       <p className="mt-3 text-[12px] font-semibold text-[#6B7280]">
         Vista previa local antes de guardar. Formatos permitidos: imágenes JPG/PNG/WebP.
-        {hiddenCount > 0 ? ` (+${hiddenCount} más, no se pierden al guardar)` : ""}
       </p>
       {files.length > 0 ? (
         <p className="mt-1 text-[12px] font-semibold text-[#9E3659]">

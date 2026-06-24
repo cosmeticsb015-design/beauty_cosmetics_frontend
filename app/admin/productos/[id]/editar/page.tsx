@@ -40,6 +40,12 @@ function money(value: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
 }
 
+// Ver nota en app/admin/page.tsx: evita que la Router Cache de Next muestre
+// una versión vieja justo después del redirect() del Server Action (esto es
+// exactamente lo que pasaba: imágenes/variantes nuevas no aparecían hasta
+// salir y volver a entrar al panel).
+export const dynamic = "force-dynamic";
+
 export default async function EditProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ saved?: string; error?: string; message?: string }> }) {
   const { id } = await params;
   const query = searchParams ? await searchParams : {};

@@ -1,3 +1,4 @@
+// RUTA: app/admin/page.tsx
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
@@ -32,6 +33,13 @@ function money(value: number) {
 function firstParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
+
+// Estas páginas se navegan justo después de un redirect() dentro de un
+// Server Action (crear/editar producto, activar/desactivar, etc.). El fetch
+// de datos ya usa cache:"no-store", pero sin esto la Router Cache de Next
+// puede reutilizar la versión que tenía antes de guardar y mostrarla
+// "desactualizada" hasta que el usuario sale y vuelve a entrar.
+export const dynamic = "force-dynamic";
 
 export default async function AdminProductsPage({
   searchParams,
