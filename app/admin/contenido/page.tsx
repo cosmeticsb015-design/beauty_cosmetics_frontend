@@ -1,10 +1,10 @@
-import { ImageIcon, Link2, Mail, MessageCircle, Save, UploadCloud } from "lucide-react";
+import { ImageIcon, Link2, Mail, MessageCircle, Save, UploadCloud, Edit2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
-import { saveStoreConfigForm } from "@/src/features/admin/actions";
+import { saveStoreConfigForm, deleteBannerForm } from "@/src/features/admin/actions";
 import { getAdminStoreConfig, getStrapiMediaUrl, type StrapiHomeBanner } from "@/src/shared/services/admin";
 
 const PAGE_SIZE = 6;
@@ -37,8 +37,23 @@ function BannerEditor({ banner, index }: { banner: Partial<StrapiHomeBanner>; in
   const desktopImage = banner.desktop_image;
   const mobileImage = banner.mobile_image;
   return (
-    <fieldset id={`banner-${index}`} className="rounded-[10px] border border-[#E7BFC9] bg-white p-5 shadow-sm">
-      <legend className="px-2 text-sm font-bold uppercase tracking-[0.12em] text-[#7B2505]">{banner.id ? `Editar banner ${index + 1}` : "Añadir nuevo banner"}</legend>
+    <fieldset id={`banner-${index}`} className="rounded-[10px] border border-[#E7BFC9] bg-white p-5 shadow-sm scroll-mt-20">
+      <div className="flex items-center justify-between mb-4">
+        <legend className="px-2 text-sm font-bold uppercase tracking-[0.12em] text-[#7B2505]">
+          {banner.id ? `Editar banner ${index + 1}` : "Añadir nuevo banner"}
+        </legend>
+        {banner.id ? (
+          <button 
+            formAction={deleteBannerForm} 
+            name="delete_banner_id" 
+            value={banner.id} 
+            className="flex items-center gap-2 text-[13px] font-bold text-red-600 transition-colors hover:text-red-800"
+          >
+            <Trash2 size={15} /> Eliminar
+          </button>
+        ) : null}
+      </div>
+
       <input type="hidden" name={`banner_id_${index}`} value={banner.id ?? ""} />
       <input type="hidden" name={`banner_desktop_existing_${index}`} value={desktopImage?.id ?? ""} />
       <input type="hidden" name={`banner_mobile_existing_${index}`} value={mobileImage?.id ?? ""} />
@@ -117,33 +132,94 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
 
         <form action={saveStoreConfigForm} className="mt-8 overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white">
           {editorBanners.map((banner, index) => (index < start || index >= start + PAGE_SIZE ? <HiddenBannerFields key={`hidden-${index}`} banner={banner} index={index} /> : null))}
+          
           <div className="border-b border-[#E7BFC9] px-7 py-7">
             <h3 className="text-[22px] font-bold text-[#1F1F22]">Configuración global de tienda</h3>
             <p className="mt-2 text-[16px] text-[#6B6063]">Estos datos también se muestran en el footer como información de contacto.</p>
           </div>
+          
           <div className="grid gap-7 px-7 py-8 lg:grid-cols-2">
-            <label className="block"><span className="mb-3 flex items-center gap-3 text-[15px] font-bold uppercase tracking-[0.08em] text-[#3F4450]"><MessageCircle size={19} /> WhatsApp / teléfono</span><input name="whatsapp_number" defaultValue={config.whatsapp_number ?? ""} placeholder="Ej: +503 7000 0000" className="h-14 w-full rounded-[4px] border border-[#C8CEDB] px-5 text-[18px] outline-none focus:border-[#9E3659]" /></label>
-            <label className="block"><span className="mb-3 flex items-center gap-3 text-[15px] font-bold uppercase tracking-[0.08em] text-[#3F4450]"><Mail size={19} /> Email de notificaciones</span><input name="notification_email" defaultValue={config.notification_email ?? ""} type="email" placeholder="admin@beauty.com" className="h-14 w-full rounded-[4px] border border-[#C8CEDB] px-5 text-[18px] outline-none focus:border-[#9E3659]" /></label>
+            <label className="block">
+              <span className="mb-3 flex items-center gap-3 text-[15px] font-bold uppercase tracking-[0.08em] text-[#3F4450]">
+                <MessageCircle size={19} /> WhatsApp / teléfono
+              </span>
+              <input name="whatsapp_number" defaultValue={config.whatsapp_number ?? ""} placeholder="Ej: +503 7000 0000" className="h-14 w-full rounded-[4px] border border-[#C8CEDB] px-5 text-[18px] outline-none focus:border-[#9E3659]" />
+            </label>
+            <label className="block">
+              <span className="mb-3 flex items-center gap-3 text-[15px] font-bold uppercase tracking-[0.08em] text-[#3F4450]">
+                <Mail size={19} /> Email de notificaciones
+              </span>
+              <input name="notification_email" defaultValue={config.notification_email ?? ""} type="email" placeholder="admin@beauty.com" className="h-14 w-full rounded-[4px] border border-[#C8CEDB] px-5 text-[18px] outline-none focus:border-[#9E3659]" />
+            </label>
           </div>
 
-          <section className="border-t border-[#E7BFC9] px-7 py-8">
+          <section className="border-t border-[#E7BFC9] px-7 py-8 bg-[#FAFAFA]">
             <div className="mb-6">
               <h3 className="text-[26px] font-bold text-[#1F1F22]">Banners del Home</h3>
               <p className="mt-1 text-[17px] text-[#6B6063]">Administra el carrusel principal tipo tarjetas. Medidas: desktop 1200×630px y móvil 1080×608px.</p>
             </div>
+            
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {banners.slice(start, start + PAGE_SIZE).map((banner) => (
-                <a key={banner.id ?? banner.name} href={`#banner-${editorBanners.indexOf(banner)}`} className="overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white transition hover:-translate-y-0.5 hover:shadow-md">
+                <div key={banner.id ?? banner.name} className="flex flex-col overflow-hidden rounded-[8px] border border-[#E7BFC9] bg-white transition hover:-translate-y-0.5 hover:shadow-md">
                   {banner.desktop_image?.url ? <img src={getStrapiMediaUrl(banner.desktop_image.url) ?? ""} alt={banner.name} className="h-40 w-full object-cover" /> : <div className="h-40 bg-[#F6F7F9]" />}
-                  <div className="p-5"><div className="flex items-start justify-between gap-3"><h4 className="font-semibold text-[#1F1F22]">{banner.name}</h4><span className="rounded-full bg-[#FFE8EE] px-3 py-1 text-sm font-semibold text-[#9E3659]">Posición {banner.home_position}</span></div><p className="mt-1 text-sm text-[#6B6063]">{scopeLabel[banner.display_scope]} • {banner.active !== false ? "Activo" : "Inactivo"}</p><div className="mt-5 flex items-center gap-2 text-sm font-semibold text-emerald-700"><span className="h-1.5 flex-1 rounded-full bg-emerald-700" /> {banner.active !== false ? "Visible" : "Oculto"}</div></div>
-                </a>
+                  
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="font-semibold text-[#1F1F22]">{banner.name}</h4>
+                      <span className="rounded-full bg-[#FFE8EE] px-3 py-1 text-sm font-semibold text-[#9E3659]">Posición {banner.home_position}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-[#6B6063]">{scopeLabel[banner.display_scope]} • {banner.active !== false ? "Activo" : "Inactivo"}</p>
+                    
+                    <div className="mt-5 mb-4 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                      <span className="h-1.5 flex-1 rounded-full bg-emerald-700" /> {banner.active !== false ? "Visible" : "Oculto"}
+                    </div>
+                    
+                    <div className="mt-auto flex items-center gap-3 border-t border-[#E7BFC9] pt-4">
+                      <a 
+                        href={`#banner-${editorBanners.indexOf(banner)}`} 
+                        className="flex flex-1 items-center justify-center gap-2 rounded bg-[#F6F7F9] py-2 text-[13px] font-bold text-[#3F4450] transition-colors hover:bg-[#E7BFC9] hover:text-[#7B2505]"
+                      >
+                        <Edit2 size={16} /> Editar
+                      </a>
+                      
+                      {banner.id ? (
+                        <button 
+                          formAction={deleteBannerForm} 
+                          name="delete_banner_id" 
+                          value={banner.id} 
+                          className="flex flex-1 items-center justify-center gap-2 rounded bg-red-50 py-2 text-[13px] font-bold text-red-700 transition-colors hover:bg-red-100"
+                        >
+                          <Trash2 size={16} /> Eliminar
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
               ))}
-              <a href={`#banner-${banners.length}`} className="flex min-h-[290px] flex-col items-center justify-center rounded-[8px] border-2 border-dashed border-[#E7BFC9] bg-[#FAFAFA] text-center text-[#7A6A70] transition hover:border-[#9E3659] hover:text-[#9E3659]"><ImageIcon size={40} /><span className="mt-4 text-lg">Añadir espacio publicitario</span></a>
+
+              <a href={`#banner-${banners.length}`} className="flex min-h-[290px] flex-col items-center justify-center rounded-[8px] border-2 border-dashed border-[#E7BFC9] bg-white text-center text-[#7A6A70] transition hover:border-[#9E3659] hover:text-[#9E3659]">
+                <ImageIcon size={40} />
+                <span className="mt-4 text-lg font-semibold">Añadir espacio publicitario</span>
+              </a>
             </div>
-            <div className="mt-8 grid gap-6">{visibleEditors.map((banner, offset) => <BannerEditor key={`editor-${start + offset}`} banner={banner} index={start + offset} />)}</div>
-            <div className="mt-8 flex items-center justify-between text-sm font-semibold text-[#554246]"><Link className={currentPage <= 1 ? "pointer-events-none opacity-40" : "hover:text-[#9E3659]"} href={`/admin/contenido?bannerPage=${currentPage - 1}`}>Anterior</Link><span>Página {currentPage} de {pageCount}</span><Link className={currentPage >= pageCount ? "pointer-events-none opacity-40" : "hover:text-[#9E3659]"} href={`/admin/contenido?bannerPage=${currentPage + 1}`}>Siguiente</Link></div>
+
+            <div className="mt-10 grid gap-6">
+              {visibleEditors.map((banner, offset) => <BannerEditor key={`editor-${start + offset}`} banner={banner} index={start + offset} />)}
+            </div>
+
+            <div className="mt-8 flex items-center justify-between text-sm font-semibold text-[#554246]">
+              <Link className={currentPage <= 1 ? "pointer-events-none opacity-40" : "hover:text-[#9E3659]"} href={`/admin/contenido?bannerPage=${currentPage - 1}`}>Anterior</Link>
+              <span>Página {currentPage} de {pageCount}</span>
+              <Link className={currentPage >= pageCount ? "pointer-events-none opacity-40" : "hover:text-[#9E3659]"} href={`/admin/contenido?bannerPage=${currentPage + 1}`}>Siguiente</Link>
+            </div>
           </section>
-          <div className="flex justify-end border-t border-[#E7BFC9] bg-[#F8F8F9] px-7 py-6"><button className="inline-flex h-12 items-center justify-center gap-3 rounded-[4px] bg-[#7B2505] px-7 text-[15px] font-bold text-white transition-colors hover:bg-[#5f1c03]"><Save size={18} /> Guardar configuración</button></div>
+
+          <div className="flex justify-end border-t border-[#E7BFC9] bg-[#F8F8F9] px-7 py-6">
+            <button className="inline-flex h-12 items-center justify-center gap-3 rounded-[4px] bg-[#7B2505] px-7 text-[15px] font-bold text-white transition-colors hover:bg-[#5f1c03]">
+              <Save size={18} /> Guardar configuración
+            </button>
+          </div>
         </form>
       </main>
     </AdminShell>

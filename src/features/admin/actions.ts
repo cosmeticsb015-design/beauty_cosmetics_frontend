@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, updateEntity, uploadAdminFile, type AdminMutationState } from "@/src/shared/services/admin";
+import { ADMIN_SESSION_COOKIE, createEntity, deleteEntity, getAdminProduct, getAdminStoreConfig, updateEntity, uploadAdminFile, type AdminMutationState } from "@/src/shared/services/admin";
 import { getAdminLoginPath } from "@/src/shared/lib/admin-auth";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
@@ -552,4 +552,27 @@ export async function updateOrderStatusForm(formData: FormData) {
 export async function saveStoreConfigForm(formData: FormData) {
   const result = await saveStoreConfig({ ok: false, message: "" }, formData);
   redirectWithNotice("/admin/contenido", result);
+}
+
+export async function deleteBannerForm(formData: FormData) {
+  const bannerId = Number(formData.get("delete_banner_id"));
+  
+  if (!bannerId) {
+    redirectWithNotice("/admin/contenido", { ok: false, message: "ID de banner inválido." });
+  }
+
+  try {
+    const currentConfig = await getAdminStoreConfig();
+    const currentBanners = currentConfig.data.home_banners ?? [];
+    const updatedBanners = currentBanners.filter((b) => b.id !== bannerId);
+
+    await updateEntity("store-config", "", { home_banners: updatedBanners });
+    
+    revalidatePath("/admin/contenido");
+    revalidatePath("/");
+    
+    redirectWithNotice("/admin/contenido", { ok: true, message: "Banner eliminado correctamente." });
+  } catch (error) {
+    redirectWithNotice("/admin/contenido", { ok: false, message: "No se pudo eliminar el banner." });
+  }
 }
