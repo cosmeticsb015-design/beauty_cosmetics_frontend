@@ -79,7 +79,6 @@ function CatalogContent() {
   const [dbBrands, setDbBrands] = useState<StrapiBrand[]>([]);
   const [dbProducts, setDbProducts] = useState<StrapiProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [catsLoaded, setCatsLoaded] = useState(false); // Estado para saber si ya consultamos Strapi
   const [hasLoadedProducts, setHasLoadedProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,49 +86,45 @@ function CatalogContent() {
   const [showFilters, setShowFilters] = useState(false);
   const PAGE_SIZE = 12;
 
-  // Categorías y marcas: carga única
+  // 1. Carga inicial unificada de taxonomías
   useEffect(() => {
     Promise.all([getCategories(), getBrands()])
       .then(([catsRes, brandsRes]) => {
-        setDbCategories(catsRes.data || []);
+        const categories = catsRes.data || [];
+        setDbCategories(categories);
         setDbBrands(brandsRes.data || []);
+
+        // Procesamos la categoría inicial inmediatamente aquí para evitar bloqueos
+        const categoryFromUrl = searchParams?.get("category");
+        if (categoryFromUrl && categories.length > 0) {
+          const matched = categories.find(
+            (c) =>
+              c.slug.toLowerCase() === categoryFromUrl.toLowerCase() ||
+              (categoryFromUrl.toLowerCase() === "makeup" && c.slug.toLowerCase() === "maquillaje") ||
+              (categoryFromUrl.toLowerCase() === "skincare" && c.slug.toLowerCase() === "cuidado_de_piel")
+          );
+          if (matched) {
+            setActiveCategory(matched.slug);
+            return;
+          }
+        }
+        setActiveCategory("all");
       })
       .catch((err) => {
         console.error(err);
         setError("Error al cargar los datos del catálogo.");
-      })
-      .finally(() => {
-        setCatsLoaded(true); // Ya terminamos de intentar traer categorías
+        setLoading(false);
       });
-  }, []);
+  }, [searchParams]);
 
-  // Determinar categoría inicial a partir de la URL, UNA VEZ que catsLoaded sea true
+  // 2. Carga dinámica de productos reactiva a los filtros
   useEffect(() => {
-    if (!catsLoaded) return; // Esperamos a que Strapi responda primero
-
-    const categoryFromUrl = searchParams?.get("category");
-    if (categoryFromUrl && dbCategories.length > 0) {
-      const matched = dbCategories.find(
-        (c) =>
-          c.slug.toLowerCase() === categoryFromUrl.toLowerCase() ||
-          (categoryFromUrl.toLowerCase() === "makeup" && c.slug.toLowerCase() === "maquillaje") ||
-          (categoryFromUrl.toLowerCase() === "skincare" && c.slug.toLowerCase() === "cuidado_de_piel")
-      );
-      if (matched) {
-        setActiveCategory(matched.slug);
-        return;
-      }
-    }
-    // Si no hay categorías o no hizo match, forzamos "all" para desatascar la carga
-    setActiveCategory("all");
-  }, [catsLoaded, dbCategories, searchParams]);
-
-  // Fetch productos cuando cambian filtros o página
-  useEffect(() => {
-    if (!activeCategory) return; // Ahora es seguro porque siempre tomará un valor gracias a catsLoaded
+    // Si la categoría aún no se procesa, mantenemos la carga pero no cortamos el flujo
+    if (!activeCategory) return;
 
     let cancelled = false;
     setLoading(true);
+
     getProducts({
       page: currentPage,
       pageSize: PAGE_SIZE,
@@ -153,7 +148,7 @@ function CatalogContent() {
       .finally(() => {
         if (cancelled) return;
         setHasLoadedProducts(true);
-        setLoading(false); // Garantizamos que siempre se apaga el spinner
+        setLoading(false);
       });
 
     return () => {
@@ -161,7 +156,7 @@ function CatalogContent() {
     };
   }, [activeCategory, selectedBrands, sortBy, currentPage]);
 
-  // Reset página al cambiar filtros
+  // Reset de paginación al alterar filtros
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategory, selectedBrands, sortBy]);
@@ -178,7 +173,8 @@ function CatalogContent() {
     router.push("/catalog");
   };
 
-  if (loading && !hasLoadedProducts) {
+  // El spinner solo se muestra si explícitamente sigue cargando y no hay datos previos en caché visual
+  if (loading && !hasLoadedProducts && !error) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 rounded-full border-4 border-[#C15074] border-t-transparent animate-spin" />
@@ -512,8 +508,8 @@ function CatalogContent() {
               </div>
             </div>
 
-            {/* Grid */}
-            {dbProducts.length === 0 ? (
+            {/* Grid o Empty State */}
+            {!loading && dbProducts.length === 0 ? (
               <div className="py-20 flex flex-col items-center justify-center text-center px-4">
                 <ShoppingBag size={56} strokeWidth={1} className="text-[#F0E4E8] mb-4" />
                 <h3 className="text-xl font-medium text-[#2D1F23]">No hay productos que mostrar</h3>
