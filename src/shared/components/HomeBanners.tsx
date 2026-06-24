@@ -8,8 +8,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import type { HomeBanner } from "@/src/shared/services/storeConfig";
 
@@ -18,50 +18,39 @@ const API_URL = (
 ).replace(/\/$/, "");
 
 /**
- * Velocidad constante del carrusel en píxeles por segundo.
- * Un valor moderado evita que se vea apresurado y mantiene una
- * sensación profesional y fluida.
+ * Velocidad del movimiento automático.
+ * Puedes subirlo a 42 o 45 si deseas que avance más rápido.
  */
-const SCROLL_SPEED_PX_PER_SEC = 28;
+const AUTO_SCROLL_SPEED = 30;
 
 /**
- * Tiempo que espera el slider después de una interacción manual
- * antes de volver a desplazarse automáticamente.
+ * Tiempo de pausa después de usar flechas, swipe o arrastre.
  */
-const RESUME_AFTER_INTERACTION_MS = 2600;
+const RESUME_AFTER_INTERACTION_MS = 1800;
 
 /**
- * Cantidad aproximada de banners que pueden mostrarse inicialmente
- * en pantallas grandes.
+ * Se repiten grupos para que el loop sea continuo incluso cuando
+ * hay pocos banners disponibles.
  */
-const DEFAULT_VISIBLE_COUNT = 3;
+const LOOP_COPIES = 6;
 
 function mediaUrl(url?: string | null) {
   if (!url) return null;
+
   return url.startsWith("http") ? url : `${API_URL}${url}`;
 }
 
 function scopeClass(scope: HomeBanner["display_scope"]) {
   if (scope === "desktop_only") return "hidden md:block";
   if (scope === "mobile_only") return "block md:hidden";
+
   return "block";
 }
 
-/**
- * Obtiene únicamente los banners visibles en el breakpoint actual.
- * Esto permite que desktop_only y mobile_only funcionen correctamente.
- */
 function getVisibleCards(container: HTMLElement) {
   return Array.from(
     container.querySelectorAll<HTMLElement>("[data-home-banner-card]")
   ).filter((card) => card.offsetParent !== null);
-}
-
-function sameArray(first: number[], second: number[]) {
-  return (
-    first.length === second.length &&
-    first.every((value, index) => value === second[index])
-  );
 }
 
 export default function HomeBanners({
@@ -69,26 +58,33 @@ export default function HomeBanners({
 }: {
   banners?: HomeBanner[];
 }) {
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const firstGroupRef = useRef<HTMLDivElement>(null);
 
-  const pausedRef = useRef(false);
-  const resumeTimeoutRef = useRef<number | null>(null);
-  const loopDistanceRef = useRef(0);
-  const activeBannerIndexRef = useRef(0);
+  const offsetRef = useRef(0);
+  const loopWidthRef = useRef(0);
+  const visibleCardsRef = useRef(0);
 
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-  const [liveMessage, setLiveMessage] = useState<string | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const hoverRef = useRef(false);
+  const focusRef = useRef(false);
+  const draggingRef = useRef(false);
+  const resumeAtRef = useRef(0);
 
-  /**
-   * Guarda los índices de banners realmente visibles según el dispositivo.
-   * Así los indicadores no muestran banners desktop en móvil ni viceversa.
-   */
-  const [visibleSlideIndexes, setVisibleSlideIndexes] = useState<number[]>(
-    []
-  );
+  const suppressClickRef = useRef(false);
+  const suppressClickTimeoutRef = useRef<number | null>(null);
 
-  const visibleBanners = useMemo(
+  const dragRef = useRef({
+    active: false,
+    axis: "undecided" as "undecided" | "horizontal" | "vertical",
+    pointerId: 0,
+    startX: 0,
+    startY: 0,
+    startOffset: 0,
+  });
+
+  const activeBanners = useMemo(
     () =>
       banners
         .filter(
@@ -103,633 +99,552 @@ export default function HomeBanners({
     [banners]
   );
 
+  const normalizeOffset = useCallback((value: number) => {
+    const loopWidth = loopWidthRef.current;
+
+    if (!loopWidth) return 0;
+
+    const normalized = value % loopWidth;
+
+    return normalized < 0 ? normalized + loopWidth : normalized;
+  }, []);
+
+  const paintTrack = useCallback((offset = offsetRef.current) => {
+    const track = trackRef.current;
+
+    if (!track) return;
+
+    track.style.transform = `translate3d(-${offset}px, 0, 0)`;
+  }, []);
+
+  const pauseFor = useCallback((milliseconds = RESUME_AFTER_INTERACTION_MS) => {
+    resumeAtRef.current = Math.max(
+      resumeAtRef.current,
+      Date.now() + milliseconds
+    );
+  }, []);
+
   /**
-   * Cuando hay más de un banner visible, se duplica el contenido
-   * para generar desplazamiento infinito sin saltos visuales.
+   * Calcula el ancho de una vuelta completa.
+   * El grupo original contiene los banners; los siguientes grupos son copias.
+   * Al llegar al final de ese grupo se reinicia matemáticamente sin salto.
    */
-  const shouldLoop =
-    visibleSlideIndexes.length > 1 ||
-    (visibleSlideIndexes.length === 0 && visibleBanners.length > 1);
+  const measureLoop = useCallback(() => {
+    const firstGroup = firstGroupRef.current;
 
-  const trackBanners = useMemo(() => {
-    if (!shouldLoop) return visibleBanners;
-    return [...visibleBanners, ...visibleBanners];
-  }, [shouldLoop, visibleBanners]);
+    if (!firstGroup) return;
+
+    const visibleCards = getVisibleCards(firstGroup);
+
+    visibleCardsRef.current = visibleCards.length;
+
+    if (!visibleCards.length) {
+      loopWidthRef.current = 0;
+      return;
+    }
+
+    const width = firstGroup.getBoundingClientRect().width;
+
+    loopWidthRef.current = width;
+
+    if (width > 0) {
+      offsetRef.current = normalizeOffset(offsetRef.current);
+      paintTrack(offsetRef.current);
+    }
+  }, [normalizeOffset, paintTrack]);
 
   /**
-   * Banners disponibles para los puntos y navegación según el breakpoint.
+   * Escucha cambios de tamaño de pantalla, orientación y cambios
+   * de breakpoint para recalcular las medidas correctamente.
    */
-  const activeSlides = useMemo(() => {
-    const slidesFromViewport = visibleSlideIndexes
-      .map((index) => ({
-        banner: visibleBanners[index],
-        index,
-      }))
-      .filter(
-        (
-          slide
-        ): slide is {
-          banner: HomeBanner;
-          index: number;
-        } => Boolean(slide.banner)
-      );
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const firstGroup = firstGroupRef.current;
 
-    if (slidesFromViewport.length) return slidesFromViewport;
+    if (!viewport || !firstGroup) return;
 
-    return visibleBanners.map((banner, index) => ({
-      banner,
-      index,
-    }));
-  }, [visibleBanners, visibleSlideIndexes]);
+    let animationFrame = 0;
+
+    const scheduleMeasure = () => {
+      window.cancelAnimationFrame(animationFrame);
+
+      animationFrame = window.requestAnimationFrame(() => {
+        measureLoop();
+      });
+    };
+
+    scheduleMeasure();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(scheduleMeasure)
+        : null;
+
+    resizeObserver?.observe(viewport);
+    resizeObserver?.observe(firstGroup);
+
+    window.addEventListener("resize", scheduleMeasure);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", scheduleMeasure);
+    };
+  }, [measureLoop, activeBanners.length]);
+
+  /**
+   * Respeta la configuración de accesibilidad del sistema.
+   * Si el usuario tiene "reducir movimiento", se detiene el autoplay.
+   */
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const updateReducedMotion = () => {
+    const updatePreference = () => {
       setReducedMotion(query.matches);
     };
 
-    updateReducedMotion();
-    query.addEventListener("change", updateReducedMotion);
+    updatePreference();
+    query.addEventListener("change", updatePreference);
 
     return () => {
-      query.removeEventListener("change", updateReducedMotion);
+      query.removeEventListener("change", updatePreference);
     };
   }, []);
 
   /**
-   * Actualiza el punto activo tomando como referencia el banner
-   * que está más cerca del borde izquierdo visible del slider.
-   */
-  const updateActiveBanner = useCallback(() => {
-    const slider = sliderRef.current;
-    if (!slider) return;
-
-    const cards = getVisibleCards(slider);
-    if (!cards.length) return;
-
-    const visibleStartPosition = slider.scrollLeft + 16;
-
-    const closestCard = cards.reduce((closest, card) => {
-      const closestDistance = Math.abs(
-        closest.offsetLeft - visibleStartPosition
-      );
-
-      const currentDistance = Math.abs(card.offsetLeft - visibleStartPosition);
-
-      return currentDistance < closestDistance ? card : closest;
-    });
-
-    const index = Number(closestCard.dataset.bannerIndex ?? 0);
-
-    if (Number.isNaN(index)) return;
-
-    if (activeBannerIndexRef.current !== index) {
-      activeBannerIndexRef.current = index;
-      setActiveBannerIndex(index);
-    }
-  }, []);
-
-  /**
-   * Calcula la distancia exacta de una vuelta completa del carrusel.
-   * Al llegar a esa distancia, el scroll vuelve matemáticamente al inicio
-   * de la copia original sin que la persona perciba un corte visual.
-   */
-  const syncSliderMetrics = useCallback(() => {
-    const slider = sliderRef.current;
-    if (!slider) return;
-
-    const cards = getVisibleCards(slider);
-
-    if (!cards.length) {
-      loopDistanceRef.current = 0;
-      setVisibleSlideIndexes([]);
-      return;
-    }
-
-    const originalCardsCount = shouldLoop
-      ? Math.floor(cards.length / 2)
-      : cards.length;
-
-    const visibleIndexes = cards
-      .slice(0, originalCardsCount)
-      .map((card) => Number(card.dataset.bannerIndex))
-      .filter((index) => !Number.isNaN(index));
-
-    setVisibleSlideIndexes((previousIndexes) =>
-      sameArray(previousIndexes, visibleIndexes)
-        ? previousIndexes
-        : visibleIndexes
-    );
-
-    if (
-      visibleIndexes.length &&
-      !visibleIndexes.includes(activeBannerIndexRef.current)
-    ) {
-      activeBannerIndexRef.current = visibleIndexes[0];
-      setActiveBannerIndex(visibleIndexes[0]);
-    }
-
-    const firstCard = cards[0];
-    const firstDuplicatedCard = cards[originalCardsCount];
-
-    if (
-      !shouldLoop ||
-      visibleIndexes.length <= 1 ||
-      !firstCard ||
-      !firstDuplicatedCard
-    ) {
-      loopDistanceRef.current = 0;
-
-      if (!shouldLoop) {
-        slider.scrollLeft = 0;
-      }
-
-      updateActiveBanner();
-      return;
-    }
-
-    loopDistanceRef.current = Math.max(
-      0,
-      firstDuplicatedCard.offsetLeft - firstCard.offsetLeft
-    );
-
-    /**
-     * Evita posiciones inválidas cuando cambia el tamaño de pantalla.
-     */
-    if (
-      loopDistanceRef.current > 0 &&
-      slider.scrollLeft >= loopDistanceRef.current
-    ) {
-      slider.scrollLeft %= loopDistanceRef.current;
-    }
-
-    updateActiveBanner();
-  }, [shouldLoop, updateActiveBanner]);
-
-  /**
-   * Recalcula posiciones al cambiar tamaño, orientación o breakpoint.
+   * Movimiento automático fluido con requestAnimationFrame.
+   * No usa intervalos ni scrollLeft, por eso no da saltos.
    */
   useEffect(() => {
-    const slider = sliderRef.current;
-    if (!slider) return;
+    if (reducedMotion || activeBanners.length <= 1) return;
 
-    let frameId = 0;
+    let animationFrame = 0;
+    let previousTimestamp: number | null = null;
 
-    const scheduleSync = () => {
-      window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(syncSliderMetrics);
-    };
-
-    scheduleSync();
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(scheduleSync)
-        : null;
-
-    resizeObserver?.observe(slider);
-    window.addEventListener("resize", scheduleSync);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", scheduleSync);
-    };
-  }, [syncSliderMetrics]);
-
-  /**
-   * Movimiento automático continuo.
-   *
-   * requestAnimationFrame permite que el desplazamiento sea suave,
-   * calculado según el tiempo real entre cuadros, no con saltos de intervalo.
-   */
-  useEffect(() => {
-    const slider = sliderRef.current;
-
-    if (!slider || reducedMotion || visibleBanners.length <= 1) return;
-
-    let animationFrameId = 0;
-    let lastTimestamp: number | null = null;
-
-    const move = (timestamp: number) => {
-      if (lastTimestamp === null) {
-        lastTimestamp = timestamp;
+    const animate = (timestamp: number) => {
+      if (previousTimestamp === null) {
+        previousTimestamp = timestamp;
       }
 
-      /**
-       * Limita el delta para evitar un salto grande cuando la pestaña
-       * vuelve a estar activa después de estar en segundo plano.
-       */
       const deltaSeconds = Math.min(
-        (timestamp - lastTimestamp) / 1000,
-        0.08
+        (timestamp - previousTimestamp) / 1000,
+        0.06
       );
 
-      lastTimestamp = timestamp;
-
-      const loopDistance = loopDistanceRef.current;
+      previousTimestamp = timestamp;
 
       const canMove =
-        !pausedRef.current &&
-        document.visibilityState === "visible" &&
-        loopDistance > 0 &&
-        slider.scrollWidth > slider.clientWidth + 1;
+        !reducedMotion &&
+        loopWidthRef.current > 0 &&
+        visibleCardsRef.current > 1 &&
+        !hoverRef.current &&
+        !focusRef.current &&
+        !draggingRef.current &&
+        Date.now() >= resumeAtRef.current &&
+        document.visibilityState === "visible";
 
       if (canMove) {
-        /**
-         * Si el scroll está ya dentro de la copia visual,
-         * lo normaliza sobre la primera sin alterar la imagen visible.
-         */
-        const currentPosition =
-          slider.scrollLeft >= loopDistance
-            ? slider.scrollLeft % loopDistance
-            : slider.scrollLeft;
-
-        const nextPosition =
-          currentPosition + SCROLL_SPEED_PX_PER_SEC * deltaSeconds;
-
-        /**
-         * Aquí está la parte clave del loop continuo:
-         * en vez de volver abruptamente a cero, conserva el sobrante
-         * de píxeles para que no exista salto visual.
-         */
-        slider.scrollLeft =
-          nextPosition >= loopDistance
-            ? nextPosition - loopDistance
-            : nextPosition;
-      }
-
-      animationFrameId = window.requestAnimationFrame(move);
-    };
-
-    animationFrameId = window.requestAnimationFrame(move);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-    };
-  }, [reducedMotion, visibleBanners.length]);
-
-  const pause = useCallback(() => {
-    pausedRef.current = true;
-
-    if (resumeTimeoutRef.current) {
-      window.clearTimeout(resumeTimeoutRef.current);
-    }
-  }, []);
-
-  const resumeSoon = useCallback(() => {
-    if (resumeTimeoutRef.current) {
-      window.clearTimeout(resumeTimeoutRef.current);
-    }
-
-    resumeTimeoutRef.current = window.setTimeout(() => {
-      pausedRef.current = false;
-    }, RESUME_AFTER_INTERACTION_MS);
-  }, []);
-
-  const resumeNow = useCallback(() => {
-    if (resumeTimeoutRef.current) {
-      window.clearTimeout(resumeTimeoutRef.current);
-    }
-
-    pausedRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (resumeTimeoutRef.current) {
-        window.clearTimeout(resumeTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  /**
-   * Busca la copia más cercana del banner solicitado.
-   * Esto evita que los botones hagan un recorrido largo e incómodo
-   * cuando el carrusel ya está cerca de la segunda copia visual.
-   */
-  const scrollToBanner = useCallback(
-    (bannerIndex: number) => {
-      const slider = sliderRef.current;
-      if (!slider) return;
-
-      const cards = getVisibleCards(slider);
-
-      const candidates = cards.filter(
-        (card) => Number(card.dataset.bannerIndex) === bannerIndex
-      );
-
-      if (!candidates.length) return;
-
-      const closestCard = candidates.reduce((closest, card) => {
-        const closestDistance = Math.abs(
-          closest.offsetLeft - slider.scrollLeft
+        offsetRef.current = normalizeOffset(
+          offsetRef.current + AUTO_SCROLL_SPEED * deltaSeconds
         );
 
-        const currentDistance = Math.abs(card.offsetLeft - slider.scrollLeft);
+        paintTrack(offsetRef.current);
+      }
 
-        return currentDistance < closestDistance ? card : closest;
-      });
+      animationFrame = window.requestAnimationFrame(animate);
+    };
 
-      slider.scrollTo({
-        left: closestCard.offsetLeft,
-        behavior: reducedMotion ? "auto" : "smooth",
-      });
-    },
-    [reducedMotion]
-  );
+    animationFrame = window.requestAnimationFrame(animate);
 
-  const goToBanner = useCallback(
-    (bannerIndex: number) => {
-      const totalSlides = activeSlides.length;
-      if (!totalSlides) return;
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [
+    activeBanners.length,
+    normalizeOffset,
+    paintTrack,
+    reducedMotion,
+  ]);
 
-      const targetPosition = activeSlides.findIndex(
-        (slide) => slide.index === bannerIndex
+  const getCardStep = useCallback(() => {
+    const firstGroup = firstGroupRef.current;
+
+    if (!firstGroup) return 0;
+
+    const firstCard = getVisibleCards(firstGroup)[0];
+
+    if (!firstCard) return 0;
+
+    const styles = window.getComputedStyle(firstGroup);
+
+    const gap = Number.parseFloat(
+      styles.columnGap || styles.gap || "12"
+    );
+
+    return firstCard.getBoundingClientRect().width + gap;
+  }, []);
+
+  const moveByCard = useCallback(
+    (direction: 1 | -1) => {
+      if (!loopWidthRef.current) return;
+
+      const step = getCardStep();
+
+      if (!step) return;
+
+      offsetRef.current = normalizeOffset(
+        offsetRef.current + direction * step
       );
 
-      const normalizedPosition =
-        targetPosition >= 0 ? targetPosition : 0;
-
-      const targetBanner = activeSlides[normalizedPosition];
-
-      if (!targetBanner) return;
-
-      pause();
-      scrollToBanner(targetBanner.index);
-      resumeSoon();
-
-      setLiveMessage(
-        `Mostrando promoción ${normalizedPosition + 1} de ${totalSlides}`
-      );
+      paintTrack(offsetRef.current);
+      pauseFor();
     },
-    [activeSlides, pause, resumeSoon, scrollToBanner]
+    [getCardStep, normalizeOffset, paintTrack, pauseFor]
   );
+
+  const finishPointerInteraction = useCallback(() => {
+    const viewport = viewportRef.current;
+    const drag = dragRef.current;
+
+    if (drag.active && viewport?.hasPointerCapture(drag.pointerId)) {
+      viewport.releasePointerCapture(drag.pointerId);
+    }
+
+    dragRef.current.active = false;
+    dragRef.current.axis = "undecided";
+    draggingRef.current = false;
+
+    pauseFor();
+  }, [pauseFor]);
+
+  const handlePointerDown = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ) => {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const viewport = viewportRef.current;
+
+    if (!viewport) return;
+
+    dragRef.current = {
+      active: true,
+      axis: "undecided",
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffset: offsetRef.current,
+    };
+
+    draggingRef.current = true;
+    pauseFor(3000);
+
+    viewport.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ) => {
+    const drag = dragRef.current;
+
+    if (!drag.active || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const distanceX = event.clientX - drag.startX;
+    const distanceY = event.clientY - drag.startY;
+
+    if (drag.axis === "undecided") {
+      if (Math.abs(distanceX) < 6 && Math.abs(distanceY) < 6) {
+        return;
+      }
+
+      drag.axis =
+        Math.abs(distanceX) > Math.abs(distanceY)
+          ? "horizontal"
+          : "vertical";
+    }
+
+    if (drag.axis !== "horizontal") {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (Math.abs(distanceX) > 8) {
+      suppressClickRef.current = true;
+    }
+
+    offsetRef.current = normalizeOffset(
+      drag.startOffset - distanceX
+    );
+
+    paintTrack(offsetRef.current);
+  };
+
+  const blockAccidentalClick = useCallback(() => {
+    if (!suppressClickRef.current) return;
+
+    if (suppressClickTimeoutRef.current) {
+      window.clearTimeout(suppressClickTimeoutRef.current);
+    }
+
+    suppressClickTimeoutRef.current = window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 80);
+  }, []);
 
   const handleKeyDown = (
     event: ReactKeyboardEvent<HTMLDivElement>
   ) => {
-    if (!activeSlides.length) return;
-
-    const activePosition = Math.max(
-      0,
-      activeSlides.findIndex(
-        (slide) => slide.index === activeBannerIndex
-      )
-    );
-
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-
-      const previousPosition =
-        (activePosition - 1 + activeSlides.length) %
-        activeSlides.length;
-
-      goToBanner(activeSlides[previousPosition].index);
+      moveByCard(-1);
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
-
-      const nextPosition =
-        (activePosition + 1) % activeSlides.length;
-
-      goToBanner(activeSlides[nextPosition].index);
+      moveByCard(1);
     }
   };
 
-  if (!visibleBanners.length) return null;
+  useEffect(() => {
+    return () => {
+      if (suppressClickTimeoutRef.current) {
+        window.clearTimeout(suppressClickTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const totalSlides = activeSlides.length;
-
-  const activeSlidePosition = Math.max(
-    0,
-    activeSlides.findIndex(
-      (slide) => slide.index === activeBannerIndex
-    )
-  );
-
-  const previousBannerIndex =
-    activeSlides[
-      (activeSlidePosition - 1 + totalSlides) % totalSlides
-    ]?.index ?? 0;
-
-  const nextBannerIndex =
-    activeSlides[
-      (activeSlidePosition + 1) % totalSlides
-    ]?.index ?? 0;
+  if (!activeBanners.length) return null;
 
   return (
     <section
-      className="overflow-hidden bg-gradient-to-b from-[#FFF8FA] via-white to-[#FFF7F9] py-7 sm:py-9"
       aria-roledescription="carousel"
       aria-label="Promociones destacadas"
-      onMouseEnter={pause}
-      onMouseLeave={resumeNow}
-      onFocus={pause}
-      onBlur={resumeNow}
-      onPointerDown={pause}
-      onPointerUp={resumeSoon}
-      onTouchStart={pause}
-      onTouchEnd={resumeSoon}
+      className="w-full py-3 sm:py-4 lg:py-5"
     >
-      <div className="section-container">
-        <div className="relative rounded-[26px] border border-[#F2D7DE] bg-white/70 p-2 shadow-[0_18px_50px_rgba(91,47,61,0.10)] backdrop-blur-sm sm:rounded-[30px] sm:p-3">
-          {totalSlides > 1 ? (
-            <>
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-3 left-0 z-[1] hidden w-20 bg-gradient-to-r from-white via-white/80 to-transparent md:block"
-              />
+      <div
+        ref={shellRef}
+        className="home-banners-shell mx-auto w-full max-w-[1440px] px-3 sm:px-5 lg:px-6"
+        onMouseEnter={() => {
+          hoverRef.current = true;
+        }}
+        onMouseLeave={() => {
+          hoverRef.current = false;
+          pauseFor(500);
+        }}
+        onFocusCapture={() => {
+          focusRef.current = true;
+        }}
+        onBlurCapture={() => {
+          window.requestAnimationFrame(() => {
+            focusRef.current = Boolean(
+              shellRef.current?.contains(document.activeElement)
+            );
 
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-3 right-0 z-[1] hidden w-20 bg-gradient-to-l from-white via-white/80 to-transparent md:block"
-              />
-            </>
-          ) : null}
-
-          {totalSlides > 1 ? (
-            <button
-              type="button"
-              onClick={() => goToBanner(previousBannerIndex)}
-              aria-label="Ver banner anterior"
-              className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#9E3659] shadow-[0_10px_25px_rgba(68,32,43,0.18)] backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-white hover:text-[#7C2344] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E3659] focus-visible:ring-offset-2 sm:h-11 sm:w-11 md:left-5 md:h-12 md:w-12"
-            >
-              <ChevronLeft
-                className="h-5 w-5 sm:h-6 sm:w-6"
-                strokeWidth={2.4}
-              />
-            </button>
-          ) : null}
+            if (!focusRef.current) {
+              pauseFor(500);
+            }
+          });
+        }}
+      >
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => moveByCard(-1)}
+            aria-label="Ver promociones anteriores"
+            className="absolute left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#087CF0] shadow-[0_5px_16px_rgba(15,23,42,0.20)] transition duration-200 hover:scale-110 hover:bg-white hover:text-[#005FC0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-2 sm:left-2 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+          >
+            <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.7} />
+          </button>
 
           <div
-            ref={sliderRef}
+            ref={viewportRef}
             role="group"
             tabIndex={0}
+            aria-label="Carrusel de promociones. Usa las flechas del teclado para navegar."
             onKeyDown={handleKeyDown}
-            onScroll={updateActiveBanner}
-            aria-label="Lista de promociones. Usa las flechas izquierda y derecha para navegar."
-            className="flex cursor-grab gap-4 overflow-x-auto px-0.5 pb-1 outline-none [scrollbar-width:none] active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#9E3659] focus-visible:ring-offset-4 [&::-webkit-scrollbar]:hidden sm:px-1"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={() => {
+              finishPointerInteraction();
+              blockAccidentalClick();
+            }}
+            onPointerCancel={() => {
+              finishPointerInteraction();
+              blockAccidentalClick();
+            }}
+            onClickCapture={(event) => {
+              if (suppressClickRef.current) {
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
+            className="home-banners-viewport touch-pan-y select-none overflow-hidden rounded-[12px] outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-4 sm:rounded-[14px]"
           >
-            {trackBanners.map((banner, renderIndex) => {
-              const sourceIndex =
-                renderIndex % visibleBanners.length;
-
-              const isDuplicatedSlide =
-                shouldLoop &&
-                renderIndex >= visibleBanners.length;
-
-              const slidePosition = activeSlides.findIndex(
-                (slide) => slide.index === sourceIndex
-              );
-
-              const accessibleSlidePosition =
-                slidePosition >= 0
-                  ? slidePosition + 1
-                  : sourceIndex + 1;
-
-              const desktopUrl =
-                mediaUrl(banner.desktop_image?.url) ??
-                mediaUrl(banner.mobile_image?.url);
-
-              const mobileUrl =
-                mediaUrl(banner.mobile_image?.url) ??
-                desktopUrl;
-
-              const isInitiallyVisible =
-                !isDuplicatedSlide &&
-                renderIndex < DEFAULT_VISIBLE_COUNT;
-
-              if (!desktopUrl) return null;
-
-              const bannerImage = (
-                <picture className="block h-full w-full">
-                  {mobileUrl ? (
-                    <source
-                      media="(max-width: 767px)"
-                      srcSet={mobileUrl}
-                    />
-                  ) : null}
-
-                  <img
-                    src={desktopUrl}
-                    alt={banner.name}
-                    loading={isInitiallyVisible ? "eager" : "lazy"}
-                    fetchPriority={
-                      renderIndex === 0 ? "high" : "auto"
-                    }
-                    draggable={false}
-                    sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 34vw"
-                    className="h-full w-full select-none object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]"
-                  />
-                </picture>
-              );
-
-              const bannerContent = banner.destination_url ? (
-                <Link
-                  href={banner.destination_url}
-                  aria-label={
-                    isDuplicatedSlide
-                      ? undefined
-                      : `Abrir promoción: ${banner.name}`
-                  }
-                  aria-hidden={
-                    isDuplicatedSlide ? true : undefined
-                  }
-                  tabIndex={isDuplicatedSlide ? -1 : undefined}
-                  className="block h-full w-full"
-                >
-                  {bannerImage}
-                </Link>
-              ) : (
-                bannerImage
-              );
-
-              return (
-                <article
-                  id={`home-banner-${banner.id ?? banner.home_position}-${renderIndex}`}
-                  data-home-banner-card
-                  data-banner-index={sourceIndex}
-                  key={`${banner.id ?? banner.name}-${renderIndex}`}
-                  aria-hidden={isDuplicatedSlide ? true : undefined}
-                  aria-roledescription={
-                    isDuplicatedSlide ? undefined : "slide"
-                  }
-                  aria-label={
-                    isDuplicatedSlide
-                      ? undefined
-                      : `${accessibleSlidePosition} de ${totalSlides}: ${banner.name}`
-                  }
-                  className={`${scopeClass(
-                    banner.display_scope
-                  )} group relative min-w-full shrink-0 overflow-hidden rounded-[20px] border border-[#F5DCE3] bg-[#FFF7F9] shadow-[0_12px_30px_rgba(75,34,47,0.14)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(75,34,47,0.20)] sm:min-w-[calc(50%-0.5rem)] sm:rounded-[22px] xl:min-w-[calc(33.333%-0.667rem)]`}
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden sm:aspect-[16/9]">
-                    {bannerContent}
-
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/10 opacity-80 transition-opacity duration-300 group-hover:opacity-100"
-                    />
-
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/30"
-                    />
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-
-          {totalSlides > 1 ? (
-            <button
-              type="button"
-              onClick={() => goToBanner(nextBannerIndex)}
-              aria-label="Ver siguiente banner"
-              className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#9E3659] shadow-[0_10px_25px_rgba(68,32,43,0.18)] backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-white hover:text-[#7C2344] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E3659] focus-visible:ring-offset-2 sm:h-11 sm:w-11 md:right-5 md:h-12 md:w-12"
+            <div
+              ref={trackRef}
+              className="flex w-max will-change-transform"
             >
-              <ChevronRight
-                className="h-5 w-5 sm:h-6 sm:w-6"
-                strokeWidth={2.4}
-              />
-            </button>
-          ) : null}
-        </div>
+              {Array.from({ length: LOOP_COPIES }).map(
+                (_, groupIndex) => (
+                  <div
+                    key={`banner-group-${groupIndex}`}
+                    ref={groupIndex === 0 ? firstGroupRef : undefined}
+                    aria-hidden={groupIndex > 0 ? true : undefined}
+                    className="home-banners-group flex w-max shrink-0 gap-3 pr-3"
+                  >
+                    {activeBanners.map((banner, bannerIndex) => {
+                      const desktopUrl =
+                        mediaUrl(banner.desktop_image?.url) ??
+                        mediaUrl(banner.mobile_image?.url);
 
-        {totalSlides > 1 ? (
-          <div
-            className="mt-5 flex items-center justify-center gap-2"
-            role="group"
-            aria-label="Selector de promociones"
-          >
-            {activeSlides.map(({ banner, index }, position) => {
-              const isActive = activeBannerIndex === index;
+                      const mobileUrl =
+                        mediaUrl(banner.mobile_image?.url) ??
+                        desktopUrl;
 
-              return (
-                <button
-                  key={`home-banner-dot-${banner.id ?? index}`}
-                  type="button"
-                  onClick={() => goToBanner(index)}
-                  aria-label={`Ver promoción ${position + 1} de ${totalSlides}`}
-                  aria-current={isActive ? "true" : undefined}
-                  className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9E3659] focus-visible:ring-offset-2 ${
-                    isActive
-                      ? "w-9 bg-[#9E3659] shadow-[0_3px_10px_rgba(158,54,89,0.34)]"
-                      : "w-2.5 bg-[#E9C6D1] hover:w-5 hover:bg-[#D57E9B]"
-                  }`}
-                />
-              );
-            })}
+                      const isDuplicate = groupIndex > 0;
+
+                      if (!desktopUrl) return null;
+
+                      const image = (
+                        <picture className="block h-full w-full">
+                          {mobileUrl ? (
+                            <source
+                              media="(max-width: 767px)"
+                              srcSet={mobileUrl}
+                            />
+                          ) : null}
+
+                          <img
+                            src={desktopUrl}
+                            alt={banner.name}
+                            draggable={false}
+                            loading={
+                              groupIndex === 0 && bannerIndex < 4
+                                ? "eager"
+                                : "lazy"
+                            }
+                            fetchPriority={
+                              groupIndex === 0 && bannerIndex === 0
+                                ? "high"
+                                : "auto"
+                            }
+                            sizes="(max-width: 639px) 86vw, (max-width: 899px) 48vw, (max-width: 1279px) 32vw, 25vw"
+                            className="h-full w-full object-cover"
+                          />
+                        </picture>
+                      );
+
+                      return (
+                        <article
+                          key={`home-banner-${groupIndex}-${banner.id ?? bannerIndex}`}
+                          data-home-banner-card
+                          aria-hidden={isDuplicate ? true : undefined}
+                          aria-roledescription={
+                            isDuplicate ? undefined : "slide"
+                          }
+                          aria-label={
+                            isDuplicate
+                              ? undefined
+                              : `${bannerIndex + 1} de ${activeBanners.length}: ${banner.name}`
+                          }
+                          className={`${scopeClass(
+                            banner.display_scope
+                          )} home-banner-card relative shrink-0 overflow-hidden rounded-[11px] border border-slate-200 bg-slate-100 shadow-[0_4px_13px_rgba(15,23,42,0.16)] transition-shadow duration-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.22)]`}
+                        >
+                          {banner.destination_url ? (
+                            <Link
+                              href={banner.destination_url}
+                              aria-label={
+                                isDuplicate
+                                  ? undefined
+                                  : `Abrir promoción: ${banner.name}`
+                              }
+                              aria-hidden={
+                                isDuplicate ? true : undefined
+                              }
+                              tabIndex={isDuplicate ? -1 : undefined}
+                              className="block h-full w-full"
+                            >
+                              {image}
+                            </Link>
+                          ) : (
+                            image
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+            </div>
           </div>
-        ) : null}
 
-        <p className="sr-only" aria-live="polite">
-          {liveMessage}
-        </p>
+          <button
+            type="button"
+            onClick={() => moveByCard(1)}
+            aria-label="Ver promociones siguientes"
+            className="absolute right-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#087CF0] shadow-[0_5px_16px_rgba(15,23,42,0.20)] transition duration-200 hover:scale-110 hover:bg-white hover:text-[#005FC0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-2 sm:right-2 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+          >
+            <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.7} />
+          </button>
+        </div>
       </div>
+
+      <style jsx>{`
+        .home-banners-shell {
+          container-name: home-banners;
+          container-type: inline-size;
+        }
+
+        .home-banners-viewport {
+          width: 100%;
+        }
+
+        /*
+         * Teléfonos pequeños:
+         * una tarjeta grande y una pequeña parte de la siguiente visible.
+         */
+        .home-banner-card {
+          flex-basis: min(86cqi, 390px);
+          aspect-ratio: 1.9 / 1;
+        }
+
+        /*
+         * Teléfonos grandes y tablets verticales:
+         * dos banners por fila.
+         */
+        @container home-banners (min-width: 560px) {
+          .home-banner-card {
+            flex-basis: calc((100cqi - 12px) / 2);
+          }
+        }
+
+        /*
+         * Tablets horizontales y laptops:
+         * tres banners por fila.
+         */
+        @container home-banners (min-width: 900px) {
+          .home-banner-card {
+            flex-basis: calc((100cqi - 24px) / 3);
+          }
+        }
+
+        /*
+         * Escritorios grandes:
+         * cuatro banners por fila, igual al ejemplo que compartiste.
+         */
+        @container home-banners (min-width: 1240px) {
+          .home-banner-card {
+            flex-basis: calc((100cqi - 36px) / 4);
+          }
+        }
+      `}</style>
     </section>
   );
 }
