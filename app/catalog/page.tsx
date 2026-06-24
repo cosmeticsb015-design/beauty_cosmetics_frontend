@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Flower2,
   Paintbrush,
@@ -21,10 +21,10 @@ import {
   SprayCan,
   Sun,
   Waves,
+  ShoppingBag,
 } from "lucide-react";
 import ProductCard from "@/src/shared/components/ProductCard";
 import { getBrands, getCategories, getProducts, StrapiBrand, StrapiCategory, StrapiProduct } from "@/src/shared/services/producst";
-
 
 // ── Icons Mapper ─────────────────────────────────────────
 type CategoryIconRule = { keywords: string[]; icon: ReactNode };
@@ -70,6 +70,7 @@ const sortOptions = [
 // ── Component ────────────────────────────────────────────
 function CatalogContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [activeCategory, setActiveCategory] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -78,6 +79,7 @@ function CatalogContent() {
   const [dbBrands, setDbBrands] = useState<StrapiBrand[]>([]);
   const [dbProducts, setDbProducts] = useState<StrapiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [catsLoaded, setCatsLoaded] = useState(false); // Estado para saber si ya consultamos Strapi
   const [hasLoadedProducts, setHasLoadedProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,15 +97,18 @@ function CatalogContent() {
       .catch((err) => {
         console.error(err);
         setError("Error al cargar los datos del catálogo.");
+      })
+      .finally(() => {
+        setCatsLoaded(true); // Ya terminamos de intentar traer categorías
       });
   }, []);
 
-  // Determinar categoría inicial a partir de la URL, una vez que dbCategories cargó
+  // Determinar categoría inicial a partir de la URL, UNA VEZ que catsLoaded sea true
   useEffect(() => {
-    if (dbCategories.length === 0) return;
+    if (!catsLoaded) return; // Esperamos a que Strapi responda primero
 
     const categoryFromUrl = searchParams?.get("category");
-    if (categoryFromUrl) {
+    if (categoryFromUrl && dbCategories.length > 0) {
       const matched = dbCategories.find(
         (c) =>
           c.slug.toLowerCase() === categoryFromUrl.toLowerCase() ||
@@ -114,17 +119,14 @@ function CatalogContent() {
         setActiveCategory(matched.slug);
         return;
       }
-      if (categoryFromUrl.toLowerCase() === "all" || categoryFromUrl.toLowerCase() === "todos") {
-        setActiveCategory("all");
-        return;
-      }
     }
+    // Si no hay categorías o no hizo match, forzamos "all" para desatascar la carga
     setActiveCategory("all");
-  }, [dbCategories, searchParams]);
+  }, [catsLoaded, dbCategories, searchParams]);
 
   // Fetch productos cuando cambian filtros o página
   useEffect(() => {
-    if (!activeCategory) return;
+    if (!activeCategory) return; // Ahora es seguro porque siempre tomará un valor gracias a catsLoaded
 
     let cancelled = false;
     setLoading(true);
@@ -151,7 +153,7 @@ function CatalogContent() {
       .finally(() => {
         if (cancelled) return;
         setHasLoadedProducts(true);
-        setLoading(false);
+        setLoading(false); // Garantizamos que siempre se apaga el spinner
       });
 
     return () => {
@@ -168,6 +170,12 @@ function CatalogContent() {
     setSelectedBrands((prev) =>
       prev.includes(brandName) ? prev.filter((b) => b !== brandName) : [...prev, brandName]
     );
+  };
+
+  const handleClearFilters = () => {
+    setActiveCategory("all");
+    setSelectedBrands([]);
+    router.push("/catalog");
   };
 
   if (loading && !hasLoadedProducts) {
@@ -192,7 +200,6 @@ function CatalogContent() {
       </div>
     );
   }
-
 
   const rootCategories = dbCategories.filter((c) => !c.parent);
   const selectedCategory = dbCategories.find((c) => c.slug === activeCategory);
@@ -224,7 +231,6 @@ function CatalogContent() {
           <aside className="hidden md:block w-full md:sticky md:top-[120px]">
             <div className="mb-6">
               <h2 className="text-base font-bold text-[#2D1F23]">Catálogo</h2>
-              {/* <p className="text-xs italic text-[#C15074] mt-0.5">Exquisite Selections</p> */}
             </div>
 
             {/* Categories */}
@@ -508,8 +514,20 @@ function CatalogContent() {
 
             {/* Grid */}
             {dbProducts.length === 0 ? (
-              <div className="py-20 text-center text-[#AC9CA0] text-sm">
-                No hay productos en esta categoría.
+              <div className="py-20 flex flex-col items-center justify-center text-center px-4">
+                <ShoppingBag size={56} strokeWidth={1} className="text-[#F0E4E8] mb-4" />
+                <h3 className="text-xl font-medium text-[#2D1F23]">No hay productos que mostrar</h3>
+                <p className="text-sm text-[#AC9CA0] mt-2 max-w-sm">
+                  Actualmente no tenemos productos disponibles en esta sección o con los filtros seleccionados.
+                </p>
+                {(activeCategory !== "all" || selectedBrands.length > 0) && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="mt-6 px-6 py-3 bg-[#C9577F] text-white text-sm font-semibold rounded-[4px] hover:bg-[#9E3659] transition-colors"
+                  >
+                    Limpiar filtros y ver todo
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -523,7 +541,7 @@ function CatalogContent() {
             )}
 
             {/* Pagination */}
-            {pagination.pageCount > 1 && (
+            {pagination.pageCount > 1 && dbProducts.length > 0 && (
               <div className="flex items-center justify-center gap-2 mt-8">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
