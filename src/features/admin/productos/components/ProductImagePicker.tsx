@@ -15,14 +15,22 @@ type ProductImagePickerProps = {
 // (MAX_PRODUCT_IMAGES_PER_SAVE), para avisar antes de guardar en vez de que el
 // backend recorte la lista en silencio.
 const MAX_NEW_IMAGES = 8;
+// Las imágenes que pesan más de esto no se dejan ni seleccionar: se avisa de
+// inmediato en vez de esperar a que el backend las rechace al guardar.
+const MAX_IMAGE_SIZE_BYTES = 1 * 1024 * 1024;
 
 function fileKey(file: File) {
   return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
+function formatSize(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+}
+
 export default function ProductImagePicker({ existingImages = [], compact = false, inputForm }: ProductImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [sizeError, setSizeError] = useState<string | null>(null);
   const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
 
   useEffect(() => () => previews.forEach((preview) => URL.revokeObjectURL(preview.url)), [previews]);
@@ -41,9 +49,26 @@ export default function ProductImagePicker({ existingImages = [], compact = fals
   };
 
   const addFiles = (incoming: File[]) => {
+    const tooHeavy = incoming.filter((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+    const allowed = incoming.filter((file) => file.size <= MAX_IMAGE_SIZE_BYTES);
+
+    if (tooHeavy.length) {
+      const names = tooHeavy.map((file) => `${file.name} (${formatSize(file.size)})`).join(", ");
+      setSizeError(`No se ${tooHeavy.length > 1 ? "subieron" : "subió"} porque ${tooHeavy.length > 1 ? "pesan" : "pesa"} mucho (máximo 1MB por imagen): ${names}.`);
+    } else {
+      setSizeError(null);
+    }
+
+    if (!allowed.length) {
+      // Igual sincronizamos el input con lo que ya teníamos: si todo lo
+      // elegido pesaba de más, no se agrega nada nuevo.
+      syncInputFiles(files);
+      return;
+    }
+
     setFiles((current) => {
       const existingKeys = new Set(current.map(fileKey));
-      const merged = [...current, ...incoming.filter((file) => !existingKeys.has(fileKey(file)))].slice(0, MAX_NEW_IMAGES);
+      const merged = [...current, ...allowed.filter((file) => !existingKeys.has(fileKey(file)))].slice(0, MAX_NEW_IMAGES);
       syncInputFiles(merged);
       return merged;
     });
@@ -121,8 +146,11 @@ export default function ProductImagePicker({ existingImages = [], compact = fals
         ) : null}
       </div>
       <p className="mt-3 text-[12px] font-semibold text-[#6B7280]">
-        Vista previa local antes de guardar. Formatos permitidos: imágenes JPG/PNG/WebP.
+        Vista previa local antes de guardar. Formatos permitidos: imágenes JPG/PNG/WebP. Peso máximo: 1MB por imagen.
       </p>
+      {sizeError ? (
+        <p className="mt-1 text-[12px] font-semibold text-red-600">{sizeError}</p>
+      ) : null}
       {files.length > 0 ? (
         <p className="mt-1 text-[12px] font-semibold text-[#9E3659]">
           {files.length} de {MAX_NEW_IMAGES} imágenes nuevas seleccionadas

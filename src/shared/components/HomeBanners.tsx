@@ -1,4 +1,5 @@
 "use client";
+// RUTA: src/shared/components/HomeBanners.tsx
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -68,8 +69,14 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
     return () => slider.removeEventListener("scroll", updateActiveFromScroll);
   }, [visibleBanners.length]);
 
+  // Por defecto se muestran hasta 3 banners en desktop (ver clase
+  // lg:min-w-[31.6%] de cada tarjeta). El auto-slide solo tiene sentido
+  // cuando hay MÁS de esos 3, porque si hay 3 o menos ya se alcanzan a ver
+  // todos sin necesidad de moverse solo.
+  const DEFAULT_VISIBLE_COUNT = 3;
+
   useEffect(() => {
-    if (visibleBanners.length <= 1) return;
+    if (visibleBanners.length <= DEFAULT_VISIBLE_COUNT) return;
     const interval = window.setInterval(() => {
       if (!pausedRef.current) goToNext();
     }, AUTO_SLIDE_MS);
@@ -118,7 +125,7 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
                 id={`home-banner-${banner.id ?? banner.home_position}`}
                 data-home-banner-card
                 key={`${banner.id ?? banner.name}-${banner.home_position}`}
-                className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[14px] bg-white shadow-[0_12px_28px_rgba(45,31,35,0.16)] ring-1 ring-[#F1CCD5]/80 sm:min-w-[46%] lg:min-w-[31.6%] xl:min-w-[24%]`}
+                className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[14px] bg-white shadow-[0_12px_28px_rgba(45,31,35,0.16)] ring-1 ring-[#F1CCD5]/80 sm:min-w-[46%] lg:min-w-[31.6%]`}
               >
                 <div className="aspect-[16/9] md:aspect-[120/63]">
                   {banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}

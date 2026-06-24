@@ -95,9 +95,14 @@ async function adminRefererPath(fallback: string) {
   }
 }
 
-const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+// Límite de 1MB para toda imagen subida desde el admin (productos, variantes
+// y banners). El cliente ya valida esto antes de permitir seleccionar el
+// archivo (ProductImagePicker.tsx / BannerImageField.tsx); esto es la
+// defensa de servidor para el caso de que esa validación se evada.
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+const MAX_PRODUCT_IMAGE_SIZE = MAX_IMAGE_SIZE;
 const MAX_PRODUCT_IMAGES_PER_SAVE = 8;
-const MAX_BANNER_IMAGE_SIZE = 8 * 1024 * 1024;
+const MAX_BANNER_IMAGE_SIZE = MAX_IMAGE_SIZE;
 
 function getOptionalImageFile(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -108,7 +113,7 @@ async function uploadBannerImage(formData: FormData, key: string) {
   const file = getOptionalImageFile(formData, key);
   if (!file) return null;
   if (!file.type.startsWith("image/")) throw new Error("Solo se permiten imagenes en banners.");
-  if (file.size > MAX_BANNER_IMAGE_SIZE) throw new Error("Cada banner debe pesar maximo 8MB.");
+  if (file.size > MAX_BANNER_IMAGE_SIZE) throw new Error("Esta imagen no se puede subir porque pesa mucho. Cada banner debe pesar máximo 1MB.");
   const uploaded = await uploadAdminFile(file);
   return uploaded[0]?.id ?? null;
 }
@@ -127,7 +132,7 @@ function getImageFiles(formData: FormData) {
 
 function validateImageFile(file: File) {
   if (!file.type.startsWith("image/")) throw new Error("Solo se permiten archivos de imagen.");
-  if (file.size > MAX_PRODUCT_IMAGE_SIZE) throw new Error("Cada imagen debe pesar máximo 5MB.");
+  if (file.size > MAX_PRODUCT_IMAGE_SIZE) throw new Error("Esta imagen no se puede subir porque pesa mucho. Cada imagen debe pesar máximo 1MB.");
 }
 
 async function deleteSelectedProductImages(formData: FormData) {

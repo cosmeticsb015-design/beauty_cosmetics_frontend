@@ -1,5 +1,5 @@
 "use client";
-// RUTA (archivo nuevo): src/features/admin/contenido/components/BannerImageField.tsx
+// RUTA: src/features/admin/contenido/components/BannerImageField.tsx
 
 import { AlertTriangle, CheckCircle2, ImageIcon, UploadCloud } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +18,13 @@ type BannerImageFieldProps = {
 };
 
 const RATIO_TOLERANCE = 0.02;
+// Las imágenes que pesan más de esto no se aceptan: se avisa de inmediato en
+// vez de esperar a que el backend las rechace al guardar.
+const MAX_IMAGE_SIZE_BYTES = 1 * 1024 * 1024;
+
+function formatSize(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(2)}MB`;
+}
 
 function detectStatus(width: number, height: number, recommendedWidth: number, recommendedHeight: number) {
   const detectedRatio = width / height;
@@ -40,6 +47,7 @@ export default function BannerImageField({
 }: BannerImageFieldProps) {
   const [file, setFile] = useState<File | null>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [sizeError, setSizeError] = useState<string | null>(null);
 
   const objectUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   const previewUrl = objectUrl ?? existingUrl ?? null;
@@ -71,7 +79,7 @@ export default function BannerImageField({
     <div>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-sm font-bold uppercase tracking-[0.08em] text-[#3F4450]">{frameLabel}</span>
-        <span className="text-xs font-semibold text-[#6B6063]">Recomendado: {recommendedWidth}×{recommendedHeight}px</span>
+        <span className="text-xs font-semibold text-[#6B6063]">Recomendado: {recommendedWidth}×{recommendedHeight}px · máx. 1MB</span>
       </div>
 
       {/* Recuadro con la MISMA proporción que el carrusel real del home
@@ -106,6 +114,9 @@ export default function BannerImageField({
       ) : (
         <p className="mt-2 text-[12px] text-[#6B6063]">{helperText}</p>
       )}
+      {sizeError ? (
+        <p className="mt-1 text-[12px] font-semibold text-red-600">{sizeError}</p>
+      ) : null}
 
       <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-[4px] border border-[#8E94A3] bg-white px-5 py-2 text-sm font-bold text-[#1F1F22] transition-colors hover:border-[#9E3659] hover:text-[#9E3659]">
         <UploadCloud size={17} />
@@ -115,7 +126,18 @@ export default function BannerImageField({
           type="file"
           accept="image/*"
           className="sr-only"
-          onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
+          onChange={(event) => {
+            const selected = event.currentTarget.files?.[0] ?? null;
+            if (selected && selected.size > MAX_IMAGE_SIZE_BYTES) {
+              setSizeError(`No se subió porque pesa mucho (máximo 1MB por imagen): ${selected.name} (${formatSize(selected.size)}).`);
+              // Limpiamos el input real: sin esto, el archivo rechazado se
+              // quedaría en su FileList y se enviaría igual al guardar.
+              event.currentTarget.value = "";
+              return;
+            }
+            setSizeError(null);
+            setFile(selected);
+          }}
         />
       </label>
     </div>
