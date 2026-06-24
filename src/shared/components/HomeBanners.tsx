@@ -3,648 +3,299 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { HomeBanner } from "@/src/shared/services/storeConfig";
 
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337"
-).replace(/\/$/, "");
-
-/**
- * Velocidad del movimiento automático.
- * Puedes subirlo a 42 o 45 si deseas que avance más rápido.
- */
-const AUTO_SCROLL_SPEED = 30;
-
-/**
- * Tiempo de pausa después de usar flechas, swipe o arrastre.
- */
-const RESUME_AFTER_INTERACTION_MS = 1800;
-
-/**
- * Se repiten grupos para que el loop sea continuo incluso cuando
- * hay pocos banners disponibles.
- */
-const LOOP_COPIES = 6;
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:1337").replace(/\/$/, "");
+// Velocidad del movimiento automático continuo, en píxeles por segundo. Es
+// independiente del refresco de pantalla (se calcula con delta de tiempo
+// real entre frames), así que se ve igual de fluido en cualquier dispositivo.
+const SCROLL_SPEED_PX_PER_SEC = 38;
+// Tras cualquier interacción manual (flechas, puntos, teclado, swipe, drag)
+// se le da un respiro a la persona antes de que el movimiento automático
+// retome, en vez de pelearse con lo que está mirando o arrastrando.
+const RESUME_AFTER_INTERACTION_MS = 2500;
+const SCROLL_GAP_PX = 12; // debe coincidir con la clase gap-3 del contenedor
+// Por defecto se ven hasta 3 banners en desktop (ver lg:min-w-[31.6%] en
+// cada tarjeta); se usa para decidir qué imágenes cargar "eager" vs "lazy".
+const DEFAULT_VISIBLE_COUNT = 3;
 
 function mediaUrl(url?: string | null) {
   if (!url) return null;
-
   return url.startsWith("http") ? url : `${API_URL}${url}`;
 }
 
 function scopeClass(scope: HomeBanner["display_scope"]) {
   if (scope === "desktop_only") return "hidden md:block";
   if (scope === "mobile_only") return "block md:hidden";
-
   return "block";
 }
 
+// Solo tarjetas realmente visibles en el breakpoint actual. offsetParent es
+// null cuando el propio elemento (o un ancestro) tiene display:none, que es
+// justo lo que le pasa a una tarjeta "solo desktop" en mobile o viceversa.
 function getVisibleCards(container: HTMLElement) {
-  return Array.from(
-    container.querySelectorAll<HTMLElement>("[data-home-banner-card]")
-  ).filter((card) => card.offsetParent !== null);
+  return Array.from(container.querySelectorAll<HTMLElement>("[data-home-banner-card]")).filter(
+    (card) => card.offsetParent !== null
+  );
 }
 
-export default function HomeBanners({
-  banners = [],
-}: {
-  banners?: HomeBanner[];
-}) {
-  const shellRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const firstGroupRef = useRef<HTMLDivElement>(null);
+export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const resumeTimeoutRef = useRef<number | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [liveMessage, setLiveMessage] = useState<string | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
-  const offsetRef = useRef(0);
-  const loopWidthRef = useRef(0);
-  const visibleCardsRef = useRef(0);
-
-  const hoverRef = useRef(false);
-  const focusRef = useRef(false);
-  const draggingRef = useRef(false);
-  const resumeAtRef = useRef(0);
-
-  const suppressClickRef = useRef(false);
-  const suppressClickTimeoutRef = useRef<number | null>(null);
-
-  const dragRef = useRef({
-    active: false,
-    axis: "undecided" as "undecided" | "horizontal" | "vertical",
-    pointerId: 0,
-    startX: 0,
-    startY: 0,
-    startOffset: 0,
-  });
-
-  const activeBanners = useMemo(
+  const visibleBanners = useMemo(
     () =>
       banners
-        .filter(
-          (banner) =>
-            banner.active !== false &&
-            (banner.desktop_image?.url || banner.mobile_image?.url)
-        )
-        .sort(
-          (first, second) =>
-            (first.home_position ?? 0) - (second.home_position ?? 0)
-        ),
+        .filter((banner) => banner.active !== false && banner.desktop_image?.url)
+        .sort((a, b) => (a.home_position ?? 0) - (b.home_position ?? 0)),
     [banners]
   );
 
-  const normalizeOffset = useCallback((value: number) => {
-    const loopWidth = loopWidthRef.current;
-
-    if (!loopWidth) return 0;
-
-    const normalized = value % loopWidth;
-
-    return normalized < 0 ? normalized + loopWidth : normalized;
-  }, []);
-
-  const paintTrack = useCallback((offset = offsetRef.current) => {
-    const track = trackRef.current;
-
-    if (!track) return;
-
-    track.style.transform = `translate3d(-${offset}px, 0, 0)`;
-  }, []);
-
-  const pauseFor = useCallback((milliseconds = RESUME_AFTER_INTERACTION_MS) => {
-    resumeAtRef.current = Math.max(
-      resumeAtRef.current,
-      Date.now() + milliseconds
-    );
-  }, []);
-
-  /**
-   * Calcula el ancho de una vuelta completa.
-   * El grupo original contiene los banners; los siguientes grupos son copias.
-   * Al llegar al final de ese grupo se reinicia matemáticamente sin salto.
-   */
-  const measureLoop = useCallback(() => {
-    const firstGroup = firstGroupRef.current;
-
-    if (!firstGroup) return;
-
-    const visibleCards = getVisibleCards(firstGroup);
-
-    visibleCardsRef.current = visibleCards.length;
-
-    if (!visibleCards.length) {
-      loopWidthRef.current = 0;
-      return;
-    }
-
-    const width = firstGroup.getBoundingClientRect().width;
-
-    loopWidthRef.current = width;
-
-    if (width > 0) {
-      offsetRef.current = normalizeOffset(offsetRef.current);
-      paintTrack(offsetRef.current);
-    }
-  }, [normalizeOffset, paintTrack]);
-
-  /**
-   * Escucha cambios de tamaño de pantalla, orientación y cambios
-   * de breakpoint para recalcular las medidas correctamente.
-   */
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    const firstGroup = firstGroupRef.current;
-
-    if (!viewport || !firstGroup) return;
-
-    let animationFrame = 0;
-
-    const scheduleMeasure = () => {
-      window.cancelAnimationFrame(animationFrame);
-
-      animationFrame = window.requestAnimationFrame(() => {
-        measureLoop();
-      });
-    };
-
-    scheduleMeasure();
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(scheduleMeasure)
-        : null;
-
-    resizeObserver?.observe(viewport);
-    resizeObserver?.observe(firstGroup);
-
-    window.addEventListener("resize", scheduleMeasure);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", scheduleMeasure);
-    };
-  }, [measureLoop, activeBanners.length]);
-
-  /**
-   * Respeta la configuración de accesibilidad del sistema.
-   * Si el usuario tiene "reducir movimiento", se detiene el autoplay.
-   */
-  const [reducedMotion, setReducedMotion] = useState(false);
-
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const updatePreference = () => {
-      setReducedMotion(query.matches);
-    };
-
-    updatePreference();
-    query.addEventListener("change", updatePreference);
-
-    return () => {
-      query.removeEventListener("change", updatePreference);
-    };
+    setReducedMotion(query.matches);
+    const handleChange = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
+    query.addEventListener("change", handleChange);
+    return () => query.removeEventListener("change", handleChange);
   }, []);
 
-  /**
-   * Movimiento automático fluido con requestAnimationFrame.
-   * No usa intervalos ni scrollLeft, por eso no da saltos.
-   */
+  // ---- Movimiento automático continuo (requestAnimationFrame) ----
+  // En vez de "saltar" cada N segundos con setInterval, esto avanza
+  // scrollLeft un poquito en CADA frame, calculando cuánto según el tiempo
+  // real transcurrido (no según número de frames). Resultado: deslizamiento
+  // fluido y constante, no pasos. Al llegar al final, vuelve al inicio.
+  // pausedRef se revisa fresco en cada frame, así que nunca hay un closure
+  // viejo/atascado que lo deje "pegado" pausado o sin arrancar.
   useEffect(() => {
-    if (reducedMotion || activeBanners.length <= 1) return;
+    const slider = sliderRef.current;
+    if (!slider || reducedMotion) return;
 
-    let animationFrame = 0;
-    let previousTimestamp: number | null = null;
+    let rafId = 0;
+    let lastTimestamp: number | null = null;
 
-    const animate = (timestamp: number) => {
-      if (previousTimestamp === null) {
-        previousTimestamp = timestamp;
+    const hasOverflow = () => slider.scrollWidth > slider.clientWidth + 1;
+
+    const tick = (timestamp: number) => {
+      if (lastTimestamp === null) lastTimestamp = timestamp;
+      // Si la pestaña estuvo en segundo plano, el siguiente frame puede
+      // traer un delta enorme; lo recortamos para no "teletransportar" el
+      // scroll de golpe al volver a la pestaña.
+      const deltaSeconds = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+      lastTimestamp = timestamp;
+
+      if (!pausedRef.current && document.visibilityState === "visible" && hasOverflow()) {
+        const maxScroll = slider.scrollWidth - slider.clientWidth;
+        const next = slider.scrollLeft + SCROLL_SPEED_PX_PER_SEC * deltaSeconds;
+        slider.scrollLeft = next >= maxScroll ? 0 : next;
       }
-
-      const deltaSeconds = Math.min(
-        (timestamp - previousTimestamp) / 1000,
-        0.06
-      );
-
-      previousTimestamp = timestamp;
-
-      const canMove =
-        !reducedMotion &&
-        loopWidthRef.current > 0 &&
-        visibleCardsRef.current > 1 &&
-        !hoverRef.current &&
-        !focusRef.current &&
-        !draggingRef.current &&
-        Date.now() >= resumeAtRef.current &&
-        document.visibilityState === "visible";
-
-      if (canMove) {
-        offsetRef.current = normalizeOffset(
-          offsetRef.current + AUTO_SCROLL_SPEED * deltaSeconds
-        );
-
-        paintTrack(offsetRef.current);
-      }
-
-      animationFrame = window.requestAnimationFrame(animate);
+      rafId = window.requestAnimationFrame(tick);
     };
 
-    animationFrame = window.requestAnimationFrame(animate);
+    rafId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [reducedMotion, visibleBanners.length]);
 
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-    };
-  }, [
-    activeBanners.length,
-    normalizeOffset,
-    paintTrack,
-    reducedMotion,
-  ]);
+  // ---- Resaltado del punto activo (solo visual, no mueve nada) ----
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+    const cards = getVisibleCards(slider);
+    if (cards.length <= 1) return;
 
-  const getCardStep = useCallback(() => {
-    const firstGroup = firstGroupRef.current;
-
-    if (!firstGroup) return 0;
-
-    const firstCard = getVisibleCards(firstGroup)[0];
-
-    if (!firstCard) return 0;
-
-    const styles = window.getComputedStyle(firstGroup);
-
-    const gap = Number.parseFloat(
-      styles.columnGap || styles.gap || "12"
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const mostVisible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!mostVisible) return;
+        const index = cards.indexOf(mostVisible.target as HTMLElement);
+        if (index >= 0) setActiveIndex(index);
+      },
+      { root: slider, threshold: [0.6] }
     );
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [visibleBanners.length]);
 
-    return firstCard.getBoundingClientRect().width + gap;
-  }, []);
-
-  const moveByCard = useCallback(
+  // ---- Navegación manual: flechas avanzan/retroceden una tarjeta ----
+  const stepByOneCard = useCallback(
     (direction: 1 | -1) => {
-      if (!loopWidthRef.current) return;
-
-      const step = getCardStep();
-
-      if (!step) return;
-
-      offsetRef.current = normalizeOffset(
-        offsetRef.current + direction * step
-      );
-
-      paintTrack(offsetRef.current);
-      pauseFor();
+      const slider = sliderRef.current;
+      if (!slider) return;
+      const cards = getVisibleCards(slider);
+      const cardWidth = cards[0]?.getBoundingClientRect().width ?? slider.clientWidth;
+      slider.scrollBy({ left: direction * (cardWidth + SCROLL_GAP_PX), behavior: reducedMotion ? "auto" : "smooth" });
     },
-    [getCardStep, normalizeOffset, paintTrack, pauseFor]
+    [reducedMotion]
   );
 
-  const finishPointerInteraction = useCallback(() => {
-    const viewport = viewportRef.current;
-    const drag = dragRef.current;
+  const scrollToIndex = useCallback(
+    (index: number) => {
+      const slider = sliderRef.current;
+      if (!slider) return;
+      const cards = getVisibleCards(slider);
+      if (!cards.length) return;
+      const normalizedIndex = ((index % cards.length) + cards.length) % cards.length;
+      const card = cards[normalizedIndex];
+      if (!card) return;
+      slider.scrollTo({ left: card.offsetLeft - slider.offsetLeft, behavior: reducedMotion ? "auto" : "smooth" });
+    },
+    [reducedMotion]
+  );
 
-    if (drag.active && viewport?.hasPointerCapture(drag.pointerId)) {
-      viewport.releasePointerCapture(drag.pointerId);
-    }
-
-    dragRef.current.active = false;
-    dragRef.current.axis = "undecided";
-    draggingRef.current = false;
-
-    pauseFor();
-  }, [pauseFor]);
-
-  const handlePointerDown = (
-    event: ReactPointerEvent<HTMLDivElement>
-  ) => {
-    if (event.pointerType === "mouse" && event.button !== 0) {
-      return;
-    }
-
-    const viewport = viewportRef.current;
-
-    if (!viewport) return;
-
-    dragRef.current = {
-      active: true,
-      axis: "undecided",
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startOffset: offsetRef.current,
-    };
-
-    draggingRef.current = true;
-    pauseFor(3000);
-
-    viewport.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (
-    event: ReactPointerEvent<HTMLDivElement>
-  ) => {
-    const drag = dragRef.current;
-
-    if (!drag.active || drag.pointerId !== event.pointerId) {
-      return;
-    }
-
-    const distanceX = event.clientX - drag.startX;
-    const distanceY = event.clientY - drag.startY;
-
-    if (drag.axis === "undecided") {
-      if (Math.abs(distanceX) < 6 && Math.abs(distanceY) < 6) {
-        return;
-      }
-
-      drag.axis =
-        Math.abs(distanceX) > Math.abs(distanceY)
-          ? "horizontal"
-          : "vertical";
-    }
-
-    if (drag.axis !== "horizontal") {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (Math.abs(distanceX) > 8) {
-      suppressClickRef.current = true;
-    }
-
-    offsetRef.current = normalizeOffset(
-      drag.startOffset - distanceX
-    );
-
-    paintTrack(offsetRef.current);
-  };
-
-  const blockAccidentalClick = useCallback(() => {
-    if (!suppressClickRef.current) return;
-
-    if (suppressClickTimeoutRef.current) {
-      window.clearTimeout(suppressClickTimeoutRef.current);
-    }
-
-    suppressClickTimeoutRef.current = window.setTimeout(() => {
-      suppressClickRef.current = false;
-    }, 80);
+  const pause = useCallback(() => {
+    pausedRef.current = true;
+    if (resumeTimeoutRef.current) window.clearTimeout(resumeTimeoutRef.current);
   }, []);
 
-  const handleKeyDown = (
-    event: ReactKeyboardEvent<HTMLDivElement>
-  ) => {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      moveByCard(-1);
-    }
+  const resumeSoon = useCallback(() => {
+    if (resumeTimeoutRef.current) window.clearTimeout(resumeTimeoutRef.current);
+    resumeTimeoutRef.current = window.setTimeout(() => {
+      pausedRef.current = false;
+    }, RESUME_AFTER_INTERACTION_MS);
+  }, []);
 
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      moveByCard(1);
-    }
-  };
+  const resumeNow = useCallback(() => {
+    if (resumeTimeoutRef.current) window.clearTimeout(resumeTimeoutRef.current);
+    pausedRef.current = false;
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (suppressClickTimeoutRef.current) {
-        window.clearTimeout(suppressClickTimeoutRef.current);
-      }
+      if (resumeTimeoutRef.current) window.clearTimeout(resumeTimeoutRef.current);
     };
   }, []);
 
-  if (!activeBanners.length) return null;
+  const navigateManually = useCallback(
+    (action: () => void, targetIndex: number) => {
+      pause();
+      resumeSoon();
+      action();
+      // Solo anunciamos a lectores de pantalla cuando la navegación la pidió
+      // la persona; el movimiento automático no se anuncia (sería una
+      // interrupción constante para quien usa lector de pantalla).
+      setLiveMessage(`Mostrando promoción ${targetIndex + 1} de ${visibleBanners.length}`);
+    },
+    [pause, resumeSoon, visibleBanners.length]
+  );
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      navigateManually(() => stepByOneCard(-1), (activeIndex - 1 + visibleBanners.length) % visibleBanners.length);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      navigateManually(() => stepByOneCard(1), (activeIndex + 1) % visibleBanners.length);
+    }
+  };
+
+  if (!visibleBanners.length) return null;
 
   return (
     <section
+      className="bg-[#FFF7F9] py-6 sm:py-7"
       aria-roledescription="carousel"
       aria-label="Promociones destacadas"
-      className="w-full py-3 sm:py-4 lg:py-5"
+      onMouseEnter={pause}
+      onMouseLeave={resumeNow}
+      onFocus={pause}
+      onBlur={resumeNow}
+      onPointerDown={pause}
+      onPointerUp={resumeSoon}
+      onTouchStart={pause}
+      onTouchEnd={resumeSoon}
     >
-      <div
-        ref={shellRef}
-        className="home-banners-shell mx-auto w-full max-w-[1440px] px-3 sm:px-5 lg:px-6"
-        onMouseEnter={() => {
-          hoverRef.current = true;
-        }}
-        onMouseLeave={() => {
-          hoverRef.current = false;
-          pauseFor(500);
-        }}
-        onFocusCapture={() => {
-          focusRef.current = true;
-        }}
-        onBlurCapture={() => {
-          window.requestAnimationFrame(() => {
-            focusRef.current = Boolean(
-              shellRef.current?.contains(document.activeElement)
+      <div className="section-container relative">
+        {visibleBanners.length > 1 ? (
+          <button
+            type="button"
+            onClick={() => navigateManually(() => stepByOneCard(-1), (activeIndex - 1 + visibleBanners.length) % visibleBanners.length)}
+            aria-label="Ver banner anterior"
+            className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.18)] ring-1 ring-[#E7BFC9] transition hover:-translate-y-1/2 hover:scale-105 hover:bg-white md:left-1 md:h-12 md:w-12"
+          >
+            <ChevronLeft className="h-7 w-7 md:h-[38px] md:w-[38px]" strokeWidth={2.2} />
+          </button>
+        ) : null}
+
+        <div
+          ref={sliderRef}
+          role="group"
+          aria-label="Lista de promociones, navegable con las flechas del teclado"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          className="flex gap-3 overflow-x-auto px-1 pb-1 outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-[#9E3659] focus-visible:ring-offset-2 [&::-webkit-scrollbar]:hidden md:px-10"
+        >
+          {visibleBanners.map((banner, index) => {
+            const desktopUrl = mediaUrl(banner.desktop_image?.url);
+            const mobileUrl = mediaUrl(banner.mobile_image?.url) ?? desktopUrl;
+            const isAboveTheFold = index < DEFAULT_VISIBLE_COUNT;
+            const content = (
+              <picture>
+                {mobileUrl ? <source media="(max-width: 767px)" srcSet={mobileUrl} /> : null}
+                <img
+                  src={desktopUrl ?? ""}
+                  alt={banner.name}
+                  loading={isAboveTheFold ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                />
+              </picture>
             );
 
-            if (!focusRef.current) {
-              pauseFor(500);
-            }
-          });
-        }}
-      >
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => moveByCard(-1)}
-            aria-label="Ver promociones anteriores"
-            className="absolute left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#087CF0] shadow-[0_5px_16px_rgba(15,23,42,0.20)] transition duration-200 hover:scale-110 hover:bg-white hover:text-[#005FC0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-2 sm:left-2 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
-          >
-            <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.7} />
-          </button>
-
-          <div
-            ref={viewportRef}
-            role="group"
-            tabIndex={0}
-            aria-label="Carrusel de promociones. Usa las flechas del teclado para navegar."
-            onKeyDown={handleKeyDown}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={() => {
-              finishPointerInteraction();
-              blockAccidentalClick();
-            }}
-            onPointerCancel={() => {
-              finishPointerInteraction();
-              blockAccidentalClick();
-            }}
-            onClickCapture={(event) => {
-              if (suppressClickRef.current) {
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
-            className="home-banners-viewport touch-pan-y select-none overflow-hidden rounded-[12px] outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-4 sm:rounded-[14px]"
-          >
-            <div
-              ref={trackRef}
-              className="flex w-max will-change-transform"
-            >
-              {Array.from({ length: LOOP_COPIES }).map(
-                (_, groupIndex) => (
-                  <div
-                    key={`banner-group-${groupIndex}`}
-                    ref={groupIndex === 0 ? firstGroupRef : undefined}
-                    aria-hidden={groupIndex > 0 ? true : undefined}
-                    className="home-banners-group flex w-max shrink-0 gap-3 pr-3"
-                  >
-                    {activeBanners.map((banner, bannerIndex) => {
-                      const desktopUrl =
-                        mediaUrl(banner.desktop_image?.url) ??
-                        mediaUrl(banner.mobile_image?.url);
-
-                      const mobileUrl =
-                        mediaUrl(banner.mobile_image?.url) ??
-                        desktopUrl;
-
-                      const isDuplicate = groupIndex > 0;
-
-                      if (!desktopUrl) return null;
-
-                      const image = (
-                        <picture className="block h-full w-full">
-                          {mobileUrl ? (
-                            <source
-                              media="(max-width: 767px)"
-                              srcSet={mobileUrl}
-                            />
-                          ) : null}
-
-                          <img
-                            src={desktopUrl}
-                            alt={banner.name}
-                            draggable={false}
-                            loading={
-                              groupIndex === 0 && bannerIndex < 4
-                                ? "eager"
-                                : "lazy"
-                            }
-                            fetchPriority={
-                              groupIndex === 0 && bannerIndex === 0
-                                ? "high"
-                                : "auto"
-                            }
-                            sizes="(max-width: 639px) 86vw, (max-width: 899px) 48vw, (max-width: 1279px) 32vw, 25vw"
-                            className="h-full w-full object-cover"
-                          />
-                        </picture>
-                      );
-
-                      return (
-                        <article
-                          key={`home-banner-${groupIndex}-${banner.id ?? bannerIndex}`}
-                          data-home-banner-card
-                          aria-hidden={isDuplicate ? true : undefined}
-                          aria-roledescription={
-                            isDuplicate ? undefined : "slide"
-                          }
-                          aria-label={
-                            isDuplicate
-                              ? undefined
-                              : `${bannerIndex + 1} de ${activeBanners.length}: ${banner.name}`
-                          }
-                          className={`${scopeClass(
-                            banner.display_scope
-                          )} home-banner-card relative shrink-0 overflow-hidden rounded-[11px] border border-slate-200 bg-slate-100 shadow-[0_4px_13px_rgba(15,23,42,0.16)] transition-shadow duration-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.22)]`}
-                        >
-                          {banner.destination_url ? (
-                            <Link
-                              href={banner.destination_url}
-                              aria-label={
-                                isDuplicate
-                                  ? undefined
-                                  : `Abrir promoción: ${banner.name}`
-                              }
-                              aria-hidden={
-                                isDuplicate ? true : undefined
-                              }
-                              tabIndex={isDuplicate ? -1 : undefined}
-                              className="block h-full w-full"
-                            >
-                              {image}
-                            </Link>
-                          ) : (
-                            image
-                          )}
-                        </article>
-                      );
-                    })}
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => moveByCard(1)}
-            aria-label="Ver promociones siguientes"
-            className="absolute right-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-[#087CF0] shadow-[0_5px_16px_rgba(15,23,42,0.20)] transition duration-200 hover:scale-110 hover:bg-white hover:text-[#005FC0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087CF0] focus-visible:ring-offset-2 sm:right-2 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
-          >
-            <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.7} />
-          </button>
+            return (
+              <article
+                id={`home-banner-${banner.id ?? banner.home_position}`}
+                data-home-banner-card
+                key={`${banner.id ?? banner.name}-${banner.home_position}`}
+                aria-roledescription="slide"
+                aria-label={`${index + 1} de ${visibleBanners.length}: ${banner.name}`}
+                className={`${scopeClass(banner.display_scope)} group relative min-w-full shrink-0 overflow-hidden rounded-[14px] bg-white shadow-[0_12px_28px_rgba(45,31,35,0.16)] ring-1 ring-[#F1CCD5]/80 sm:min-w-[46%] lg:min-w-[31.6%]`}
+              >
+                <div className="aspect-[16/9] md:aspect-[120/63]">
+                  {banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}
+                </div>
+              </article>
+            );
+          })}
         </div>
+
+        {visibleBanners.length > 1 ? (
+          <button
+            type="button"
+            onClick={() => navigateManually(() => stepByOneCard(1), (activeIndex + 1) % visibleBanners.length)}
+            aria-label="Ver siguiente banner"
+            className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.18)] ring-1 ring-[#E7BFC9] transition hover:-translate-y-1/2 hover:scale-105 hover:bg-white md:right-1 md:h-12 md:w-12"
+          >
+            <ChevronRight className="h-7 w-7 md:h-[38px] md:w-[38px]" strokeWidth={2.2} />
+          </button>
+        ) : null}
+
+        {visibleBanners.length > 1 ? (
+          <div className="mt-4 flex justify-center gap-2" role="tablist" aria-label="Selector de promociones">
+            {visibleBanners.map((banner, index) => (
+              <button
+                key={`home-banner-dot-${banner.id ?? index}`}
+                type="button"
+                role="tab"
+                aria-selected={activeIndex === index}
+                onClick={() => navigateManually(() => scrollToIndex(index), index)}
+                aria-label={`Ver banner ${index + 1} de ${visibleBanners.length}`}
+                aria-current={activeIndex === index ? "true" : undefined}
+                className={`h-2.5 rounded-full transition-all ${activeIndex === index ? "w-8 bg-[#9E3659]" : "w-2.5 bg-[#E7BFC9] hover:bg-[#D4738F]"}`}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <p className="sr-only" aria-live="polite">
+          {liveMessage}
+        </p>
       </div>
-
-      <style jsx>{`
-        .home-banners-shell {
-          container-name: home-banners;
-          container-type: inline-size;
-        }
-
-        .home-banners-viewport {
-          width: 100%;
-        }
-
-        /*
-         * Teléfonos pequeños:
-         * una tarjeta grande y una pequeña parte de la siguiente visible.
-         */
-        .home-banner-card {
-          flex-basis: min(86cqi, 390px);
-          aspect-ratio: 1.9 / 1;
-        }
-
-        /*
-         * Teléfonos grandes y tablets verticales:
-         * dos banners por fila.
-         */
-        @container home-banners (min-width: 560px) {
-          .home-banner-card {
-            flex-basis: calc((100cqi - 12px) / 2);
-          }
-        }
-
-        /*
-         * Tablets horizontales y laptops:
-         * tres banners por fila.
-         */
-        @container home-banners (min-width: 900px) {
-          .home-banner-card {
-            flex-basis: calc((100cqi - 24px) / 3);
-          }
-        }
-
-        /*
-         * Escritorios grandes:
-         * cuatro banners por fila, igual al ejemplo que compartiste.
-         */
-        @container home-banners (min-width: 1240px) {
-          .home-banner-card {
-            flex-basis: calc((100cqi - 36px) / 4);
-          }
-        }
-      `}</style>
     </section>
   );
 }
