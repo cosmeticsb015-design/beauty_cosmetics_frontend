@@ -24,7 +24,6 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
   const pausedRef = useRef(false);
   const isAnimatingRef = useRef(false);
   const scrollTimeoutRef = useRef<number | undefined>(undefined);
-  const [activeIndex, setActiveIndex] = useState(0);
 
   const visibleBanners = useMemo(
     () =>
@@ -34,123 +33,158 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
     [banners]
   );
 
-  // Duplicamos los banners para crear la ilusión de bucle infinito sin cortes
+  const n = visibleBanners.length;
+
+  // Creamos 3 bloques exactos: [Clones Inicio] [Reales] [Clones Final]
+  // Garantiza que en pantallas ultra anchas jamás se vean huecos al hacer el bucle
   const extendedBanners = useMemo(() => {
-    if (visibleBanners.length <= 1) return visibleBanners;
-    return [...visibleBanners, ...visibleBanners];
-  }, [visibleBanners]);
+    if (n <= 1) return visibleBanners;
+    return [...visibleBanners, ...visibleBanners, ...visibleBanners];
+  }, [visibleBanners, n]);
+
+  // Iniciamos en el bloque central (el real)
+  const [activeIndex, setActiveIndex] = useState(n > 1 ? n : 0);
+  const realActiveIndex = activeIndex % (n || 1);
+
+  // Motor de animación manual para un deslizamiento fluido
+  const smoothScrollTo = useCallback((slider: HTMLElement, targetLeft: number, duration = 750) => {
+    return new Promise<void>((resolve) => {
+      const startLeft = slider.scrollLeft;
+      const distance = targetLeft - startLeft;
+      const startTime = performance.now();
+
+      const animateScroll = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Curva EaseInOutCubic (acelera y frena con una fluidez elegante)
+        const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        slider.scrollLeft = startLeft + distance * ease;
+
+        if (elapsed < duration) {
+          requestAnimationFrame(animateScroll);
+        } else {
+          slider.scrollLeft = targetLeft;
+          resolve();
+        }
+      };
+
+      requestAnimationFrame(animateScroll);
+    });
+  }, []);
 
   const scrollToIndex = useCallback(
-    (index: number, smooth = true) => {
+    async (index: number, animate = true) => {
       const slider = sliderRef.current;
-      if (!slider || !visibleBanners.length) return;
+      if (!slider || n <= 1) return;
       
       const cards = Array.from(slider.querySelectorAll<HTMLElement>("[data-home-banner-card]"));
       const card = cards[index];
       if (!card) return;
 
-      // Si es un salto invisible, apagamos temporalmente el comportamiento suave
-      if (!smooth) {
-        slider.style.scrollBehavior = "auto";
-        slider.classList.remove("scroll-smooth");
+      const targetLeft = card.offsetLeft - slider.offsetLeft;
+
+      if (!animate) {
+        slider.scrollLeft = targetLeft;
+        return;
       }
 
-      slider.scrollTo({
-        left: card.offsetLeft - slider.offsetLeft,
-        behavior: smooth ? "smooth" : "auto",
-      });
-
-      // Restauramos el comportamiento suave inmediatamente después del salto
-      if (!smooth) {
-        requestAnimationFrame(() => {
-          slider.style.scrollBehavior = "";
-          slider.classList.add("scroll-smooth");
-        });
-      }
+      // Evitamos que el scroll-snap de CSS "pelee" con nuestra animación matemática
+      slider.style.scrollSnapType = "none";
+      await smoothScrollTo(slider, targetLeft, 750);
+      slider.style.scrollSnapType = ""; // Se restaura para seguir permitiendo deslizar con el dedo en móvil
     },
-    [visibleBanners.length]
+    [n, smoothScrollTo]
   );
 
-  const goToNext = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    const n = visibleBanners.length;
-    const nextIndex = activeIndex + 1;
-
-    isAnimatingRef.current = true;
-    scrollToIndex(nextIndex, true);
-    setActiveIndex(nextIndex % n);
-
-    // Si navegamos hacia el primer "clon", esperamos a que termine la animación visual
-    // y hacemos un salto invisible de vuelta al elemento original real.
-    if (nextIndex === n) {
-      setTimeout(() => {
-        scrollToIndex(0, false);
-        isAnimatingRef.current = false;
-      }, 600); // 600ms cubre la duración del scroll-smooth nativo
-    } else {
-      setTimeout(() => {
-        isAnimatingRef.current = false;
-      }, 600);
-    }
-  }, [activeIndex, visibleBanners.length, scrollToIndex]);
-
-  const goToPrevious = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    const n = visibleBanners.length;
-
-    isAnimatingRef.current = true;
-    if (activeIndex === 0) {
-      // Si estamos en el inicio y retrocedemos, saltamos invisiblemente al final de los clones
-      // y luego animamos suavemente hacia atrás.
+  // Posicionamiento inicial invisible
+  useEffect(() => {
+    if (n > 1) {
       scrollToIndex(n, false);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          scrollToIndex(n - 1, true);
-          setActiveIndex(n - 1);
-          setTimeout(() => {
-            isAnimatingRef.current = false;
-          }, 600);
-        });
-      });
-    } else {
-      const prevIndex = activeIndex - 1;
-      scrollToIndex(prevIndex, true);
-      setActiveIndex(prevIndex);
-      setTimeout(() => {
-        isAnimatingRef.current = false;
-      }, 600);
     }
-  }, [activeIndex, visibleBanners.length, scrollToIndex]);
+  }, [n, scrollToIndex]);
 
-  // Manejo del scroll manual (ej. cuando el usuario arrastra en el móvil)
+  const goToNext = useCallback(async () => {
+    if (isAnimatingRef.current || n <= 1) return;
+    isAnimatingRef.current = true;
+    
+    let nextIndex = activeIndex + 1;
+    await scrollToIndex(nextIndex, true);
+    
+    // Magia del bucle: Si entramos al bloque de clones finales, saltamos al bloque real equivalente sin parpadear
+    if (nextIndex >= n * 2) {
+      nextIndex = n; 
+      await scrollToIndex(nextIndex, false);
+    }
+    
+    setActiveIndex(nextIndex);
+    isAnimatingRef.current = false;
+  }, [activeIndex, n, scrollToIndex]);
+
+  const goToPrevious = useCallback(async () => {
+    if (isAnimatingRef.current || n <= 1) return;
+    isAnimatingRef.current = true;
+    
+    let prevIndex = activeIndex - 1;
+    await scrollToIndex(prevIndex, true);
+    
+    // Si entramos al bloque de clones iniciales, saltamos invisiblemente al final del bloque real
+    if (prevIndex < n) {
+      prevIndex = (n * 2) - 1; 
+      await scrollToIndex(prevIndex, false);
+    }
+    
+    setActiveIndex(prevIndex);
+    isAnimatingRef.current = false;
+  }, [activeIndex, n, scrollToIndex]);
+
+  const goToDot = useCallback(async (dotIndex: number) => {
+    if (isAnimatingRef.current || n <= 1) return;
+    isAnimatingRef.current = true;
+    
+    const targetIndex = dotIndex + n; // Se dirige siempre al bloque central real
+    await scrollToIndex(targetIndex, true);
+    setActiveIndex(targetIndex);
+    
+    isAnimatingRef.current = false;
+  }, [n, scrollToIndex]);
+
+  // Manejo de scroll manual (cuando el usuario arrastra en el móvil)
   useEffect(() => {
     const slider = sliderRef.current;
-    if (!slider || visibleBanners.length <= 1) return;
+    if (!slider || n <= 1) return;
 
     const updateActiveFromScroll = () => {
-      if (isAnimatingRef.current) return; // Ignoramos eventos de scroll mientras se pulsan botones
+      if (isAnimatingRef.current) return;
 
       const cards = Array.from(slider.querySelectorAll<HTMLElement>("[data-home-banner-card]"));
       if (!cards.length) return;
+      
       const nearest = cards.reduce(
         (best, card, index) => {
           const distance = Math.abs(card.offsetLeft - slider.offsetLeft - slider.scrollLeft);
           return distance < best.distance ? { index, distance } : best;
         },
-        { index: 0, distance: Number.POSITIVE_INFINITY }
+        { index: n, distance: Number.POSITIVE_INFINITY }
       );
 
-      const n = visibleBanners.length;
+      let nearestIndex = nearest.index;
 
-      // Si el usuario llega deslizando al área clonada, reseteamos invisiblemente el scroll
-      if (nearest.index >= n) {
-        setActiveIndex(nearest.index % n);
-        window.clearTimeout(scrollTimeoutRef.current);
-        scrollTimeoutRef.current = window.setTimeout(() => {
-          scrollToIndex(nearest.index % n, false);
-        }, 150);
-      } else {
-        setActiveIndex(nearest.index);
+      window.clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = window.setTimeout(() => {
+         if (nearestIndex >= n * 2) {
+            nearestIndex = nearestIndex - n;
+            scrollToIndex(nearestIndex, false);
+         } else if (nearestIndex < n) {
+            nearestIndex = nearestIndex + n;
+            scrollToIndex(nearestIndex, false);
+         }
+         setActiveIndex(nearestIndex);
+      }, 150); // Se ajusta justo después de que el usuario termina de deslizar
+      
+      if (nearestIndex >= n && nearestIndex < n * 2) {
+         setActiveIndex(nearestIndex);
       }
     };
 
@@ -159,16 +193,15 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
       slider.removeEventListener("scroll", updateActiveFromScroll);
       window.clearTimeout(scrollTimeoutRef.current);
     };
-  }, [visibleBanners.length, scrollToIndex]);
+  }, [n, scrollToIndex]);
 
-  // Autoplay
   useEffect(() => {
-    if (visibleBanners.length <= 1) return;
+    if (n <= 1) return;
     const interval = window.setInterval(() => {
       if (!pausedRef.current) goToNext();
     }, AUTO_SLIDE_MS);
     return () => window.clearInterval(interval);
-  }, [goToNext, visibleBanners.length]);
+  }, [goToNext, n]);
 
   if (!visibleBanners.length) return null;
 
@@ -182,7 +215,7 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
       onBlur={() => { pausedRef.current = false; }}
     >
       <div className="section-container relative">
-        {visibleBanners.length > 1 ? (
+        {n > 1 ? (
           <button
             type="button"
             onClick={goToPrevious}
@@ -193,9 +226,10 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
           </button>
         ) : null}
 
+        {/* NOTA: Eliminamos la clase 'scroll-smooth' de aquí intencionalmente para evitar fricción con nuestro motor */}
         <div
           ref={sliderRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:px-10"
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:px-10"
         >
           {extendedBanners.map((banner, index) => {
             const desktopUrl = mediaUrl(banner.desktop_image?.url);
@@ -203,37 +237,26 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
             const content = (
               <picture>
                 {mobileUrl ? <source media="(max-width: 767px)" srcSet={mobileUrl} /> : null}
-                <img
-                  src={desktopUrl ?? ""}
-                  alt={banner.name}
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]"
-                />
+                <img src={desktopUrl ?? ""} alt={banner.name} className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]" />
               </picture>
             );
 
             return (
               <article
-                // Aseguramos que los IDs y Keys sean únicos añadiendo el índice del array extendido
                 id={`home-banner-${banner.id ?? banner.home_position}-${index}`}
                 data-home-banner-card
                 key={`home-banner-card-${banner.id ?? banner.name}-${index}`}
                 className={`${scopeClass(banner.display_scope)} group relative min-w-full snap-center overflow-hidden rounded-[14px] bg-white shadow-[0_12px_28px_rgba(45,31,35,0.16)] ring-1 ring-[#F1CCD5]/80 sm:min-w-[46%] lg:min-w-[31.6%] xl:min-w-[24%]`}
               >
                 <div className="aspect-[16/9] md:aspect-[120/63]">
-                  {banner.destination_url ? (
-                    <Link href={banner.destination_url} aria-label={banner.name}>
-                      {content}
-                    </Link>
-                  ) : (
-                    content
-                  )}
+                  {banner.destination_url ? <Link href={banner.destination_url} aria-label={banner.name}>{content}</Link> : content}
                 </div>
               </article>
             );
           })}
         </div>
 
-        {visibleBanners.length > 1 ? (
+        {n > 1 ? (
           <button
             type="button"
             onClick={goToNext}
@@ -244,22 +267,16 @@ export default function HomeBanners({ banners = [] }: { banners?: HomeBanner[] }
           </button>
         ) : null}
 
-        {visibleBanners.length > 1 ? (
+        {n > 1 ? (
           <div className="mt-4 flex justify-center gap-2" aria-label="Indicadores del carrusel de banners">
             {visibleBanners.map((banner, index) => (
               <button
                 key={`home-banner-dot-${banner.id ?? index}`}
                 type="button"
-                onClick={() => {
-                  if (isAnimatingRef.current) return;
-                  scrollToIndex(index, true);
-                  setActiveIndex(index);
-                }}
+                onClick={() => goToDot(index)}
                 aria-label={`Ver banner ${index + 1}`}
-                aria-current={activeIndex === index ? "true" : undefined}
-                className={`h-2.5 rounded-full transition-all ${
-                  activeIndex === index ? "w-8 bg-[#9E3659]" : "w-2.5 bg-[#E7BFC9] hover:bg-[#D4738F]"
-                }`}
+                aria-current={realActiveIndex === index ? "true" : undefined}
+                className={`h-2.5 rounded-full transition-all ${realActiveIndex === index ? "w-8 bg-[#9E3659]" : "w-2.5 bg-[#E7BFC9] hover:bg-[#D4738F]"}`}
               />
             ))}
           </div>
