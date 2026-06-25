@@ -6,7 +6,7 @@ import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import { saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminProduct } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
-import VariantValuePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import VariantValuePicker from "@/src/features/admin/productos/components/VariantValuePicker";
 import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 export default async function NewVariantPage({ searchParams }: { searchParams: Promise<{ product?: string }> }) {
