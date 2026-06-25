@@ -1,5 +1,4 @@
 "use client";
-// RUTA (archivo nuevo): src/features/admin/productos/components/VariantValuePicker.tsx
 
 import { useId, useState } from "react";
 import { Palette } from "lucide-react";
