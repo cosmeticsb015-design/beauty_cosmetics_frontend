@@ -1,3 +1,5 @@
+// RUTA: app/page.tsx
+
 import HeroSection from "@/src/shared/components/HeroSection";
 import CategoriesSection from "@/src/shared/components/CategoriesSection";
 import FeaturedProduct from "@/src/shared/components/FeaturedProduct";
@@ -5,7 +7,6 @@ import EssenceSection from "@/src/shared/components/EssenceSection";
 import GiftCardSection from "@/src/shared/components/GiftCardSection";
 import NewsletterSection from "@/src/shared/components/NewsletterSection";
 import SeoLandingSection from "@/src/shared/components/SeoLandingSection";
-import HomeBanners from "@/src/shared/components/HomeBanners";
 import { getCategories, getProducts, StrapiCategory, StrapiProduct } from "@/src/shared/services/producst";
 import { getPublicStoreConfig } from "@/src/shared/services/storeConfig";
 
@@ -33,8 +34,9 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSection />
-      <HomeBanners banners={storeConfigResponse.data?.home_banners} />
+      {/* El carrusel de banners ahora vive DENTRO del Hero (como fondo
+          rotativo), por eso ya no se renderiza <HomeBanners /> aparte. */}
+      <HeroSection banners={storeConfigResponse.data?.home_banners} />
       <CategoriesSection categories={categories} />
       <FeaturedProduct products={featuredProducts} />
       <EssenceSection />

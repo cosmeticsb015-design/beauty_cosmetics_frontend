@@ -10,11 +10,16 @@ type BannerImageFieldProps = {
   frameLabel: string;
   recommendedWidth: number;
   recommendedHeight: number;
-  // Proporción real usada en src/shared/components/HomeBanners.tsx para que la
-  // previsualización sea el mismo recuadro (mismo recorte "cover") que verá
-  // el cliente en el home, no una aproximación.
+  // Proporción real que ocupa esta imagen en el Hero (HeroBackgroundSlider.tsx
+  // / HeroSection.tsx), para que el recorte "object-cover" que se ve aquí sea
+  // lo más parecido posible al recorte real que verá el cliente.
   liveAspectRatio: number;
   helperText?: string;
+  // Clases para el ancho del recuadro de previsualización. Por defecto ocupa
+  // todo el ancho disponible (sirve para el recuadro horizontal de desktop);
+  // para el recuadro vertical de móvil se pasa algo como
+  // "mx-auto max-w-[260px]" para que no salga una caja gigante y angosta.
+  previewWidthClassName?: string;
 };
 
 const RATIO_TOLERANCE = 0.02;
@@ -44,6 +49,7 @@ export default function BannerImageField({
   recommendedHeight,
   liveAspectRatio,
   helperText,
+  previewWidthClassName = "w-full",
 }: BannerImageFieldProps) {
   const [file, setFile] = useState<File | null>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -82,12 +88,11 @@ export default function BannerImageField({
         <span className="text-xs font-semibold text-[#6B6063]">Recomendado: {recommendedWidth}×{recommendedHeight}px · máx. 1MB</span>
       </div>
 
-      {/* Recuadro con la MISMA proporción que el carrusel real del home
-          (aspect-[120/63] en desktop, aspect-[16/9] en móvil dentro de
-          HomeBanners.tsx), para que el recorte "object-cover" que se ve aquí
-          sea el recorte real que verá el cliente. */}
+      {/* Recuadro con la MISMA proporción que ocupa esta imagen en el Hero
+          real (HeroBackgroundSlider.tsx), para que el recorte "object-cover"
+          que se ve aquí sea lo más fiel posible al recorte real. */}
       <div
-        className="relative w-full overflow-hidden rounded-[10px] border-2 border-dashed border-[#C9CEDD] bg-[#F6F7F9]"
+        className={`relative overflow-hidden rounded-[10px] border-2 border-dashed border-[#C9CEDD] bg-[#F6F7F9] ${previewWidthClassName}`}
         style={{ aspectRatio: liveAspectRatio }}
       >
         {previewUrl ? (

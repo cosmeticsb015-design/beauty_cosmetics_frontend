@@ -7,7 +7,7 @@ import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
 import { saveStoreConfigForm } from "@/src/features/admin/actions";
 import { getAdminStoreConfig, getStrapiMediaUrl } from "@/src/shared/services/admin";
-import BannerManager, { type EditableBanner } from "./components/BannerManager";
+import BannerManager, { type EditableBanner } from "@/src/features/admin/contenido/components/BannerManager";
 
 const PAGE_SIZE = 6;
 
@@ -57,7 +57,7 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
         <div>
           <p className="mb-2 text-sm font-semibold text-[#9E3659] lg:hidden">Beauty Cosmetics Admin</p>
           <h2 className="text-[30px] font-bold leading-tight text-[#1F1F22]">Contenido y Configuración</h2>
-          <p className="mt-1 text-[17px] text-[#6B6063]">Administra contacto, carrusel principal y promociones temporales.</p>
+          <p className="mt-1 text-[17px] text-[#6B6063]">Administra contacto, fondo del Hero y promociones temporales.</p>
         </div>
         <div className="mt-6"><AdminFlash notice={noticeFromQuery(query, "Configuración guardada correctamente.")} /></div>
 
@@ -85,7 +85,7 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
           <section className="border-t border-[#E7BFC9] px-7 py-8 bg-[#FAFAFA]">
             <div className="mb-6">
               <h3 className="text-[26px] font-bold text-[#1F1F22]">Banners del Home</h3>
-              <p className="mt-1 text-[17px] text-[#6B6063]">Administra el carrusel principal tipo tarjetas. Medidas: desktop 1200×630px y móvil 1080×608px.</p>
+              <p className="mt-1 text-[17px] text-[#6B6063]">Administra el fondo rotativo del Hero (la sección principal de inicio). Medidas: desktop 1920×1080px (16:9) y móvil 1080×1920px vertical (9:16).</p>
             </div>
 
             {/* Por defecto SOLO se ve este grid de tarjetas. Ningún editor se

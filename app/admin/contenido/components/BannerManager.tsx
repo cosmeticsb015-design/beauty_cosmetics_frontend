@@ -1,5 +1,5 @@
 "use client";
-// RUTA (archivo nuevo): src/features/admin/contenido/components/BannerManager.tsx
+// RUTA: src/features/admin/contenido/components/BannerManager.tsx
 
 import { Edit2, ImageIcon, Link2, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -75,10 +75,10 @@ function BannerEditor({ banner, onClose }: { banner: EditableBanner; onClose: ()
           name={`banner_desktop_image_${index}`}
           existingUrl={banner.desktopUrl}
           frameLabel="Desktop"
-          recommendedWidth={1200}
-          recommendedHeight={630}
-          liveAspectRatio={120 / 63}
-          helperText="Esta es la misma proporción (120:63) que usa el carrusel del home en desktop. Peso máximo: 8MB."
+          recommendedWidth={1920}
+          recommendedHeight={1080}
+          liveAspectRatio={16 / 9}
+          helperText="Esta imagen es el fondo del Hero en pantallas grandes (16:9, como una foto panorámica típica). Como la altura real varía según el monitor de cada persona, el recorte puede variar un poco — pero al ser landscape, siempre se ve bien. Peso máximo: 1MB."
         />
       </div>
 
@@ -109,9 +109,10 @@ function BannerEditor({ banner, onClose }: { banner: EditableBanner; onClose: ()
             existingUrl={banner.mobileUrl}
             frameLabel="Móvil"
             recommendedWidth={1080}
-            recommendedHeight={608}
-            liveAspectRatio={16 / 9}
-            helperText="Opcional: si no subes una, el home usa la imagen desktop también en móvil. Proporción real del carrusel en móvil: 16:9."
+            recommendedHeight={1920}
+            liveAspectRatio={9 / 16}
+            previewWidthClassName="mx-auto max-w-[260px]"
+            helperText="En el teléfono el Hero ocupa casi toda la pantalla, por eso esta imagen debe ser VERTICAL (retrato), no horizontal — igual a una historia de Instagram (9:16). Opcional: si no subes una, se usa la imagen desktop (se recortará bastante al ser horizontal)."
           />
         </div>
         <label className="flex items-center gap-3 text-sm font-bold text-[#3F4450] lg:col-span-2">

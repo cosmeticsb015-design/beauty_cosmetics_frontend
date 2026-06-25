@@ -1,3 +1,4 @@
+// RUTA: src/shared/components/ProductCard.tsx
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -137,12 +138,6 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     router.push("/checkout");
   };
 
-  const variantButtonLabel = showVariantPicker
-    ? selectedVariant
-      ? "Añadir tono seleccionado"
-      : "Añadir sin tono"
-    : "Añadir al carrito";
-
   const variantTotalPages = variantOptions ? Math.ceil(variantOptions.length / CARD_VARIANTS_PER_PAGE) : 0;
   const variantStart = variantPage * CARD_VARIANTS_PER_PAGE;
   const visibleVariantOptions = variantOptions?.slice(variantStart, variantStart + CARD_VARIANTS_PER_PAGE) ?? [];
@@ -259,9 +254,12 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             className="flex items-center justify-center gap-2 w-full bg-[#C15074] hover:bg-[#9E3659] active:scale-[0.98] text-white text-[10px] font-bold tracking-widest uppercase py-2.5 rounded-[4px] transition-all duration-200"
           >
             <ShoppingCart size={13} strokeWidth={2} />
-            {variantButtonLabel}
+            Añadir al carrito
           </button>
 
+          {/* Botón "Comprar ahora" deshabilitado a pedido: siempre se maneja
+              agregar al carrito, no tiene sentido ofrecer un atajo directo
+              a checkout desde la card del catálogo.
           <button
             type="button"
             onClick={handleBuyNow}
@@ -270,6 +268,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           >
             Comprar ahora
           </button>
+          */}
 
           <Link
             href={`/catalog/${product.documentId}`}
@@ -282,4 +281,3 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
     </div>
   );
 }
-
