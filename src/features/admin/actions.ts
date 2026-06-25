@@ -482,14 +482,24 @@ function deleteSuccessMessage(collection: string) {
 export async function setProductActiveForm(formData: FormData) {
   const id = sanitizeText(formData.get("id"));
   const active = sanitizeBoolean(formData.get("active"));
-  if (!id) redirectWithNotice("/admin", { ok: false, message: "Producto inválido." });
+  if (!id) {
+    redirectWithNotice("/admin", { ok: false, message: "Producto inválido." });
+    return;
+  }
+
+  // Mismo patrón que deleteBannerForm/removeEntityForm: el redirect de éxito
+  // se hace DESPUÉS del try/catch, no adentro, para que el catch no atrape
+  // el throw interno de redirect() y dispare un segundo redirect de error.
+  let result: { ok: boolean; message: string };
   try {
     await updateEntity("products", id, { active });
     revalidatePath("/admin");
-    redirectWithNotice("/admin", { ok: true, message: active ? "Producto activado correctamente." : "Producto desactivado correctamente." });
+    result = { ok: true, message: active ? "Producto activado correctamente." : "Producto desactivado correctamente." };
   } catch (error) {
-    redirectWithNotice("/admin", { ok: false, message: error instanceof Error ? error.message : "No se pudo actualizar el producto." });
+    result = { ok: false, message: error instanceof Error ? error.message : "No se pudo actualizar el producto." };
   }
+
+  redirectWithNotice("/admin", result);
 }
 
 export async function deactivateProductForm(formData: FormData) {
@@ -538,7 +548,15 @@ export async function saveVariantForm(formData: FormData) {
 export async function saveBranchInventoryForm(formData: FormData) {
   const product = sanitizeText(formData.get("product"));
   const branch = sanitizeText(formData.get("branch"));
-  if (!product || !branch) redirectWithNotice(await adminRefererPath("/admin"), { ok: false, message: "Inventario inválido." });
+  if (!product || !branch) {
+    redirectWithNotice(await adminRefererPath("/admin"), { ok: false, message: "Inventario inválido." });
+    return;
+  }
+
+  // Mismo patrón que deleteBannerForm/setProductActiveForm: el redirect de
+  // éxito va DESPUÉS del try/catch para que el catch no atrape su throw
+  // interno y dispare un segundo redirect de error encima de uno exitoso.
+  let result: { ok: boolean; message: string };
   try {
     const entries = Array.from(formData.entries()).filter(([key]) => key.startsWith("variant_stock_"));
     for (const [key, value] of entries) {
@@ -552,10 +570,12 @@ export async function saveBranchInventoryForm(formData: FormData) {
     }
     revalidatePath(`/admin/productos/${product}/editar`);
     revalidatePath(`/admin/productos/${product}/inventario/${branch}`);
-    redirectWithNotice("/admin", { ok: true, message: "Inventario guardado correctamente." });
+    result = { ok: true, message: "Inventario guardado correctamente." };
   } catch (error) {
-    redirectWithNotice(await adminRefererPath("/admin"), { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar el inventario." });
+    result = { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar el inventario." };
   }
+
+  redirectWithNotice("/admin", result);
 }
 
 export async function saveShippingRateForm(formData: FormData) {
@@ -577,18 +597,26 @@ export async function deleteBannerForm(bannerId: number, _formData: FormData) {
     return;
   }
 
+  // El redirect (abajo) se hace DESPUÉS de este try/catch, no adentro: como
+  // redirect() funciona lanzando una excepción especial para interrumpir la
+  // ejecución, hacerlo dentro del try hacía que el propio catch la atrapara
+  // y disparara un segundo redirect con el mensaje de error — aunque el
+  // borrado ya se había hecho bien. Mismo patrón que removeEntityForm.
+  let result: { ok: boolean; message: string };
   try {
     const currentConfig = await getAdminStoreConfig();
     const currentBanners = currentConfig.data.home_banners ?? [];
     const updatedBanners = currentBanners.filter((b) => b.id !== bannerId);
 
     await updateEntity("store-config", "", { home_banners: updatedBanners });
-    
+
     revalidatePath("/admin/contenido");
     revalidatePath("/");
-    
-    redirectWithNotice("/admin/contenido", { ok: true, message: "Banner eliminado correctamente." });
+
+    result = { ok: true, message: "Banner eliminado correctamente." };
   } catch (error) {
-    redirectWithNotice("/admin/contenido", { ok: false, message: "No se pudo eliminar el banner." });
+    result = { ok: false, message: "No se pudo eliminar el banner." };
   }
+
+  redirectWithNotice("/admin/contenido", result);
 }
