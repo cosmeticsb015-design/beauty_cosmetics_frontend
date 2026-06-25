@@ -571,11 +571,10 @@ export async function saveStoreConfigForm(formData: FormData) {
   redirectWithNotice("/admin/contenido", result);
 }
 
-export async function deleteBannerForm(formData: FormData) {
-  const bannerId = Number(formData.get("delete_banner_id"));
-  
+export async function deleteBannerForm(bannerId: number, _formData: FormData) {
   if (!bannerId) {
     redirectWithNotice("/admin/contenido", { ok: false, message: "ID de banner inválido." });
+    return;
   }
 
   try {

@@ -6,7 +6,8 @@ import AdminDataError from "@/src/features/admin/components/AdminDataError";
 import { saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminProduct } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
-import VariantValuePicker from "../../components/VariantValuePicker";
+import VariantValuePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 export default async function NewVariantPage({ searchParams }: { searchParams: Promise<{ product?: string }> }) {
   const { product: productId } = await searchParams;
@@ -58,7 +59,13 @@ export default async function NewVariantPage({ searchParams }: { searchParams: P
                 <label className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4"><span><span className="block text-[15px] font-bold text-[#1F1F22]">Variante Activa</span><span className="text-[13px] text-[#4B4E5A]">Visible en tienda</span></span><input type="checkbox" name="active" defaultChecked className="h-6 w-6 accent-[#9E3659]" /></label>
                 <section className="rounded-[8px] border border-[#E7BFC9] p-5"><h4 className="text-[18px] font-bold text-[#1F1F22]">Stock inicial por sucursal</h4><div className="mt-4 grid gap-3 md:grid-cols-2">{branchesResponse.data.map((branch) => <label key={branch.documentId} className="rounded-[6px] bg-[#F8F9FB] p-3"><span className="block text-[13px] font-bold text-[#1F1F22]">{branch.name}</span><input name={`branch_stock_${branch.documentId}`} type="number" min="0" defaultValue="0" className="mt-2 h-10 w-full rounded border border-[#C8CEDB] px-3 font-bold" /></label>)}</div></section>
                 <div className="flex gap-5 rounded-[8px] bg-[#FCEDF0] p-6 text-[#7D123B]"><Info size={26} className="shrink-0" /><p className="text-[15px] leading-relaxed text-[#5C4B50]">Al guardar, se crea la variante en Strapi, se suben imágenes y se crean/actualizan sus branch-stocks.</p></div>
-                <button className="inline-flex h-12 min-w-[230px] items-center justify-center gap-3 rounded-[8px] bg-[#7D123B] px-7 text-[15px] font-bold text-white shadow-md transition-colors hover:bg-[#681032]"><Save size={17} />Guardar Variante</button>
+                <SubmitButton
+                  icon={<Save size={17} />}
+                  pendingText="Guardando..."
+                  className="inline-flex h-12 min-w-[230px] items-center justify-center gap-3 rounded-[8px] bg-[#7D123B] px-7 text-[15px] font-bold text-white shadow-md transition-colors hover:bg-[#681032] disabled:cursor-wait disabled:opacity-80"
+                >
+                  Guardar Variante
+                </SubmitButton>
               </div>
             </section>
           </div>

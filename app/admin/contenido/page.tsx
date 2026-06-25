@@ -8,12 +8,20 @@ import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.util
 import { saveStoreConfigForm } from "@/src/features/admin/actions";
 import { getAdminStoreConfig, getStrapiMediaUrl } from "@/src/shared/services/admin";
 import BannerManager, { type EditableBanner } from "@/src/features/admin/contenido/components/BannerManager";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 const PAGE_SIZE = 6;
 
 function firstParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
+
+// Sin esto, la Router Cache de Next puede servir una versión vieja de esta
+// página al navegar entre "Página 1"/"Página 2" o justo después de guardar
+// (mismo problema que ya resolvimos en las páginas de productos): los
+// banners recién publicados o de otra página no aparecían hasta salir y
+// volver a entrar manualmente.
+export const dynamic = "force-dynamic";
 
 export default async function AdminContentPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const query = (await searchParams) ?? {};
@@ -101,9 +109,13 @@ export default async function AdminContentPage({ searchParams }: { searchParams?
           </section>
 
           <div className="flex justify-end border-t border-[#E7BFC9] bg-[#F8F8F9] px-7 py-6">
-            <button className="inline-flex h-12 items-center justify-center gap-3 rounded-[4px] bg-[#7B2505] px-7 text-[15px] font-bold text-white transition-colors hover:bg-[#5f1c03]">
-              <Save size={18} /> Guardar configuración
-            </button>
+            <SubmitButton
+              icon={<Save size={18} />}
+              pendingText="Guardando cambios..."
+              className="inline-flex h-12 items-center justify-center gap-3 rounded-[4px] bg-[#7B2505] px-7 text-[15px] font-bold text-white transition-colors hover:bg-[#5f1c03] disabled:cursor-wait disabled:opacity-80"
+            >
+              Guardar configuración
+            </SubmitButton>
           </div>
         </form>
       </main>

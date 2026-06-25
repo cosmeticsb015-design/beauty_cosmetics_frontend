@@ -4,7 +4,7 @@
 import { Edit2, ImageIcon, Link2, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { deleteBannerForm } from "@/src/features/admin/actions";
-import BannerImageField from "./BannerImageField";
+import BannerImageField from "@/src/features/admin/contenido/components/BannerImageField";
 import type { StrapiHomeBanner } from "@/src/shared/services/admin";
 
 export type EditableBanner = Partial<StrapiHomeBanner> & {
@@ -52,9 +52,7 @@ function BannerEditor({ banner, onClose }: { banner: EditableBanner; onClose: ()
         <div className="flex items-center gap-4">
           {banner.id ? (
             <button
-              formAction={deleteBannerForm}
-              name="delete_banner_id"
-              value={banner.id}
+              formAction={deleteBannerForm.bind(null, banner.id)}
               className="flex items-center gap-2 text-[13px] font-bold text-red-600 transition-colors hover:text-red-800"
             >
               <Trash2 size={15} /> Eliminar
@@ -171,9 +169,7 @@ export default function BannerManager({ allBanners, gridBanners }: BannerManager
 
                 {banner.id ? (
                   <button
-                    formAction={deleteBannerForm}
-                    name="delete_banner_id"
-                    value={banner.id}
+                    formAction={deleteBannerForm.bind(null, banner.id)}
                     className="flex flex-1 items-center justify-center gap-2 rounded bg-red-50 py-2 text-[13px] font-bold text-red-700 transition-colors hover:bg-red-100"
                   >
                     <Trash2 size={16} /> Eliminar

@@ -19,6 +19,7 @@ import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.util
 import { saveProductForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminBrands, getAdminCategories } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 import ProductDraftPersistence from "@/src/features/admin/productos/components/ProductDraftPersistence";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -50,10 +51,13 @@ export default async function NewProductPage({ searchParams }: { searchParams?: 
             >
               Descartar
             </Link>
-            <button className="inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#9E3659] px-7 text-[14px] font-bold tracking-wide text-white transition-colors hover:bg-[#84304C]">
-              <Save size={17} strokeWidth={2} />
+            <SubmitButton
+              icon={<Save size={17} strokeWidth={2} />}
+              pendingText="Guardando..."
+              className="inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#9E3659] px-7 text-[14px] font-bold tracking-wide text-white transition-colors hover:bg-[#84304C] disabled:cursor-wait disabled:opacity-80"
+            >
               Guardar Producto
-            </button>
+            </SubmitButton>
           </div>
         </div>
 

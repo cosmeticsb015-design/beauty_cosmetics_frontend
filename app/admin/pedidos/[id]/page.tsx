@@ -1,3 +1,4 @@
+// RUTA: app/admin/pedidos/[id]/page.tsx
 import Image from "next/image";
 import Link from "next/link";
 import { CreditCard, MapPin, MessageSquareText, ReceiptText, Store, Truck, UserRound, Zap } from "lucide-react";
@@ -6,6 +7,7 @@ import AdminFlash from "@/src/features/admin/components/AdminFlash";
 import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.utils";
 import { updateOrderStatusForm } from "@/src/features/admin/actions";
 import { getStrapiMediaUrl, type OrderFulfillmentStatus, type StrapiOrder, type StrapiOrderItem } from "@/src/shared/services/admin";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 function money(value?: number) {
   return new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
@@ -197,7 +199,9 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
             <form action={updateOrderStatusForm} className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <input type="hidden" name="id" value={order.documentId} />
               <select name="order_status" defaultValue={orderStatus as OrderFulfillmentStatus} className="h-12 rounded-[4px] border border-[#E7BFC9] bg-white px-4 text-[16px] outline-none focus:border-[#9E3659]"><option value="pending_shipping">Pendiente de envio</option><option value="shipped">Enviado</option><option value="delivered">Entregado</option></select>
-              <button className="h-12 rounded-[4px] bg-[#9E3659] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#84304C]">Guardar cambios</button>
+              <SubmitButton pendingText="Guardando..." className="h-12 rounded-[4px] bg-[#9E3659] px-8 text-[15px] font-semibold text-white transition-colors hover:bg-[#84304C] disabled:cursor-wait disabled:opacity-80">
+                Guardar cambios
+              </SubmitButton>
             </form>
           </section>
 

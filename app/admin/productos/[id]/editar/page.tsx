@@ -25,6 +25,7 @@ import { removeEntityForm, saveProductForm, saveVariantForm } from "@/src/featur
 import { getAdminBranches, getAdminBrands, getAdminCategories, getAdminProduct, getStrapiMediaUrl, type StrapiStock } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
 import VariantColorPicker from "@/src/features/admin/productos/components/VariantColorPicker";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="text-[13px] sm:text-[15px] font-bold tracking-wide text-[#4B4E5A]">{children}</label>;
@@ -108,10 +109,13 @@ export default async function EditProductPage({ params, searchParams }: { params
             >
               Descartar
             </Link>
-            <button className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 sm:gap-3 rounded-[8px] bg-[#9E3659] px-4 sm:px-7 text-[13px] sm:text-[14px] font-bold tracking-wide text-white transition-colors hover:bg-[#84304C] whitespace-nowrap">
-              <Save size={16} strokeWidth={2} className="sm:size-[17px]" />
+            <SubmitButton
+              icon={<Save size={16} strokeWidth={2} className="sm:size-[17px]" />}
+              pendingText="Guardando..."
+              className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 sm:gap-3 rounded-[8px] bg-[#9E3659] px-4 sm:px-7 text-[13px] sm:text-[14px] font-bold tracking-wide text-white transition-colors hover:bg-[#84304C] whitespace-nowrap disabled:cursor-wait disabled:opacity-80"
+            >
               <span>Guardar Cambios</span>
-            </button>
+            </SubmitButton>
           </div>
         </div>
 

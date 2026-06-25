@@ -1,10 +1,12 @@
 "use client";
+// RUTA: src/features/admin/logistica/AdminLogisticsClient.tsx
 
 import { useState } from "react";
 import { DollarSign, Info, MapPin, Pencil, Plus, Save, Truck, X } from "lucide-react";
 import AdminShell from "@/src/features/admin/components/AdminShell";
 import AdminFlash, { type AdminNotice } from "@/src/features/admin/components/AdminFlash";
 import { saveShippingRateForm } from "@/src/features/admin/actions";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 export type ShippingZoneIcon = "map-pin" | "truck";
 export type ShippingZoneRow = { id: string; title: string; description: string; price: number; icon: ShippingZoneIcon; highlighted: boolean };
@@ -51,7 +53,7 @@ export default function AdminLogisticsClient({ shippingZones, saved, notice }: A
               <label className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4"><span><span className="block text-[15px] font-bold text-[#1F1F22]">Tarifa activa</span><span className="text-[13px] text-[#4B4E5A]">Disponible en checkout</span></span><input type="checkbox" name="active" defaultChecked={editingZone.highlighted} className="h-6 w-6 accent-[#9E3659]" /></label>
               <div className="rounded-[8px] bg-[#FCEDF0] p-5 text-[#5C4B50]"><div className="flex gap-3"><Info size={22} strokeWidth={2} className="shrink-0 text-[#7D123B]" /><p className="text-[14px] leading-relaxed">Esta tarifa se guardará en Strapi y se usará por el checkout cuando esté activa.</p></div></div>
             </div>
-            <div className="flex flex-col gap-4 border-t border-[#E7BFC9] bg-[#F8F8F9] px-8 py-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => setEditingZone(null)} className="h-12 px-7 text-[15px] font-bold text-[#5C4B50] transition-colors hover:text-[#9E3659]">Cancelar</button><button className="inline-flex h-12 items-center justify-center gap-3 rounded-[6px] bg-[#7D123B] px-8 text-[15px] font-bold text-white transition-colors hover:bg-[#681032]"><Save size={17} strokeWidth={2} />Guardar Tarifa</button></div>
+            <div className="flex flex-col gap-4 border-t border-[#E7BFC9] bg-[#F8F8F9] px-8 py-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => setEditingZone(null)} className="h-12 px-7 text-[15px] font-bold text-[#5C4B50] transition-colors hover:text-[#9E3659]">Cancelar</button><SubmitButton icon={<Save size={17} strokeWidth={2} />} pendingText="Guardando..." className="inline-flex h-12 items-center justify-center gap-3 rounded-[6px] bg-[#7D123B] px-8 text-[15px] font-bold text-white transition-colors hover:bg-[#681032] disabled:cursor-wait disabled:opacity-80">Guardar Tarifa</SubmitButton></div>
           </form>
         </div>
       )}

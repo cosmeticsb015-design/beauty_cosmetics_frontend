@@ -1,4 +1,5 @@
 "use client";
+// RUTA: src/features/admin/marcas-categorias/AdminCatalogClient.tsx
 
 import { useActionState, useEffect, useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
   Eye,
   EyeOff,
   Grid2X2Plus,
+  Loader2,
   Package,
   Save,
   Search,
@@ -32,10 +34,11 @@ type AdminCatalogClientProps = { brands: BrandRow[]; categories: CategoryRow[]; 
 export default function AdminCatalogClient({ brands, categories, allCategories }: AdminCatalogClientProps) {
   const [activeModal, setActiveModal] = useState<CatalogModal>(null);
   const [savedMessage, setSavedMessage] = useState("");
-  const [brandState, brandAction] = useActionState(saveBrand, { ok: false, message: "" });
-  const [categoryState, categoryAction] = useActionState(saveCategory, { ok: false, message: "" });
+  const [brandState, brandAction, isBrandPending] = useActionState(saveBrand, { ok: false, message: "" });
+  const [categoryState, categoryAction, isCategoryPending] = useActionState(saveCategory, { ok: false, message: "" });
   const isBrand = activeModal?.type === "brand";
   const isCategory = activeModal?.type === "category";
+  const isPending = isBrand ? isBrandPending : isCategoryPending;
   const editingBrand = isBrand ? activeModal.item : undefined;
   const editingCategory = isCategory ? activeModal.item : undefined;
 
@@ -125,7 +128,7 @@ export default function AdminCatalogClient({ brands, categories, allCategories }
               <label className="block"><span className="text-[15px] font-bold text-[#4B4E5A]">Slug</span><input name="slug" defaultValue={isBrand ? editingBrand?.slug : editingCategory?.slug} placeholder={isBrand ? "luxe-essence" : "cuidado-corporal"} className="mt-3 h-13 w-full rounded-[6px] border border-[#E7BFC9] bg-[#FFFCFC] px-5 text-[16px] outline-none placeholder:text-[#C8AAB3] focus:border-[#9E3659]" /></label>
               {isCategory && <label className="block"><span className="text-[15px] font-bold text-[#4B4E5A]">Categoría padre</span><div className="relative mt-3"><select name="parent" defaultValue={editingCategory?.parentId ?? ""} className="h-13 w-full appearance-none rounded-[6px] border border-[#E7BFC9] bg-[#FFFCFC] px-5 text-[16px] outline-none focus:border-[#9E3659]"><option value="">Sin categoría padre</option>{allCategories.filter((category) => category.id !== editingCategory?.id).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#5F6370]" /></div></label>}
               <label className="flex items-center justify-between rounded-[8px] bg-[#F1F2F4] px-5 py-4"><span><span className="block text-[15px] font-bold text-[#1F1F22]">Estado</span><span className="text-[13px] text-[#4B4E5A]">Visible y disponible para productos</span></span><input type="checkbox" name="active" defaultChecked={isBrand ? editingBrand?.active ?? true : editingCategory?.visible ?? true} className="h-6 w-6 accent-[#9E3659]" /></label>
-              <div className="flex flex-col gap-4 border-t border-[#E7BFC9] bg-[#F8F8F9] px-0 py-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => setActiveModal(null)} className="h-12 px-7 text-[15px] font-bold text-[#5C4B50] transition-colors hover:text-[#9E3659]">Cancelar</button><button className="inline-flex h-12 items-center justify-center gap-3 rounded-[6px] bg-[#7D123B] px-8 text-[15px] font-bold text-white transition-colors hover:bg-[#681032]"><Save size={17} strokeWidth={2} />{isBrand ? "Guardar Marca" : "Guardar Categoría"}</button></div>
+              <div className="flex flex-col gap-4 border-t border-[#E7BFC9] bg-[#F8F8F9] px-0 py-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => setActiveModal(null)} className="h-12 px-7 text-[15px] font-bold text-[#5C4B50] transition-colors hover:text-[#9E3659]">Cancelar</button><button disabled={isPending} aria-busy={isPending} className="inline-flex h-12 items-center justify-center gap-3 rounded-[6px] bg-[#7D123B] px-8 text-[15px] font-bold text-white transition-colors hover:bg-[#681032] disabled:cursor-wait disabled:opacity-80">{isPending ? <Loader2 size={17} strokeWidth={2.2} className="animate-spin" /> : <Save size={17} strokeWidth={2} />}{isPending ? "Guardando..." : isBrand ? "Guardar Marca" : "Guardar Categoría"}</button></div>
             </form>
             {(editingBrand || editingCategory) && <form action={removeEntityForm} className="border-t border-red-100 px-8 pb-8"><input type="hidden" name="collection" value={isBrand ? "brands" : "categories"} /><input type="hidden" name="id" value={isBrand ? editingBrand?.id ?? "" : editingCategory?.id ?? ""} /><button className="inline-flex h-11 items-center gap-2 rounded-[6px] border border-red-200 px-5 text-[14px] font-bold text-red-700 hover:bg-red-50"><Trash2 size={16} />Eliminar {isBrand ? "marca" : "categoría"}</button></form>}
           </div>

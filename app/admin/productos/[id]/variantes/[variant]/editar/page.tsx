@@ -18,7 +18,8 @@ import { noticeFromQuery } from "@/src/features/admin/components/AdminFlash.util
 import { removeEntityForm, saveVariantForm } from "@/src/features/admin/actions";
 import { getAdminBranches, getAdminVariant, getStrapiMediaUrl } from "@/src/shared/services/admin";
 import ProductImagePicker from "@/src/features/admin/productos/components/ProductImagePicker";
-import VariantValuePicker from "../../../../components/VariantValuePicker";
+import VariantValuePicker from "@/src/features/admin/productos/components/VariantValuePicker";
+import SubmitButton from "@/src/features/admin/components/SubmitButton";
 
 function stockState(quantity: number) {
   if (quantity <= 0) return { label: "Sin Stock", classes: "bg-red-100 text-red-700" };
@@ -70,10 +71,13 @@ export default async function EditVariantPage({ params, searchParams }: { params
               <Link href={`/admin/productos/${product?.documentId ?? id}/editar`} className="inline-flex h-11 items-center justify-center rounded-[8px] border border-[#C8CEDB] px-8 text-[14px] font-bold text-[#4B4E5A] hover:border-[#9E3659] hover:text-[#9E3659]">
                 Cancelar
               </Link>
-              <button className="inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#9E3659] px-7 text-[14px] font-bold text-white hover:bg-[#84304C]">
-                <Save size={17} strokeWidth={2} />
+              <SubmitButton
+                icon={<Save size={17} strokeWidth={2} />}
+                pendingText="Guardando..."
+                className="inline-flex h-11 items-center justify-center gap-3 rounded-[8px] bg-[#9E3659] px-7 text-[14px] font-bold text-white hover:bg-[#84304C] disabled:cursor-wait disabled:opacity-80"
+              >
                 Guardar Variante
-              </button>
+              </SubmitButton>
             </div>
           </div>
 
