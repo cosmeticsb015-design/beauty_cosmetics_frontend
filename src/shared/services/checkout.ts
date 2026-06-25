@@ -47,6 +47,12 @@ export interface CreateCheckoutOrderPayload {
   items: { branch_stock: string; quantity: number }[];
 }
 
+// `CheckoutOrder` representa lo que el backend devuelve al crear el checkout.
+// Desde el refactor a payment-attempts, esto YA NO es una orden real: es el
+// intento de pago (payment-attempt) recién creado. Se mantiene el nombre del
+// tipo para no romper imports existentes, pero los campos reflejan el
+// payment-attempt (documentId, tracking_number, payment_status = 'pending',
+// is_payment_attempt = true, wompi_payment = { ... }).
 export interface CheckoutOrder {
   id: number;
   documentId: string;
@@ -59,6 +65,12 @@ export interface CheckoutOrder {
   subtotal: number;
   shipping_cost: number;
   payment_status: "pending" | "paid" | "failed" | "refunded";
+  is_payment_attempt?: boolean;
+  wompi_payment?: {
+    payment_link_id?: number;
+    payment_url?: string;
+    qr_url?: string;
+  };
 }
 
 export interface WompiPaymentLinkResponse {
