@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Truck, Store, Pencil, ShieldCheck, Lock, FileText, AlertCircle, MapPin, Clock } from "lucide-react";
+import { FaCcVisa, FaCcMastercard, FaCcAmex } from "react-icons/fa6";
 import { useCart } from "@/src/shared/context/CartContext";
 import { CheckoutBranch, CheckoutBranchStock, CheckoutShippingRate, createCheckoutPayment, getCheckoutBranches, getCheckoutBranchStocks, getCheckoutShippingRates } from "@/src/shared/services/checkout";
 
@@ -651,6 +652,11 @@ export default function CheckoutPage() {
                         <div className="flex flex-wrap items-center justify-between gap-4 w-full">
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-bold text-[#2D1F23] text-[15px]">Wompi</span>
+                            <div className="flex items-center gap-1.5" aria-label="Tarjetas aceptadas: Visa, Mastercard y American Express">
+                              <FaCcVisa size={24} className="text-[#1A1F71]" />
+                              <FaCcMastercard size={24} className="text-[#EB001B]" />
+                              <FaCcAmex size={24} className="text-[#2E77BC]" />
+                            </div>
                             <span className="bg-[#F4F4F4] text-[#8A7A7E] text-[10px] px-2 py-0.5 rounded-[4px]">
                               Tarjetas, PSE, Nequi y más
                             </span>
