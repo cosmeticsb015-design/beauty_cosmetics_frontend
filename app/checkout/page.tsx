@@ -655,7 +655,7 @@ export default function CheckoutPage() {
                             <div className="flex items-center gap-1.5" aria-label="Tarjetas aceptadas: Visa, Mastercard y American Express">
                               <FaCcVisa size={24} className="text-[#1A1F71]" />
                               <FaCcMastercard size={24} className="text-[#EB001B]" />
-                              <FaCcAmex size={24} className="text-[#2E77BC]" />
+                            
                             </div>
                             <span className="bg-[#F4F4F4] text-[#8A7A7E] text-[10px] px-2 py-0.5 rounded-[4px]">
                               Tarjetas, PSE, Nequi y más
