@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "127.0.0.1" },
       { protocol: "https", hostname: "127.0.0.1" },
       { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "api.beautycosmeticssv.com" },
     ],
   },
 
