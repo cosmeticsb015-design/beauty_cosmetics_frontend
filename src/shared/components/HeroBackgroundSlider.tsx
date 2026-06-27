@@ -1,4 +1,5 @@
 "use client";
+// RUTA: src/shared/components/HeroBackgroundSlider.tsx
 // RUTA (archivo nuevo): src/shared/components/HeroBackgroundSlider.tsx
 
 import Link from "next/link";
@@ -167,7 +168,7 @@ export default function HeroBackgroundSlider({ banners = [] }: { banners?: HomeB
             type="button"
             onClick={() => navigateManually(activeIndex - 1)}
             aria-label="Ver promoción anterior"
-            className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.25)] transition hover:scale-105 hover:bg-white md:left-6 md:h-12 md:w-12"
+            className="absolute left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.25)] transition hover:scale-105 hover:bg-white md:flex md:left-6 md:h-12 md:w-12"
           >
             <ChevronLeft className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.3} />
           </button>
@@ -175,7 +176,7 @@ export default function HeroBackgroundSlider({ banners = [] }: { banners?: HomeB
             type="button"
             onClick={() => navigateManually(activeIndex + 1)}
             aria-label="Ver siguiente promoción"
-            className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.25)] transition hover:scale-105 hover:bg-white md:right-6 md:h-12 md:w-12"
+            className="absolute right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#9E3659] shadow-[0_8px_24px_rgba(45,31,35,0.25)] transition hover:scale-105 hover:bg-white md:flex md:right-6 md:h-12 md:w-12"
           >
             <ChevronRight className="h-6 w-6 md:h-7 md:w-7" strokeWidth={2.3} />
           </button>
