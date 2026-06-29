@@ -178,7 +178,15 @@ export async function getAdminOrder(id: string) {
             fields: ["label", "value", "price_override"],
             populate: { images: { sort: ["sort_order:asc"], populate: { image: { fields: ["url", "formats", "alternativeText"] } } } },
           },
-          branch_stock: { populate: { branch: true } },
+          branch_stock: {
+            populate: {
+              branch: true,
+              variant: {
+                fields: ["label", "value", "price_override"],
+                populate: { images: { sort: ["sort_order:asc"], populate: { image: { fields: ["url", "formats", "alternativeText"] } } } },
+              },
+            },
+          },
         },
       },
     },
