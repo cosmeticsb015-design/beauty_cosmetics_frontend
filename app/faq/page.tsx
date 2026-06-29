@@ -131,9 +131,9 @@ const branches = [
     mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
-    name: "Sucursal Plaza Mundo Usulután",
+    name: "Sucursal Plaza Mundo Usulutan",
     address: ["Entrada principal, Nivel 2", "En el pasillo del súper"],
-    hours: ["Lunes a domingo: 10:30am - 7:00pm"],
+    hours: ["Lunes a Domingo: 10:30am - 7:00pm"],
     mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];

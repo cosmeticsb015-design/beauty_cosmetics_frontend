@@ -166,11 +166,11 @@ const organizationJsonLd = {
     },
     {
       "@type": "Store",
-      name: "Beauty Cosmetics Usulután Plaza Mundo",
+      name: "Beauty Cosmetics Usulutan Plaza Mundo",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Plaza Mundo Usulután, entrada principal, Nivel 2, en el pasillo del súper",
-        addressLocality: "Usulután",
+        streetAddress: "Plaza Mundo Usulutan, entrada principal, Nivel 2, en el pasillo del súper",
+        addressLocality: "Usulutan",
         addressCountry: "SV",
       },
       openingHoursSpecification: {
