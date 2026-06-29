@@ -127,13 +127,13 @@ const branches = [
   {
     name: "San Miguel Casa Matriz",
     address: ["Urbanización España", "Calle Suiza (principal), pol. 12", "N-1, San Miguel"],
-    hours: ["Lunes a viernes: 10:00am - 6:30pm", "Sábados: 9:30am - 6:30pm"],
+    hours: ["Lunes a viernes: 10:00am - 6:30pm", "Sábados: 10:30am - 5:30pm"],
     mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
-    name: "Sucursal Usulután",
-    address: ["Plaza Mundo Usulután", "2do Nivel, frente a Didi Shop"],
-    hours: ["Horario: 10:00am - 6:00pm", "Martes cerrado"],
+    name: "Sucursal Plaza Mundo Usulután",
+    address: ["Entrada principal, Nivel 2", "En el pasillo del súper"],
+    hours: ["Lunes a domingo: 10:30am - 7:00pm"],
     mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];
@@ -265,12 +265,16 @@ export default function FaqPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {branches.map((branch) => (
-              <article key={branch.name} className="rounded-2xl border border-white/10 bg-white/8 p-6">
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#FBD5E0] text-[#9E3659]">
+              <article
+                key={branch.name}
+                style={{ background: "linear-gradient(135deg, #C15074 0%, #9E3659 100%)" }}
+                className="rounded-2xl border border-[#C15074] p-6 shadow-sm shadow-[#C15074]/25"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white ring-1 ring-white/25">
                   <Store size={22} strokeWidth={1.8} />
                 </div>
                 <h3 className="text-base font-bold uppercase tracking-widest text-white">{branch.name}</h3>
-                <div className="mt-4 space-y-2 text-sm leading-6 text-white/78">
+                <div className="mt-4 space-y-2 text-sm leading-6 text-white/90">
                   {branch.address.map((line) => (
                     <p key={line} className="flex gap-2">
                       <MapPin size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#F5C6D0]" />
@@ -278,7 +282,7 @@ export default function FaqPage() {
                     </p>
                   ))}
                 </div>
-                <div className="mt-5 border-t border-white/10 pt-4 text-sm leading-6 text-white/78">
+                <div className="mt-5 border-t border-white/20 pt-4 text-sm leading-6 text-white/90">
                   {branch.hours.map((line) => (
                     <p key={line} className="flex gap-2">
                       <Clock3 size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#F5C6D0]" />
@@ -290,7 +294,7 @@ export default function FaqPage() {
                   href={branch.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-[4px] bg-[#FBD5E0] px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9E3659] transition-colors hover:bg-white"
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-[4px] bg-white px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9E3659] transition-colors hover:bg-[#FCEDF0]"
                 >
                   Abrir pin en Google Maps
                   <ExternalLink size={14} strokeWidth={2} />

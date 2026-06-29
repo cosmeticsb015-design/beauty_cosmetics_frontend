@@ -160,7 +160,7 @@ const organizationJsonLd = {
       },
       openingHoursSpecification: [
         { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "10:00", closes: "18:30" },
-        { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "09:30", closes: "18:30" },
+        { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "10:30", closes: "17:30" },
       ],
       hasMap: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
     },
@@ -169,15 +169,15 @@ const organizationJsonLd = {
       name: "Beauty Cosmetics Usulután Plaza Mundo",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Plaza Mundo Usulután, 2do Nivel, frente a Didi Shop",
+        streetAddress: "Plaza Mundo Usulután, entrada principal, Nivel 2, en el pasillo del súper",
         addressLocality: "Usulután",
         addressCountry: "SV",
       },
       openingHoursSpecification: {
         "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-        opens: "10:00",
-        closes: "18:00"
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        opens: "10:30",
+        closes: "19:00"
       },
       hasMap: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
     },
