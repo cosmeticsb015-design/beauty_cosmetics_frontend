@@ -39,7 +39,9 @@ export default async function EditVariantPage({ params, searchParams }: { params
     const [response, branchesResponse] = await Promise.all([getAdminVariant(variantId), getAdminBranches({ pageSize: 100 })]);
     const variant = response.data;
     const product = variant.product;
-    const existingImages = (variant.images ?? []).map((item) => getStrapiMediaUrl(item.image?.url)).filter(Boolean) as string[];
+    const existingImages = (variant.images ?? [])
+      .map((item) => ({ id: item.documentId, url: getStrapiMediaUrl(item.image?.url) }))
+      .filter((item): item is { id: string; url: string } => Boolean(item.id && item.url));
     const stockByBranch = new Map((variant.stocks ?? []).map((stock) => [stock.branch?.documentId, stock]));
     const stockRows = branchesResponse.data.map((branch) => ({ branch, stock: stockByBranch.get(branch.documentId) }));
     const displayPrice = variant.price_override || product?.price || "";

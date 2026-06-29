@@ -69,18 +69,42 @@ export default function CheckoutPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getCheckoutBranches(), getCheckoutShippingRates()])
-      .then(([branchesResponse, ratesResponse]) => {
+    Promise.all([
+      getCheckoutBranches(),
+      getCheckoutShippingRates(),
+      items.length
+        ? getCheckoutBranchStocks(items.map((item) => ({ productDocumentId: item.product_id, variantDocumentId: item.variant_id, quantity: item.quantity })))
+        : Promise.resolve([]),
+    ])
+      .then(([branchesResponse, ratesResponse, stocks]) => {
         if (cancelled) return;
 
         const activeBranches = (branchesResponse.data || []).filter((branch) => branch.active !== false);
         const activeRates = (ratesResponse.data || []).filter((rate) => rate.active !== false);
+        const availableBranches = items.length
+          ? activeBranches.filter((branch) => {
+              const branchStocks = stocks.filter((stock) => stock.branch?.documentId === branch.documentId);
+              const usedStock = new Map<string, number>();
 
-        setBranches(activeBranches);
+              return items.every((item) => {
+                const stock = item.variant_id
+                  ? branchStocks.find((entry) => entry.variant?.documentId === item.variant_id && Number(entry.quantity || 0) - (usedStock.get(entry.documentId) || 0) >= item.quantity)
+                  : branchStocks.find((entry) => entry.variant?.product?.documentId === item.product_id && Number(entry.quantity || 0) - (usedStock.get(entry.documentId) || 0) >= item.quantity);
+
+                if (!stock) return false;
+                usedStock.set(stock.documentId, (usedStock.get(stock.documentId) || 0) + item.quantity);
+                return true;
+              });
+            })
+          : activeBranches;
+
+        setBranches(availableBranches);
         setShippingRates(activeRates);
         setFormData((current) => ({
           ...current,
-          branchDocumentId: current.branchDocumentId || activeBranches[0]?.documentId || "",
+          branchDocumentId: availableBranches.some((branch) => branch.documentId === current.branchDocumentId)
+            ? current.branchDocumentId
+            : availableBranches[0]?.documentId || "",
           shippingRateDocumentId: current.shippingRateDocumentId || activeRates[0]?.documentId || "",
         }));
       })
@@ -95,7 +119,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [items]);
 
   const selectedBranch = branches.find((branch) => branch.documentId === formData.branchDocumentId) || null;
   const selectedShippingRate = shippingRates.find((rate) => rate.documentId === formData.shippingRateDocumentId) || null;
