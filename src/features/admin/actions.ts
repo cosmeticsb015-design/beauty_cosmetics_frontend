@@ -198,6 +198,28 @@ async function syncVariantStocks(variantDocumentId: string, formData: FormData) 
   }
 }
 
+async function deactivateEmptyInventory(productDocumentId: string) {
+  if (!productDocumentId) return;
+
+  const product = await getAdminProduct(productDocumentId);
+  const variants = (product.data as typeof product.data & { variants?: { documentId?: string; active?: boolean; stocks?: { quantity?: number | string | null }[] }[] }).variants ?? [];
+  const variantTotals = variants.map((variant) => ({
+    documentId: variant.documentId,
+    active: variant.active,
+    total: (variant.stocks ?? []).reduce((sum, stock) => sum + Number(stock.quantity || 0), 0),
+  }));
+
+  for (const variant of variantTotals) {
+    if (variant.documentId && variant.active !== false && variant.total <= 0) {
+      await updateEntity("variant-options", variant.documentId, { active: false });
+    }
+  }
+
+  if (product.data.active !== false && variantTotals.length > 0 && variantTotals.every((variant) => variant.total <= 0)) {
+    await updateEntity("products", productDocumentId, { active: false });
+  }
+}
+
 export type AdminLoginState = {
   ok: boolean;
   message: string;
@@ -332,6 +354,7 @@ export async function saveProduct(_prev: AdminMutationState, formData: FormData)
     await deleteSelectedProductImages(formData);
     const defaultVariantDocumentId = await ensureDefaultVariant(productDocumentId);
     await syncVariantStocks(defaultVariantDocumentId, formData);
+    await deactivateEmptyInventory(productDocumentId);
     await uploadProductImages(productDocumentId, formData);
     revalidatePath("/admin");
     revalidatePath(`/admin/productos/${productDocumentId}/editar`);
@@ -377,6 +400,7 @@ export async function saveVariant(_prev: AdminMutationState, formData: FormData)
     const response = id ? await updateEntity<{ documentId: string }>("variant-options", id, data) : await createEntity<{ documentId: string }>("variant-options", data);
     const variantDocumentId = id || response.data.documentId;
     await syncVariantStocks(variantDocumentId, formData);
+    await deactivateEmptyInventory(product);
     await deleteSelectedProductImages(formData);
     await uploadVariantImages(variantDocumentId, formData);
     revalidatePath(`/admin/productos/${product}/editar`);
@@ -570,6 +594,7 @@ export async function saveBranchInventoryForm(formData: FormData) {
       if (stockDocumentId) await updateEntity("branch-stocks", stockDocumentId, payload);
       else await createEntity("branch-stocks", payload);
     }
+    await deactivateEmptyInventory(product);
     revalidatePath(`/admin/productos/${product}/editar`);
     revalidatePath(`/admin/productos/${product}/inventario/${branch}`);
     result = { ok: true, message: "Inventario guardado correctamente." };
