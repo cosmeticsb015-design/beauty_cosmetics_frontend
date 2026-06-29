@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, HeartHandshake, ShieldCheck, Sparkles, Store } from "lucide-react";
 
-const stats = ["+13 mil seguidores", "Sucursales en oriente", "Envíos a todo El Salvador"];
+const stats = ["+13 mil seguidores", "+ 6 años ", "2 sucursales", "Envíos a todo El Salvador"];
 
 const pillars = [
   {
@@ -45,7 +45,7 @@ export default function AboutPage() {
               Beauty Cosmetics
             </h1>
             <p className="mt-6 max-w-2xl text-sm leading-7 text-[#554246] md:text-base">
-              Beauty Cosmetics es un ecommerce salvadoreño de belleza, cosmética y cuidado personal especializado en maquillaje original, skincare, accesorios y productos auténticos. Atendemos en línea con entregas en San Salvador y San Miguel, envíos a todo El Salvador y presencia en nuestras sucursales de San Miguel y Usulután Plaza Mundo.
+              Beauty Cosmetics es un ecommerce salvadoreño de belleza, cosmética y cuidado personal especializado en maquillaje original, skincare, accesorios y productos auténticos. Atendemos en línea con entregas a Todo el pais.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
