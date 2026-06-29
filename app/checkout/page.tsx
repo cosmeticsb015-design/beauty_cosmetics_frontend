@@ -537,7 +537,7 @@ export default function CheckoutPage() {
                     <div className="rounded-[8px] border border-[#F0E4E8] bg-white p-5">
                       <div className="mb-4 flex items-center justify-between gap-4">
                         <div>
-                          <h2 className="text-sm font-bold text-[#2D1F23]">Sucursales disponibles</h2>
+                          <h2 className="text-sm font-bold text-[#2D1F23]">Sucursales donde el articulo esta disponibles</h2>
                           <p className="text-xs text-[#AC9CA0]">Selecciona dónde quieres recoger tu pedido.</p>
                         </div>
                         <Store size={18} className="text-[#C15074]" />
