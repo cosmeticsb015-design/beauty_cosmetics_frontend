@@ -377,8 +377,10 @@ export async function saveVariant(_prev: AdminMutationState, formData: FormData)
     const response = id ? await updateEntity<{ documentId: string }>("variant-options", id, data) : await createEntity<{ documentId: string }>("variant-options", data);
     const variantDocumentId = id || response.data.documentId;
     await syncVariantStocks(variantDocumentId, formData);
+    await deleteSelectedProductImages(formData);
     await uploadVariantImages(variantDocumentId, formData);
     revalidatePath(`/admin/productos/${product}/editar`);
+    revalidatePath(`/admin/productos/${product}/variantes/${variantDocumentId}/editar`);
     return { ok: true, message: id ? "Variante actualizada." : "Variante creada.", id: variantDocumentId };
   } catch (error) { return { ok: false, message: error instanceof Error ? error.message : "No se pudo guardar la variante." }; }
 }

@@ -46,7 +46,7 @@ function whatsappHref(phone?: string | null) {
   return `https://wa.me/${normalized}`;
 }
 function firstItemImage(item: StrapiOrderItem) {
-  const image = item.product?.images?.[0]?.image;
+  const image = item.variant?.images?.[0]?.image ?? item.branch_stock?.variant?.images?.[0]?.image ?? item.product?.images?.[0]?.image;
   const formats = image?.formats as { thumbnail?: { url?: string }; small?: { url?: string } } | undefined;
   return getStrapiMediaUrl(formats?.thumbnail?.url ?? formats?.small?.url ?? image?.url);
 }
@@ -134,7 +134,15 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
           </div>
 
           <div className="mt-7 grid gap-6 lg:grid-cols-3">
-            <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p></div><h3 className="text-[24px] font-bold text-[#1F1F22]">{order.customer_name}</h3><p className="mt-2 text-[16px] text-[#6B6063]">{order.customer_email}</p><p className="mt-1 text-[16px] text-[#6B6063]">{order.customer_phone}</p></article>
+            <article className="min-w-0 overflow-hidden rounded-[8px] border border-[#E7E4E5] bg-white p-7">
+              <div className="mb-5 flex items-center gap-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span>
+                <p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p>
+              </div>
+              <h3 className="max-w-full break-all text-[24px] font-bold leading-tight text-[#1F1F22] [overflow-wrap:anywhere]">{order.customer_name}</h3>
+              <p className="mt-2 max-w-full break-all text-[16px] leading-relaxed text-[#6B6063] [overflow-wrap:anywhere]">{order.customer_email}</p>
+              <p className="mt-1 break-words text-[16px] text-[#6B6063]">{order.customer_phone}</p>
+            </article>
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
               <div className="mb-5 flex items-center gap-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]">{order.delivery_type === "pickup" ? <Store size={22} strokeWidth={1.8} /> : <Truck size={22} strokeWidth={1.8} />}</span>
