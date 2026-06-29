@@ -5,14 +5,14 @@ const sucursales = [
     id: "san-miguel",
     nombre: "San Miguel Casa Matriz",
     direccion: ["Urbanización España", "Calle Suiza (principal), pol. 12", "N-1, San Miguel"],
-    horarios: ["Lunes a viernes: 10:00 AM - 6:30 PM", "Sábados: 9:30 AM - 6:30 PM"],
+    horarios: ["Lunes a viernes: 10:00 AM - 6:30 PM", "Sábados: 10:30am - 5:30pm"],
     mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
     id: "usulutan",
-    nombre: "Sucursal Usulután",
-    direccion: ["Plaza Mundo Usulután", "2do Nivel, frente a Didi Shop"],
-    horarios: ["Horario: 10:00 AM - 6:00 PM", "Martes cerrado"],
+    nombre: "Sucursal Plaza Mundo Usulutan",
+    direccion: ["Entrada principal, Nivel 2", "En el pasillo del súper"],
+    horarios: ["Lunes a Domingo: 10:30am - 7:00pm"],
     mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];
@@ -38,28 +38,29 @@ export default function HorarioSection() {
           {sucursales.map((sucursal) => (
             <article
               key={sucursal.id}
-              className="relative overflow-hidden rounded-[22px] border border-[#F0E4E8] bg-white p-6 shadow-sm transition-shadow hover:shadow-md md:p-8"
+              style={{ background: "linear-gradient(135deg, #C15074 0%, #9E3659 100%)" }}
+              className="relative overflow-hidden rounded-[22px] border border-[#C15074] p-6 text-white shadow-sm shadow-[#C15074]/25 transition-shadow hover:shadow-md hover:shadow-[#C15074]/30 md:p-8"
             >
-              <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[42px] bg-[#FCEDF0]" />
+              <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[42px] bg-white/12" />
               <div className="relative z-10">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#FBD5E0] text-[#9E3659]">
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white ring-1 ring-white/25">
                   <Store size={22} strokeWidth={1.8} />
                 </div>
-                <h3 className="text-base font-bold uppercase tracking-widest text-[#2D1F23]">{sucursal.nombre}</h3>
+                <h3 className="text-base font-bold uppercase tracking-widest text-white">{sucursal.nombre}</h3>
 
-                <div className="mt-5 space-y-2 text-sm leading-6 text-[#554246]">
+                <div className="mt-5 space-y-2 text-sm leading-6 text-white/90">
                   {sucursal.direccion.map((line) => (
                     <p key={line} className="flex gap-2">
-                      <MapPin size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#C15074]" />
+                      <MapPin size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#FBD5E0]" />
                       <span>{line}</span>
                     </p>
                   ))}
                 </div>
 
-                <div className="mt-5 border-t border-[#F0E4E8] pt-4 text-sm leading-6 text-[#554246]">
+                <div className="mt-5 border-t border-white/20 pt-4 text-sm leading-6 text-white/90">
                   {sucursal.horarios.map((line) => (
                     <p key={line} className="flex gap-2">
-                      <Clock3 size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#C15074]" />
+                      <Clock3 size={15} strokeWidth={1.8} className="mt-1 shrink-0 text-[#FBD5E0]" />
                       <span>{line}</span>
                     </p>
                   ))}
@@ -69,7 +70,7 @@ export default function HorarioSection() {
                   href={sucursal.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-[#C15074] px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#9E3659] sm:w-auto"
+                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-[4px] bg-white px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#9E3659] transition-colors hover:bg-[#FCEDF0] sm:w-auto"
                 >
                   Abrir pin en Google Maps
                   <ExternalLink size={14} strokeWidth={2} />
