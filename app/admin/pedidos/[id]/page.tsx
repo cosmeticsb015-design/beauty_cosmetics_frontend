@@ -134,7 +134,15 @@ export default async function AdminOrderDetailPage({ params, searchParams }: { p
           </div>
 
           <div className="mt-7 grid gap-6 lg:grid-cols-3">
-            <article className="min-w-0 rounded-[8px] border border-[#E7E4E5] bg-white p-7"><div className="mb-5 flex items-center gap-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span><p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p></div><h3 className="[overflow-wrap:anywhere] text-[24px] font-bold text-[#1F1F22]">{order.customer_name}</h3><p className="mt-2 break-all text-[16px] text-[#6B6063]">{order.customer_email}</p><p className="mt-1 break-words text-[16px] text-[#6B6063]">{order.customer_phone}</p></article>
+            <article className="min-w-0 rounded-[8px] border border-[#E7E4E5] bg-white p-7">
+              <div className="mb-5 flex items-center gap-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]"><UserRound size={22} strokeWidth={1.8} /></span>
+                <p className="text-[15px] font-semibold uppercase tracking-wide text-[#6B6063]">Cliente</p>
+              </div>
+              <h3 className="[overflow-wrap:anywhere] text-[24px] font-bold text-[#1F1F22]">{order.customer_name}</h3>
+              <p className="mt-2 break-all text-[16px] text-[#6B6063]">{order.customer_email}</p>
+              <p className="mt-1 break-words text-[16px] text-[#6B6063]">{order.customer_phone}</p>
+            </article>
             <article className="rounded-[8px] border border-[#E7E4E5] bg-white p-7">
               <div className="mb-5 flex items-center gap-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[4px] bg-[#F0EEEE] text-[#9E3659]">{order.delivery_type === "pickup" ? <Store size={22} strokeWidth={1.8} /> : <Truck size={22} strokeWidth={1.8} />}</span>
