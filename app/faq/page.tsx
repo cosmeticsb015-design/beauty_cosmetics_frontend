@@ -131,9 +131,9 @@ const branches = [
     mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
-    name: "Sucursal Plaza Mundo Usulután",
+    name: "Sucursal Plaza Mundo Usulutan",
     address: ["Entrada principal, Nivel 2", "En el pasillo del súper"],
-    hours: ["Lunes a domingo: 10:30am - 7:00pm"],
+    hours: ["Lunes a Domingo: 10:30am - 7:00pm"],
     mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];
@@ -265,7 +265,11 @@ export default function FaqPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {branches.map((branch) => (
-              <article key={branch.name} className="rounded-2xl border border-[#C15074] bg-[#C15074] p-6 shadow-sm shadow-[#C15074]/20">
+              <article
+                key={branch.name}
+                style={{ background: "linear-gradient(135deg, #C15074 0%, #9E3659 100%)" }}
+                className="rounded-2xl border border-[#C15074] p-6 shadow-sm shadow-[#C15074]/25"
+              >
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white ring-1 ring-white/25">
                   <Store size={22} strokeWidth={1.8} />
                 </div>

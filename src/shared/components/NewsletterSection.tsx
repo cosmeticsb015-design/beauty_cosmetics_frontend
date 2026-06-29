@@ -5,14 +5,14 @@ const sucursales = [
     id: "san-miguel",
     nombre: "San Miguel Casa Matriz",
     direccion: ["Urbanización España", "Calle Suiza (principal), pol. 12", "N-1, San Miguel"],
-    horarios: ["Lunes a viernes: 10:00 AM - 6:30 PM", "Sábados: 10:30 AM - 5:30 PM"],
+    horarios: ["Lunes a viernes: 10:00 AM - 6:30 PM", "Sábados: 10:30am - 5:30pm"],
     mapsUrl: "https://maps.app.goo.gl/K5RwqeqXaL2MHGeN6",
   },
   {
     id: "usulutan",
-    nombre: "Sucursal Plaza Mundo Usulután",
+    nombre: "Sucursal Plaza Mundo Usulutan",
     direccion: ["Entrada principal, Nivel 2", "En el pasillo del súper"],
-    horarios: ["Lunes a domingo: 10:30 AM - 7:00 PM"],
+    horarios: ["Lunes a Domingo: 10:30am - 7:00pm"],
     mapsUrl: "https://maps.app.goo.gl/k7EzCyrpCmnPJbcQA",
   },
 ];
@@ -38,7 +38,8 @@ export default function HorarioSection() {
           {sucursales.map((sucursal) => (
             <article
               key={sucursal.id}
-              className="relative overflow-hidden rounded-[22px] border border-[#C15074] bg-[#C15074] p-6 text-white shadow-sm shadow-[#C15074]/20 transition-shadow hover:shadow-md hover:shadow-[#C15074]/25 md:p-8"
+              style={{ background: "linear-gradient(135deg, #C15074 0%, #9E3659 100%)" }}
+              className="relative overflow-hidden rounded-[22px] border border-[#C15074] p-6 text-white shadow-sm shadow-[#C15074]/25 transition-shadow hover:shadow-md hover:shadow-[#C15074]/30 md:p-8"
             >
               <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-[42px] bg-white/12" />
               <div className="relative z-10">
