@@ -46,7 +46,7 @@ function whatsappHref(phone?: string | null) {
   return `https://wa.me/${normalized}`;
 }
 function firstItemImage(item: StrapiOrderItem) {
-  const image = item.product?.images?.[0]?.image;
+  const image = item.variant?.images?.[0]?.image ?? item.product?.images?.[0]?.image;
   const formats = image?.formats as { thumbnail?: { url?: string }; small?: { url?: string } } | undefined;
   return getStrapiMediaUrl(formats?.thumbnail?.url ?? formats?.small?.url ?? image?.url);
 }
