@@ -1,11 +1,28 @@
 import Image from "next/image";
 
-// Sube las imágenes finales a public/store-slider con estos nombres:
-// beauty-store-01.jpg ... beauty-store-10.jpg
-const galleryImages = Array.from({ length: 10 }, (_, index) => ({
-  src: `/store-slider/beauty-store-${String(index + 1).padStart(2, "0")}.jpg`,
-  alt: `Beauty Cosmetics experiencia en tienda ${index + 1}`,
-}));
+// Cuando agregues las imágenes en public/store-slider, usa estos nombres/rutas:
+// import beautyStore01 from "public/store-slider/beauty-store-01.jpg";
+// import beautyStore02 from "public/store-slider/beauty-store-02.jpg";
+// import beautyStore03 from "public/store-slider/beauty-store-03.jpg";
+// import beautyStore04 from "public/store-slider/beauty-store-04.jpg";
+// import beautyStore05 from "public/store-slider/beauty-store-05.jpg";
+// import beautyStore06 from "public/store-slider/beauty-store-06.jpg";
+// import beautyStore07 from "public/store-slider/beauty-store-07.jpg";
+// import beautyStore08 from "public/store-slider/beauty-store-08.jpg";
+// import beautyStore09 from "public/store-slider/beauty-store-09.jpg";
+// import beautyStore10 from "public/store-slider/beauty-store-10.jpg";
+const galleryImages = [
+  { src: "/store-slider/beauty-store-01.jpg", alt: "Beauty Cosmetics experiencia en tienda 1" },
+  { src: "/store-slider/beauty-store-02.jpg", alt: "Beauty Cosmetics experiencia en tienda 2" },
+  { src: "/store-slider/beauty-store-03.jpg", alt: "Beauty Cosmetics experiencia en tienda 3" },
+  { src: "/store-slider/beauty-store-04.jpg", alt: "Beauty Cosmetics experiencia en tienda 4" },
+  { src: "/store-slider/beauty-store-05.jpg", alt: "Beauty Cosmetics experiencia en tienda 5" },
+  { src: "/store-slider/beauty-store-06.jpg", alt: "Beauty Cosmetics experiencia en tienda 6" },
+  { src: "/store-slider/beauty-store-07.jpg", alt: "Beauty Cosmetics experiencia en tienda 7" },
+  { src: "/store-slider/beauty-store-08.jpg", alt: "Beauty Cosmetics experiencia en tienda 8" },
+  { src: "/store-slider/beauty-store-09.jpg", alt: "Beauty Cosmetics experiencia en tienda 9" },
+  { src: "/store-slider/beauty-store-10.jpg", alt: "Beauty Cosmetics experiencia en tienda 10" },
+];
 
 export default function StoreGallerySlider() {
   const loopImages = [...galleryImages, ...galleryImages];
