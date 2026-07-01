@@ -1,17 +1,17 @@
 import Image from "next/image";
 
 const galleryImages = [
-  { src: "/store-slider/1.jpg", alt: "Beauty Cosmetics experiencia en tienda 1", orientation: "portrait" },
-  { src: "/store-slider/2.jpg", alt: "Beauty Cosmetics experiencia en tienda 2", orientation: "landscape" },
-  { src: "/store-slider/3.jpg", alt: "Beauty Cosmetics experiencia en tienda 3", orientation: "portrait" },
-  { src: "/store-slider/4.jpg", alt: "Beauty Cosmetics experiencia en tienda 4", orientation: "portrait" },
-  { src: "/store-slider/5.jpg", alt: "Beauty Cosmetics experiencia en tienda 5", orientation: "landscape" },
-  { src: "/store-slider/6.jpg", alt: "Beauty Cosmetics experiencia en tienda 6", orientation: "portrait" },
-  { src: "/store-slider/7.jpg", alt: "Beauty Cosmetics experiencia en tienda 7", orientation: "landscape" },
-  { src: "/store-slider/8.jpg", alt: "Beauty Cosmetics experiencia en tienda 8", orientation: "landscape" },
-  { src: "/store-slider/9.jpg", alt: "Beauty Cosmetics experiencia en tienda 9", orientation: "portrait" },
-  { src: "/store-slider/10.jpg", alt: "Beauty Cosmetics experiencia en tienda 10", orientation: "portrait" },
-] as const;
+  { src: "/store-slider/1.jpg", alt: "Beauty Cosmetics experiencia en tienda 1" },
+  { src: "/store-slider/2.jpg", alt: "Beauty Cosmetics experiencia en tienda 2" },
+  { src: "/store-slider/3.jpg", alt: "Beauty Cosmetics experiencia en tienda 3" },
+  { src: "/store-slider/4.jpg", alt: "Beauty Cosmetics experiencia en tienda 4" },
+  { src: "/store-slider/5.jpg", alt: "Beauty Cosmetics experiencia en tienda 5" },
+  { src: "/store-slider/6.jpg", alt: "Beauty Cosmetics experiencia en tienda 6" },
+  { src: "/store-slider/7.jpg", alt: "Beauty Cosmetics experiencia en tienda 7" },
+  { src: "/store-slider/8.jpg", alt: "Beauty Cosmetics experiencia en tienda 8" },
+  { src: "/store-slider/9.jpg", alt: "Beauty Cosmetics experiencia en tienda 9" },
+  { src: "/store-slider/10.jpg", alt: "Beauty Cosmetics experiencia en tienda 10" },
+];
 
 export default function StoreGallerySlider() {
   const loopImages = [...galleryImages, ...galleryImages];
@@ -28,30 +28,23 @@ export default function StoreGallerySlider() {
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent md:w-28" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent md:w-28" />
-        <div className="store-gallery-track flex w-max items-end gap-5 px-5 md:gap-7 md:px-7">
-          {loopImages.map((image, index) => {
-            const isLandscape = image.orientation === "landscape";
-            return (
-              <figure
-                key={`${image.src}-${index}`}
-                className={`group relative shrink-0 overflow-hidden rounded-[24px] border border-[#F0E4E8] shadow-[0_16px_45px_rgba(193,80,116,0.13)] transition-transform duration-500 hover:-translate-y-1 ${
-                  isLandscape
-                    ? "h-[260px] w-[340px] sm:h-[320px] sm:w-[420px] lg:h-[370px] lg:w-[480px]"
-                    : "h-[420px] w-[250px] sm:h-[500px] sm:w-[310px] lg:h-[560px] lg:w-[350px]"
-                }`}
-              >
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  fill
-                  sizes="(min-width: 1024px) 480px, (min-width: 640px) 420px, 340px"
-                  loading={index < 4 ? "eager" : "lazy"}
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-              </figure>
-            );
-          })}
+        <div className="store-gallery-track flex w-max gap-5 px-5 md:gap-7 md:px-7">
+          {loopImages.map((image, index) => (
+            <figure
+              key={`${image.src}-${index}`}
+              className="group relative h-[420px] w-[250px] shrink-0 overflow-hidden rounded-[24px] border border-[#F0E4E8] shadow-[0_16px_45px_rgba(193,80,116,0.13)] transition-transform duration-500 hover:-translate-y-1 sm:h-[500px] sm:w-[310px] lg:h-[560px] lg:w-[350px]"
+            >
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                sizes="(min-width: 1024px) 350px, (min-width: 640px) 310px, 250px"
+                loading={index < 4 ? "eager" : "lazy"}
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            </figure>
+          ))}
         </div>
       </div>
     </section>
