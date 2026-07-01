@@ -15,7 +15,7 @@ const englishSignals = [
 
 export default function SeoLandingSection() {
   return (
-    <section className="bg-white px-4 py-14 md:px-8 md:py-20" aria-labelledby="seo-beauty-cosmetics-title">
+    <section className="hidden bg-white px-4 py-14 md:block md:px-8 md:py-20" aria-labelledby="seo-beauty-cosmetics-title">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#C15074]">
