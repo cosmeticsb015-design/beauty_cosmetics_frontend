@@ -1,7 +1,15 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, HeartHandshake, ShieldCheck, Sparkles, Store } from "lucide-react";
 
 const stats = ["+13 mil seguidores", "+ 6 años ", "2 sucursales", "Envíos a todo El Salvador"];
+
+const aboutGalleryImages = [
+  { src: "/store-slider/1.jpg", alt: "Vitrina con maquillaje y productos de Beauty Cosmetics" },
+  { src: "/store-slider/2.jpg", alt: "Fachada rosa de la tienda Beauty Cosmetics" },
+  { src: "/store-slider/3.jpg", alt: "Productos recibidos en Beauty Cosmetics frente a pared floral" },
+  { src: "/store-slider/4.jpg", alt: "Entrada de Beauty Cosmetics decorada con globos rosados" },
+];
 
 const pillars = [
   {
@@ -47,6 +55,23 @@ export default function AboutPage() {
             <p className="mt-6 max-w-2xl text-sm leading-7 text-[#554246] md:text-base">
               Más de seis años construyendo una comunidad que cree en la autenticidad, la calidad y la confianza. Beauty Cosmetics nació de la pasión por el maquillaje y el skincare, y hoy continúa creciendo para acercarte las marcas más reconocidas del mundo con una experiencia de compra excepcional.
             </p>
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4" aria-label="Galería estática de Beauty Cosmetics">
+              {aboutGalleryImages.map((image) => (
+                <figure
+                  key={image.src}
+                  className="group relative aspect-[4/5] overflow-hidden rounded-[18px] border border-white/80 bg-white shadow-[0_14px_32px_rgba(193,80,116,0.14)] sm:rounded-[22px]"
+                >
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    sizes="(min-width: 1024px) 300px, (min-width: 640px) 45vw, 50vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </figure>
+              ))}
+            </div>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/catalog"
