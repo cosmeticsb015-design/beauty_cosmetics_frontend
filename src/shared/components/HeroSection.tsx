@@ -27,12 +27,12 @@ export default function HeroSection({ banners = [] }: { banners?: HomeBanner[] }
       <div className="section-container relative z-10 flex flex-col items-start text-left">
         <div className="max-w-[640px]">
           <h1 className="responsive-heading font-normal font-serif text-white tracking-wide uppercase drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
-            Beauty Cosmetics El Salvador
+            Beauty Cosmetics 
             <br />
-            Maquillaje Original
+          
           </h1>
           <p className="mt-5 max-w-[34rem] text-sm leading-relaxed text-white/90 drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)] sm:text-base md:mt-6">
-            Comprá maquillaje original, skincare, cosmética y cuidado personal con entregas en San Salvador y San Miguel, envíos a todo El Salvador y sucursales en San Miguel y Usulután Plaza Mundo.
+            Comprá maquillaje original, skincare, cosmética y cuidado personal
           </p>
           <div className="mt-7 flex w-full flex-col gap-3 min-[420px]:w-auto min-[420px]:flex-row sm:gap-4">
             <Link
