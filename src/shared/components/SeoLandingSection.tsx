@@ -1,10 +1,10 @@
 const seoTopics = [
-  "maquillaje original en El Salvador",
-  "skincare y cuidado de la piel",
-  "cosmética y cuidado personal",
-  "entregas en San Salvador y San Miguel",
-  "envíos a todo El Salvador",
-  "sucursales en San Miguel y Usulután Plaza Mundo",
+  "+ 6 años de trayectoria",
+  "Maquillaje original en tendencia",
+  "+2 sucursales fisicas",
+  "Desde K-Beauty hasta marcas icónicas.",
+  "Cobertura en todo El Salvador",
+  "Compromiso con nuestros clientes",
 ];
 
 const englishSignals = [
