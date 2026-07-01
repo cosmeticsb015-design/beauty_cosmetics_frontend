@@ -22,16 +22,15 @@ export default function SeoLandingSection() {
             Belleza, cosmética y cuidado personal
           </p>
           <h2 id="seo-beauty-cosmetics-title" className="mt-3 font-serif text-3xl font-normal uppercase tracking-wide text-[#2D1F23] md:text-4xl">
-            Beauty Cosmetics SV: tu tienda online de maquillaje original en El Salvador
+            Conoce Beauty Cosmetics.
+            <br />
+            Donde las marcas más reconocidas del mundo encuentran un lugar en tu rutina.
           </h2>
         </div>
 
         <div className="space-y-5 text-sm leading-7 text-[#554246] md:text-base">
           <p>
-            En Beauty Cosmetics encontrás maquillaje original, skincare, accesorios, cosméticos y productos de cuidado personal seleccionados para rutinas de belleza reales. Nuestro catálogo online está pensado para comprar fácil desde cualquier lugar de El Salvador, con atención cercana, asesoría personalizada y opciones de entrega en San Salvador, San Miguel y envíos a todo el país.
-          </p>
-          <p>
-            También atendemos desde nuestras sucursales en San Miguel y Usulután Plaza Mundo, conectando la experiencia de tienda física con un ecommerce de belleza confiable para quienes buscan productos auténticos, tendencias de maquillaje, cuidado de la piel, regalos y novedades de marcas reconocidas.
+            Beauty Cosmetics se ha consolidado como una marca de referencia en maquillaje y skincare en El Salvador. Desde 2019, acercamos las marcas más reconocidas del mundo a miles de clientes, combinando una cuidada selección de productos, presencia física y cobertura nacional para ofrecer una experiencia de compra que inspire confianza y te invite a volver.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {seoTopics.map((topic) => (
