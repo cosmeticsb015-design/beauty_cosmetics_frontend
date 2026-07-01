@@ -1,4 +1,5 @@
 import { Gift } from "lucide-react";
+import Image from "next/image";
 
 function buildWhatsappGiftCardUrl(whatsappNumber?: string | null) {
   const cleanNumber = whatsappNumber?.replace(/\D/g, "");
@@ -47,14 +48,17 @@ export default function GiftCardSection({ whatsappNumber }: { whatsappNumber?: s
                 {/* Top row */}
                 <div className="flex justify-between items-start">
                   <span className="text-[10px] font-bold tracking-[0.2em] text-[#C15074] uppercase">GIFT CARD</span>
-                  <span className="text-[#C15074]">
-                    <Gift size={20} strokeWidth={1.8} />
+                  <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-[#F5C6D0] bg-white shadow-sm">
+                    <Image src="/bc-logo.png" alt="Beauty Cosmetics logo" width={48} height={48} className="h-full w-full object-cover" />
                   </span>
                 </div>
 
                 {/* Bottom row */}
                 <div className="flex justify-between items-end">
-                  <span className="text-[11px] text-[#9E8A8E] font-normal tracking-wide">Beauty Cosmetics</span>
+                  <span className="inline-flex items-center gap-2 text-[11px] text-[#9E8A8E] font-normal tracking-wide">
+                    <Gift size={14} strokeWidth={1.8} className="text-[#C15074]" />
+                    Beauty Cosmetics
+                  </span>
                   <span className="text-2xl font-normal text-[#2D1F23]">$50</span>
                 </div>
               </div>

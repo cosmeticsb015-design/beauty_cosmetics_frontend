@@ -1,33 +1,33 @@
 "use client";
 
-import { Gift, HandFist, Mail, MessageCircle, ShieldCheck, Truck } from "lucide-react";
+import { HeartHandshake, Mail, MessageCircle, PackagePlus, ShieldCheck, Truck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const preFooterFeatures = [
   {
     id: "feat-envios",
-    title: "ENVIOS RAPIDOS",
+    title: "ENVÍOS RÁPIDOS",
     desc: "A todo El Salvador",
     icon: <Truck className="w-6 h-6 text-[#9E3659]" />,
   },
   {
     id: "feat-segura",
-    title: "PAGA SEGURO",
-    desc: "Tus compras están protegidas",
+    title: "COMPRA SEGURA",
+    desc: "Tu pago está protegido",
     icon: <ShieldCheck className="w-6 h-6 text-[#9E3659]" />,
   },
   {
     id: "feat-soporte",
-    title: "ATENCIÓN PERSONALIZADA",
-    desc: "Estamos aqui para ayudarte",
-    icon: <HandFist className="w-6 h-6 text-[#9E3659]" />,
+    title: "ASESORÍA PERSONALIZADA",
+    desc: "Estamos para ayudarte",
+    icon: <HeartHandshake className="w-6 h-6 text-[#9E3659]" />,
   },
   {
     id: "feat-regalos",
-    title: "REGALOS Y MUESTRAS",
-    desc: "En compras selecionadas",
-    icon: <Gift className="w-6 h-6 text-[#9E3659]" />,
+    title: "PEDIDOS ESPECIALES",
+    desc: "Productos exclusivos por encargo",
+    icon: <PackagePlus className="w-6 h-6 text-[#9E3659]" />,
   },
 ];
 

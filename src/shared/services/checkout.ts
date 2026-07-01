@@ -131,7 +131,10 @@ export const getCheckoutBranchStocks = async (items: CreateCheckoutOrderItem[], 
   const productIds = Array.from(new Set(items.map((item) => item.productDocumentId).filter(Boolean)));
   const filters: Record<string, unknown> = {
     quantity: { $gt: 0 },
-    variant: { product: { documentId: { $in: productIds } } },
+    variant: {
+      active: { $ne: false },
+      product: { documentId: { $in: productIds }, active: { $eq: true } },
+    },
   };
 
   if (branchDocumentId) {

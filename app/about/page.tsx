@@ -11,12 +11,12 @@ const pillars = [
   },
   {
     title: "Asesoría cercana",
-    description: "Te acompañamos con recomendaciones personalizadas según tus gustos, necesidades y objetivos de belleza.",
+    description: "Te acompañamos a encontrar productos que realmente se adapten a tu piel, necesidades y objetivos.",
     icon: HeartHandshake,
   },
   {
     title: "Experiencia confiable",
-    description: "Cuidamos cada detalle del proceso para ofrecerte atención, calidad y resultados reales.",
+    description: "Desde el primer clic hasta la entrega de tu pedido, cuidamos cada detalle para brindarte una experiencia segura y confiable.",
     icon: BadgeCheck,
   },
 ];
@@ -45,7 +45,7 @@ export default function AboutPage() {
               Beauty Cosmetics
             </h1>
             <p className="mt-6 max-w-2xl text-sm leading-7 text-[#554246] md:text-base">
-              Beauty Cosmetics es un ecommerce salvadoreño de belleza, cosmética y cuidado personal especializado en maquillaje original, skincare, accesorios y productos auténticos. Atendemos en línea con entregas en San Salvador y San Miguel, envíos a todo El Salvador y presencia en nuestras sucursales de San Miguel y Usulután Plaza Mundo.
+              Más de seis años construyendo una comunidad que cree en la autenticidad, la calidad y la confianza. Beauty Cosmetics nació de la pasión por el maquillaje y el skincare, y hoy continúa creciendo para acercarte las marcas más reconocidas del mundo con una experiencia de compra excepcional.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link

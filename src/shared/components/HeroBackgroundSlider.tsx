@@ -16,7 +16,13 @@ function mediaUrl(url?: string | null) {
   return url.startsWith("http") ? url : `${API_URL}${url}`;
 }
 
-export default function HeroBackgroundSlider({ banners = [] }: { banners?: HomeBanner[] }) {
+export default function HeroBackgroundSlider({
+  banners = [],
+  onActiveDestinationChange,
+}: {
+  banners?: HomeBanner[];
+  onActiveDestinationChange?: (url: string | null) => void;
+}) {
   const pausedRef = useRef(false);
   const resumeTimeoutRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -57,6 +63,10 @@ export default function HeroBackgroundSlider({ banners = [] }: { banners?: HomeB
   useEffect(() => {
     setActiveIndex((current) => (slides.length ? current % slides.length : 0));
   }, [slides.length]);
+
+  useEffect(() => {
+    onActiveDestinationChange?.(slides[activeIndex]?.destination_url || null);
+  }, [activeIndex, slides, onActiveDestinationChange]);
 
   const goTo = useCallback(
     (index: number) => {
