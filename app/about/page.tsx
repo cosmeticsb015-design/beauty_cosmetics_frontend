@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, HeartHandshake, ShieldCheck, Sparkles, Store } from "lucide-react";
 
-const stats = ["+13 mil seguidores", "Sucursales en oriente", "Envíos a todo El Salvador"];
+const stats = ["+13 mil seguidores", "+ 6 años ", "2 sucursales", "Envíos a todo El Salvador"];
 
 const pillars = [
   {
