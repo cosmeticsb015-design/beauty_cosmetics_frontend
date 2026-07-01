@@ -112,6 +112,23 @@ textarea {
   line-height: 1.08;
 }
 
+@keyframes store-gallery-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.store-gallery-track {
+  animation: store-gallery-scroll 55s linear infinite;
+}
+
+.store-gallery-track:hover {
+  animation-play-state: paused;
+}
+
 @media (max-width: 480px) {
   body {
     line-height: 1.55;

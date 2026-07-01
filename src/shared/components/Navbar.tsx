@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { HandFist, Search, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { HeartHandshake, Search, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import SearchOverlay from "./SearchOverlay";
 import { useCart } from "@/src/shared/context/CartContext";
 
@@ -17,7 +17,7 @@ const navLinks = [
 const subBarItems = [
   { id: "sub-envios", icon: <Truck size={16} strokeWidth={1.8} />, label: "ENVÍOS A TODO EL PAIS" },
   { id: "sub-originales", icon: <ShieldCheck size={16} strokeWidth={1.8} />, label: "PRODUCTOS 100% ORIGINALES" },
-  { id: "sub-atencion", icon: <HandFist size={16} strokeWidth={1.8} />, label: "ATENCIÓN PERSONALIZADA" },
+  { id: "sub-atencion", icon: <HeartHandshake size={16} strokeWidth={1.8} />, label: "ASESORÍA PERSONALIZADA" },
 ];
 
 export default function Header() {

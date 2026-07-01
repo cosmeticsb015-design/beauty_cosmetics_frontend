@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import qs from "qs";
 import type { CheckoutOrder, CreateCheckoutOrderPayload, WompiPaymentLink } from "@/src/shared/services/checkout";
 import type { StrapiResponse } from "@/src/shared/services/producst";
 
@@ -74,6 +75,73 @@ async function strapiPost<T>(endpoint: string, data?: unknown, idempotencyKey?: 
   return response.json();
 }
 
+async function strapiGet<T>(endpoint: string): Promise<T> {
+  const headers = new Headers();
+  if (STRAPI_TOKEN) headers.set("Authorization", `Bearer ${STRAPI_TOKEN}`);
+
+  const response = await fetch(`${API_URL}/api/${endpoint}`, { headers, cache: "no-store" });
+  if (!response.ok) throw new StrapiRequestError(response.statusText, response.status);
+  return response.json();
+}
+
+async function strapiPut<T>(endpoint: string, data: Record<string, unknown>): Promise<T> {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (STRAPI_TOKEN) headers.set("Authorization", `Bearer ${STRAPI_TOKEN}`);
+
+  const response = await fetch(`${API_URL}/api/${endpoint}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ data }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new StrapiRequestError(response.statusText, response.status);
+  return response.json();
+}
+
+async function deactivateSoldOutProducts(items: CreateCheckoutOrderPayload["items"]) {
+  if (!STRAPI_TOKEN || !items.length) return;
+
+  const stockPopulateQuery = qs.stringify({
+    fields: ["quantity"],
+    populate: { variant: { fields: ["documentId", "active"], populate: { product: { fields: ["documentId", "active"] } } } },
+  }, { encodeValuesOnly: true });
+
+  for (const item of items) {
+    try {
+      const stockResponse = await strapiGet<StrapiResponse<{
+        quantity?: number | string | null;
+        variant?: { documentId?: string; active?: boolean; product?: { documentId?: string; active?: boolean } | null } | null;
+      }>>(`branch-stocks/${item.branch_stock}?${stockPopulateQuery}`);
+      const stock = stockResponse.data;
+      const variantDocumentId = stock.variant?.documentId;
+      const productDocumentId = stock.variant?.product?.documentId;
+
+      if (Number(stock.quantity || 0) > 0 || !variantDocumentId || !productDocumentId) continue;
+
+      if (stock.variant?.active !== false) await strapiPut(`variant-options/${variantDocumentId}`, { active: false });
+
+      const productQuery = qs.stringify({
+        fields: ["documentId", "active"],
+        populate: { variants: { fields: ["documentId"], populate: { stocks: { fields: ["quantity"] } } } },
+      }, { encodeValuesOnly: true });
+      const productResponse = await strapiGet<StrapiResponse<{
+        active?: boolean;
+        variants?: { stocks?: { quantity?: number | string | null }[] }[];
+      }>>(`products/${productDocumentId}?${productQuery}`);
+      const totalStock = (productResponse.data.variants ?? []).reduce(
+        (sum, variant) => sum + (variant.stocks ?? []).reduce((stockSum, entry) => stockSum + Number(entry.quantity || 0), 0),
+        0
+      );
+
+      if (productResponse.data.active !== false && totalStock <= 0) {
+        await strapiPut(`products/${productDocumentId}`, { active: false });
+      }
+    } catch (error) {
+      console.warn("No se pudo sincronizar estado de inventario agotado:", error);
+    }
+  }
+}
+
 // Construye el objeto de pago que consume el frontend (checkoutPayment.payment.payment_url)
 // a partir del wompi_payment que ya viene incluido en la respuesta de creación.
 function buildPaymentFromAttempt(attempt: CheckoutAttemptResponseData): WompiPaymentLink | null {
@@ -120,6 +188,7 @@ export async function POST(request: Request) {
     );
 
     const attempt = attemptResponse.data;
+    await deactivateSoldOutProducts(orderPayload.items);
     let payment = buildPaymentFromAttempt(attempt);
 
     // Defensivo: si por alguna razón el enlace no vino incluido (no debería
@@ -131,13 +200,18 @@ export async function POST(request: Request) {
         undefined,
         checkoutAttemptId
       );
+      const retryData = retryResponse.data as CheckoutAttemptResponseData & {
+        payment_link_id?: number;
+        payment_url?: string;
+        qr_url?: string;
+      };
 
       payment = buildPaymentFromAttempt(retryResponse.data) ?? buildPaymentFromAttempt({
         ...attempt,
         wompi_payment: {
-          payment_link_id: (retryResponse.data as any)?.payment_link_id,
-          payment_url: (retryResponse.data as any)?.payment_url,
-          qr_url: (retryResponse.data as any)?.qr_url,
+          payment_link_id: retryData.payment_link_id,
+          payment_url: retryData.payment_url,
+          qr_url: retryData.qr_url,
         },
       });
     }

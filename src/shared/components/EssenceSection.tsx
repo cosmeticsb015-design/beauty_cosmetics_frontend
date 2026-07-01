@@ -3,20 +3,20 @@ import { BadgeCheck, Globe, Heart } from "lucide-react";
 const values = [
   {
     id: "value-originales",
-    title: "Productos Originales",
-    description: "Garantizamos la autenticidad del 100% de nuestro catálogo.",
+    title: "Autenticidad Garantizada",
+    description: "Cada producto es cuidadosamente seleccionado y adquirido directamente de las marcas, garantizando la autenticidad, calidad y confianza que nuestros clientes merecen.",
     icon: <BadgeCheck size={22} strokeWidth={1.8} />,
   },
   {
     id: "value-internacionales",
-    title: "Marcas Internacionales",
-    description: "Traemos lo mejor del mercado global directamente a tus manos.",
+    title: "Marcas de Prestigio Internacional",
+    description: "Contamos con una selección premium de las marcas de maquillaje y skincare más deseadas del mundo, reunidas en un solo lugar.",
     icon: <Globe size={22} strokeWidth={1.8} />,
   },
   {
     id: "value-atencion",
-    title: "Atención Personalizada",
-    description: "Asesoramiento experto para encontrar los productos ideales para ti.",
+    title: "Más Cerca de Ti",
+    description: "Con cobertura en todo El Salvador y presencia física en San Miguel y Usulután, seguimos creciendo para brindarte una experiencia más cercana, conveniente y confiable.",
     icon: <Heart size={22} strokeWidth={1.8} />,
   },
 ];
@@ -31,8 +31,9 @@ export default function EssenceSection() {
             Nuestra Esencia
           </h2>
           <p className="mt-4 text-sm md:text-base text-[#554246] max-w-lg mx-auto leading-relaxed">
-            Fundada en 2019 en El Salvador, Beauty Cosmetics nació con la visión de acercar el mundo
-            del maquillaje editorial y el cuidado de la piel premium a ti.
+            ¿Por qué elegir Beauty Cosmetics?
+            <br />
+            Desde 2019, acercamos maquillaje y skincare auténticos de las marcas más reconocidas del mundo, ofreciendo una experiencia basada en calidad, confianza y atención personalizada.
           </p>
         </div>
 
