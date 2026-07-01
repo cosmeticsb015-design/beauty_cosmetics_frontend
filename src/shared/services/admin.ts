@@ -167,7 +167,30 @@ export async function getAdminOrdersWatermark() {
 }
 
 export async function getAdminOrder(id: string) {
-  const query = qs.stringify({ populate: { branch: true, shipping_rate: true, items: { populate: { product: { populate: productPopulate }, variant: true, branch_stock: { populate: { branch: true } } } } } }, { encodeValuesOnly: true });
+  const query = qs.stringify({
+    populate: {
+      branch: true,
+      shipping_rate: true,
+      items: {
+        populate: {
+          product: { populate: productPopulate },
+          variant: {
+            fields: ["label", "value", "price_override"],
+            populate: { images: { sort: ["sort_order:asc"], populate: { image: { fields: ["url", "formats", "alternativeText"] } } } },
+          },
+          branch_stock: {
+            populate: {
+              branch: true,
+              variant: {
+                fields: ["label", "value", "price_override"],
+                populate: { images: { sort: ["sort_order:asc"], populate: { image: { fields: ["url", "formats", "alternativeText"] } } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, { encodeValuesOnly: true });
   return adminRequest<StrapiResponse<StrapiOrder>>(`orders/${id}?${query}`);
 }
 
