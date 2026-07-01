@@ -5,10 +5,10 @@ import { ArrowRight, BadgeCheck, HeartHandshake, ShieldCheck, Sparkles, Store } 
 const stats = ["+13 mil seguidores", "+ 6 años ", "2 sucursales", "Envíos a todo El Salvador"];
 
 const aboutGalleryImages = [
-  { src: "/store-slider/1.jpg", alt: "Vitrina con maquillaje y productos de Beauty Cosmetics" },
-  { src: "/store-slider/2.jpg", alt: "Fachada rosa de la tienda Beauty Cosmetics" },
-  { src: "/store-slider/3.jpg", alt: "Productos recibidos en Beauty Cosmetics frente a pared floral" },
-  { src: "/store-slider/4.jpg", alt: "Entrada de Beauty Cosmetics decorada con globos rosados" },
+  { src: "/store-slider/11.jpeg", alt: "Vitrina con maquillaje y productos de Beauty Cosmetics" },
+  { src: "/store-slider/12.jpeg", alt: "Fachada rosa de la tienda Beauty Cosmetics" },
+  { src: "/store-slider/13.jpeg", alt: "Productos recibidos en Beauty Cosmetics frente a pared floral" },
+  { src: "/store-slider/14.jpeg", alt: "Entrada de Beauty Cosmetics decorada con globos rosados" },
 ];
 
 const pillars = [
