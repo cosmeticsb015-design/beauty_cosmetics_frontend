@@ -5,6 +5,7 @@ import CategoriesSection from "@/src/shared/components/CategoriesSection";
 import FeaturedProduct from "@/src/shared/components/FeaturedProduct";
 import EssenceSection from "@/src/shared/components/EssenceSection";
 import GiftCardSection from "@/src/shared/components/GiftCardSection";
+import StoreGallerySlider from "@/src/shared/components/StoreGallerySlider";
 import NewsletterSection from "@/src/shared/components/NewsletterSection";
 import SeoLandingSection from "@/src/shared/components/SeoLandingSection";
 import { getCategories, getProducts, StrapiCategory, StrapiProduct } from "@/src/shared/services/producst";
@@ -42,6 +43,7 @@ export default async function Home() {
       <EssenceSection />
       <SeoLandingSection />
       <GiftCardSection whatsappNumber={storeConfigResponse.data?.whatsapp_number} />
+      <StoreGallerySlider />
       <NewsletterSection />
     </>
   );
